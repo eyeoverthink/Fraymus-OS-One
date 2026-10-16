@@ -70,6 +70,55 @@ function imageData(img, maxSide) {
   return canvas.toDataURL("image/jpeg", 0.9);
 }
 
+function skinLike(r, g, b) {
+  const spread = Math.max(r, g, b) - Math.min(r, g, b);
+  return r > 40 && r >= g && g >= b * 0.8 && r - b >= 12 && r - b <= 140 && spread >= 12;
+}
+
+function skinStats(img) {
+  if (!img) return null;
+  const { width, height, data } = img;
+  const picks = [];
+  for (let y = Math.round(height * 0.12); y < Math.round(height * 0.62); y += 2) {
+    for (let x = Math.round(width * 0.28); x < Math.round(width * 0.72); x += 2) {
+      const i = (y * width + x) * 4;
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      if (skinLike(r, g, b)) picks.push([0.299 * r + 0.587 * g + 0.114 * b, r, g, b]);
+    }
+  }
+  if (picks.length < 120) return null;
+  picks.sort((a, b) => a[0] - b[0]);
+  const mid = picks.slice(Math.floor(picks.length * 0.25), Math.ceil(picks.length * 0.75));
+  const mean = [0, 0, 0];
+  mid.forEach(([, r, g, b]) => { mean[0] += r; mean[1] += g; mean[2] += b; });
+  return mean.map((value) => value / mid.length);
+}
+
+function matchSkin(raw, photo, shift) {
+  const out = new ImageData(new Uint8ClampedArray(raw.data), raw.width, raw.height);
+  const rendered = skinStats(raw);
+  if (!rendered) return out;
+  const target = skinStats(photo);
+  const luma = ([r, g, b]) => 0.299 * r + 0.587 * g + 0.114 * b;
+  const auto = target ? Math.min(1.1, Math.max(0.7, luma(target) / Math.max(1, luma(rendered)))) : 1;
+  const gain = auto * (1 + shift / 100);
+  const ratio = [gain, gain, gain];
+  const d = out.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i];
+    const g = d[i + 1];
+    const b = d[i + 2];
+    if (!skinLike(r, g, b)) continue;
+    if (Math.abs(r - rendered[0]) + Math.abs(g - rendered[1]) + Math.abs(b - rendered[2]) > 120) continue;
+    d[i] = r * ratio[0];
+    d[i + 1] = g * ratio[1];
+    d[i + 2] = b * ratio[2];
+  }
+  return out;
+}
+
 function drawAi(canvas, img, lock) {
   const width = 512;
   const height = Math.round(width * img.height / img.width);
@@ -100,6 +149,24 @@ function loadImage(src) {
     img.onerror = () => reject(new Error("That image could not be read."));
     img.src = src;
   });
+}
+
+async function readAnyFile(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    return await loadImage(url);
+  } catch {
+    const response = await fetch("/api/pixel/convert", {
+      method: "POST",
+      headers: { "Content-Type": "application/octet-stream", "X-File-Name": file.name || "upload" },
+      body: file
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok || !body.image) throw new Error(body.error || `Could not open ${file.name}.`);
+    return loadImage(body.image);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 export function applySprite(project, dataUrl) {
@@ -148,8 +215,8 @@ export default function PixelPage({ project, onApply, say }) {
   const fileRef = useRef(null);
   const styleFileRef = useRef(null);
   const photoRef = useRef(null);
-  const aiSrcRef = useRef(null);
-  const aiMaskRef = useRef(null);
+  const photoDataRef = useRef(null);
+  const aiRawRef = useRef(null);
   const paintingRef = useRef(null);
   const editedRef = useRef(false);
   const undoRef = useRef([]);
@@ -177,6 +244,7 @@ export default function PixelPage({ project, onApply, say }) {
   const [aiNote, setAiNote] = useState("");
   const [styleRef, setStyleRef] = useState(null);
   const [lock, setLock] = useState(0);
+  const [skin, setSkin] = useState(0);
 
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -193,6 +261,8 @@ export default function PixelPage({ project, onApply, say }) {
   async function useSource(img) {
     const fitted = fitSource(img);
     sourceRef.current = fitted;
+    photoDataRef.current = fitted;
+    aiRawRef.current = null;
     photoRef.current = imageData(img, 768);
     setAiImage(null);
     setAiNote("");
@@ -209,7 +279,7 @@ export default function PixelPage({ project, onApply, say }) {
     const canvas = resultRef.current;
     if (!source || !canvas) return;
     if (view === "ai") {
-      if (aiImage && aiSrcRef.current) {
+      if (aiImage) {
         drawAi(canvas, aiComposite(), editing ? 0 : lock);
         return;
       }
@@ -235,7 +305,7 @@ export default function PixelPage({ project, onApply, say }) {
 
   useEffect(() => {
     const source = sourceRef.current;
-    if (source && !paintingRef.current) {
+    if (source && !paintingRef.current && !aiRawRef.current) {
       const base = buildSubjectMask(source, tolerance);
       maskRef.current = lift > 0 ? liftMask(source, base, Math.round(lift / 6)) : base;
       editedRef.current = false;
@@ -248,8 +318,8 @@ export default function PixelPage({ project, onApply, say }) {
   }, [pixelSize, colors, saturation, outline, cyan, view, editing, aiImage, lock]);
 
   function aiComposite() {
-    const src = aiSrcRef.current;
-    const mask = aiMaskRef.current;
+    const src = sourceRef.current;
+    const mask = maskRef.current;
     const canvas = document.createElement("canvas");
     canvas.width = src.width;
     canvas.height = src.height;
@@ -265,18 +335,26 @@ export default function PixelPage({ project, onApply, say }) {
     return canvas;
   }
 
-  function adoptAi(img) {
+  function adoptAi(img, shift = skin) {
     const canvas = document.createElement("canvas");
     canvas.width = 512;
     canvas.height = Math.round(512 * img.height / img.width);
     const ctx = canvas.getContext("2d");
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    aiSrcRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    aiMaskRef.current = new Uint8Array(canvas.width * canvas.height).fill(1);
+    aiRawRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    sourceRef.current = matchSkin(aiRawRef.current, photoDataRef.current, shift);
+    maskRef.current = new Uint8Array(canvas.width * canvas.height).fill(1);
+    editedRef.current = false;
     undoRef.current = [];
     redoRef.current = [];
   }
+
+  useEffect(() => {
+    if (!aiRawRef.current || !aiImage) return;
+    sourceRef.current = matchSkin(aiRawRef.current, photoDataRef.current, skin);
+    paint();
+  }, [skin]);
 
   function toggleEdit() {
     if (editing) {
@@ -318,14 +396,11 @@ export default function PixelPage({ project, onApply, say }) {
 
   async function onStyleFile(file) {
     if (!file) return;
-    const url = URL.createObjectURL(file);
     try {
-      setStyleRef(imageData(await loadImage(url), 512));
+      setStyleRef(imageData(await readAnyFile(file), 512));
       setAiNote("Style reference set. The render copies its drawing style.");
     } catch (error) {
       setAiNote(error.message);
-    } finally {
-      URL.revokeObjectURL(url);
     }
   }
 
@@ -333,10 +408,8 @@ export default function PixelPage({ project, onApply, say }) {
     if (!file) return;
     setBusy(true);
     try {
-      const url = URL.createObjectURL(file);
-      const img = await loadImage(url);
-      URL.revokeObjectURL(url);
-      await useSource(img);
+      setNote(`Opening ${file.name}…`);
+      await useSource(await readAnyFile(file));
       say?.("ok", "Picture loaded");
     } catch (error) {
       setNote(error.message);
@@ -384,7 +457,7 @@ export default function PixelPage({ project, onApply, say }) {
   function characterCanvas() {
     const source = sourceRef.current;
     if (!source) return null;
-    if (view === "ai" && aiImage && aiSrcRef.current) {
+    if (view === "ai" && aiImage) {
       const canvas = document.createElement("canvas");
       drawAi(canvas, aiComposite(), lock);
       return canvas;
@@ -434,6 +507,8 @@ export default function PixelPage({ project, onApply, say }) {
       const img = await loadImage(item.source);
       const fitted = fitSource(img);
       sourceRef.current = fitted;
+      photoDataRef.current = fitted;
+      aiRawRef.current = null;
       photoRef.current = imageData(img, 768);
       setAiImage(null);
       const restored = decodeMask(item.mask, fitted.width * fitted.height);
@@ -466,21 +541,16 @@ export default function PixelPage({ project, onApply, say }) {
     setNote("Background lifted. Edit, then trace anything still behind the person.");
   }
 
-  function onAiLayer() {
-    return view === "ai" && Boolean(aiImage) && Boolean(aiSrcRef.current);
-  }
-
   function editSource() {
-    return onAiLayer() ? aiSrcRef.current : sourceRef.current;
+    return sourceRef.current;
   }
 
   function editMask() {
-    return onAiLayer() ? aiMaskRef.current : maskRef.current;
+    return maskRef.current;
   }
 
   function setEditMask(mask) {
-    if (onAiLayer()) aiMaskRef.current = mask;
-    else maskRef.current = mask;
+    maskRef.current = mask;
   }
 
   function pointerPoint(event) {
@@ -597,7 +667,7 @@ export default function PixelPage({ project, onApply, say }) {
       <aside className="tool-side">
         <p className="fh">Capture</p>
         <p className="muted">AI Render redraws the photo as an 8-bit portrait. Character is the offline filter.</p>
-        <input ref={fileRef} hidden type="file" accept="image/*" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ""; }} />
+        <input ref={fileRef} hidden type="file" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ""; }} />
         <button className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>New picture</button>
         {!cameraOn && <button className="btn" onClick={startCamera}>Take picture</button>}
         {cameraOn && (
@@ -615,12 +685,15 @@ export default function PixelPage({ project, onApply, say }) {
           <button className={aiMode === "avatar" ? "on" : ""} onClick={() => setAiMode("avatar")}>Avatar</button>
         </div>
         <button className="btn on" onClick={aiRender} disabled={!hasSource || aiBusy}>{aiBusy ? "Rendering…" : "AI Render"}</button>
-        <input ref={styleFileRef} hidden type="file" accept="image/*" onChange={(event) => { onStyleFile(event.target.files?.[0]); event.target.value = ""; }} />
+        <input ref={styleFileRef} hidden type="file" onChange={(event) => { onStyleFile(event.target.files?.[0]); event.target.value = ""; }} />
         <div className="row">
           <button className="btn" onClick={() => styleFileRef.current?.click()}>{styleRef ? "Change style ref" : "Style reference"}</button>
           {styleRef && <button className="btn" onClick={() => setStyleRef(null)}>Clear</button>}
         </div>
         {styleRef && <img className="pixel-styleref" src={styleRef} alt="Style reference" />}
+        <label className="field">Skin {skin === 0 ? "match photo" : skin > 0 ? `+${skin} lighter` : `${skin} darker`}
+          <input type="range" min={-40} max={40} step={2} value={skin} onChange={(event) => setSkin(Number(event.target.value))} />
+        </label>
         <label className="field">Pixel lock {lock ? `${lock} wide` : "off"}
           <input type="range" min={0} max={160} step={8} value={lock} onChange={(event) => setLock(Number(event.target.value) < 48 ? 0 : Number(event.target.value))} />
         </label>

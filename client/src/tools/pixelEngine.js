@@ -785,6 +785,8 @@ function hsvToRgb(hue, sat, value) {
 
 function boostColor(color, amount) {
   const [hue, sat, value] = rgbToHsv(color[0], color[1], color[2]);
+  const skinTone = hue >= 5 && hue <= 40 && sat > 0.12 && sat < 0.75;
+  if (skinTone) return hsvToRgb(hue, Math.min(1, sat * Math.min(amount, 1.08)), value);
   let next = sat * amount;
   const blue = hue > 190 && hue < 265;
   const yellow = hue > 35 && hue < 75;

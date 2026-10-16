@@ -1,5 +1,7 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import { execFile } from "node:child_process";
 import express from "express";
 import cors from "cors";
 import archiver from "archiver";
@@ -101,7 +103,7 @@ const PIXEL_SPACE = process.env.FRAYMUS_PIXEL_SPACE || "prithivMLmods/Flux.2-Kle
 const PIXEL_STYLE = "8-bit pixel art bust portrait, chunky square pixels, hard black outlines, flat cel shading, "
   + "limited retro palette, solid black background, head and shoulders centered, straight-on camera, "
   + "small glowing cyan highlight pixels on the edges like a cyberpunk game sprite";
-const PIXEL_SKIN = "warm light beige skin tone, natural, not orange or red";
+const PIXEL_SKIN = "Keep the person's exact natural skin tone, complexion and ethnicity from the photo, same depth and warmth; do not lighten, whiten or darken the skin";
 let pixelClient = null;
 
 function hfToken() {
@@ -131,6 +133,51 @@ function pixelPrompt(mode, hasStyle, extra) {
     : "Keep their real clothes, hat, hair, beard and any shirt graphics exactly as in the photo.";
   return `Convert the person in image 1 into an ${style} Remove the room and background completely. ${look} ${PIXEL_SKIN}. ${note}`.trim();
 }
+
+function run(cmd, args) {
+  return new Promise((resolve, reject) => {
+    execFile(cmd, args, { timeout: 45000 }, (error, stdout, stderr) => {
+      if (error) reject(new Error(String(stderr || error.message).trim()));
+      else resolve(stdout);
+    });
+  });
+}
+
+app.post("/api/pixel/convert", express.raw({ type: () => true, limit: "60mb" }), async (req, res) => {
+  if (!req.body?.length) return res.status(400).json({ error: "The file was empty." });
+  const name = String(req.get("x-file-name") || "upload").replace(/[^\w.\-]+/g, "_").slice(-80);
+  const ext = path.extname(name).toLowerCase() || ".bin";
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "fraymus-convert-"));
+  const input = path.join(dir, `in${ext}`);
+  const output = path.join(dir, "out.png");
+  fs.writeFileSync(input, req.body);
+  try {
+    let made = false;
+    if (process.platform === "darwin") {
+      try {
+        const dims = await run("sips", ["-g", "pixelWidth", "-g", "pixelHeight", input]).catch(() => "");
+        const side = Math.max(...[...dims.matchAll(/pixel(?:Width|Height):\s*(\d+)/g)].map((m) => Number(m[1])), 0);
+        const resize = side > 2048 ? ["-Z", "2048"] : [];
+        await run("sips", ["-s", "format", "png", ...resize, input, "--out", output]);
+        made = fs.existsSync(output) && fs.statSync(output).size > 0;
+      } catch {}
+      if (!made) {
+        await run("qlmanage", ["-t", "-s", "1600", "-o", dir, input]).catch(() => {});
+        const thumb = fs.readdirSync(dir).find((file) => file.startsWith("in") && file.endsWith(".png"));
+        if (thumb) {
+          fs.renameSync(path.join(dir, thumb), output);
+          made = true;
+        }
+      }
+    }
+    if (!made) throw new Error(`Could not read ${ext.slice(1).toUpperCase() || "that"} files on this machine.`);
+    res.json({ image: `data:image/png;base64,${fs.readFileSync(output).toString("base64")}` });
+  } catch (error) {
+    res.status(415).json({ error: error.message });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
 
 app.post("/api/pixel/render", async (req, res) => {
   const photo = base64Image(req.body?.image);
