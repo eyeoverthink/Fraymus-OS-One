@@ -97,6 +97,75 @@ function sessionOr404(req, res) {
   return session;
 }
 
+const PIXEL_SPACE = process.env.FRAYMUS_PIXEL_SPACE || "prithivMLmods/Flux.2-Klein-Edit-Ultra-Fast";
+const PIXEL_STYLE = "8-bit pixel art bust portrait, chunky square pixels, hard black outlines, flat cel shading, "
+  + "limited retro palette, solid black background, head and shoulders centered, straight-on camera, "
+  + "small glowing cyan highlight pixels on the edges like a cyberpunk game sprite";
+const PIXEL_SKIN = "warm light beige skin tone, natural, not orange or red";
+let pixelClient = null;
+
+function hfToken() {
+  if (process.env.HF_TOKEN) return process.env.HF_TOKEN.trim();
+  const file = path.join(process.cwd(), "hf-token.txt");
+  try {
+    const raw = fs.readFileSync(file, "utf8");
+    const match = raw.match(/hf_[A-Za-z0-9]+/);
+    return match ? match[0] : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function base64Image(value) {
+  if (typeof value !== "string") return null;
+  const raw = value.includes(",") ? value.split(",").pop() : value;
+  if (!/^[A-Za-z0-9+/=]+$/.test(raw) || raw.length > 9_000_000) return null;
+  return raw;
+}
+
+function pixelPrompt(mode, hasStyle, extra) {
+  const note = String(extra || "").replace(/[\r\n]+/g, " ").slice(0, 240);
+  const style = hasStyle ? `Match the drawing style of image 2 only. ${PIXEL_STYLE}.` : `${PIXEL_STYLE}.`;
+  const look = mode === "avatar"
+    ? "Give the person a dark gray fedora, black sunglasses with small cyan highlights, and a navy jacket with glowing cyan trim. Keep their face shape, beard and hair."
+    : "Keep their real clothes, hat, hair, beard and any shirt graphics exactly as in the photo.";
+  return `Convert the person in image 1 into an ${style} Remove the room and background completely. ${look} ${PIXEL_SKIN}. ${note}`.trim();
+}
+
+app.post("/api/pixel/render", async (req, res) => {
+  const photo = base64Image(req.body?.image);
+  if (!photo) return res.status(400).json({ error: "Send the photo as a base64 image." });
+  const style = base64Image(req.body?.style);
+  const mode = req.body?.mode === "avatar" ? "avatar" : "real";
+  const seed = Number.isInteger(req.body?.seed) ? req.body.seed : Math.floor(Math.random() * 100000);
+  try {
+    const { Client } = await import("@gradio/client");
+    const token = hfToken();
+    if (!pixelClient) pixelClient = await Client.connect(PIXEL_SPACE, token ? { token } : {});
+    const images = style ? [photo, style] : [photo];
+    const result = await pixelClient.predict("/edit_image", {
+      images_b64_json: JSON.stringify(images),
+      prompt: pixelPrompt(mode, Boolean(style), req.body?.note),
+      seed,
+      randomize_seed: false,
+      width: 1024,
+      height: 1024,
+      steps: 4,
+      guidance_scale: 1.0
+    });
+    const image = result?.data?.[0]?.image;
+    if (typeof image !== "string") throw new Error("The model returned no image.");
+    res.json({ image: image.startsWith("data:") ? image : `data:image/png;base64,${image}`, seed, mode });
+  } catch (error) {
+    pixelClient = null;
+    const message = error?.message || String(error);
+    const quota = /quota|GPU|exceeded/i.test(message);
+    res.status(quota ? 429 : 502).json({
+      error: quota ? "The free AI queue is out of GPU time. Put your Hugging Face token in hf-token.txt or try again later." : message
+    });
+  }
+});
+
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, mongo: mongoState, port: PORT });
 });

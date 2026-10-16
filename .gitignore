@@ -4,6 +4,7 @@ data/runtime
 data/published
 data/projects
 .env
+hf-token.txt
 .env.*
 .extract
 .DS_Store

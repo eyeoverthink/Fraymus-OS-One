@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import CrudPage from "./tools/CrudPage.jsx";
 import ReplPage from "./tools/ReplPage.jsx";
 import CanvasPage from "./tools/CanvasPage.jsx";
+import PixelPage from "./tools/PixelPage.jsx";
 import {
   BRAND,
   PHI,
@@ -584,11 +585,11 @@ export default function App() {
       </header>
       <div className="top" style={{ paddingTop: 0 }}>
         <div className="seg">
-          {[["studio", "Code"], ["crud", "CRUD"], ["repl", "REPL"], ["canvas", "Canvas"]].map(([id, label]) => (
+          {[["studio", "Code"], ["crud", "CRUD"], ["repl", "REPL"], ["canvas", "Canvas"], ["pixel", "8-bit"]].map(([id, label]) => (
             <button key={id} className={workspace === id ? "on" : ""} onClick={() => setWorkspace(id)}>{label}</button>
           ))}
         </div>
-        <span className="muted">{workspace === "canvas" ? "Blocks, cube grid, entity components" : workspace === "repl" ? "JavaScript and DOM" : workspace === "crud" ? "GET POST PUT PATCH DELETE" : "Editor"}</span>
+        <span className="muted">{workspace === "pixel" ? "Photo to 8-bit character" : workspace === "canvas" ? "Blocks, cube grid, entity components" : workspace === "repl" ? "JavaScript and DOM" : workspace === "crud" ? "GET POST PUT PATCH DELETE" : "Editor"}</span>
       </div>
       {narrow && workspace === "studio" && (
         <div className="mobile-switch seg">
@@ -599,6 +600,7 @@ export default function App() {
       {workspace === "crud" && project && <CrudPage project={project} say={say} onApply={(next) => patch(() => next)} />}
       {workspace === "repl" && <ReplPage />}
       {workspace === "canvas" && project && <CanvasPage project={project} say={say} onApply={(next) => patch(() => next)} />}
+      {workspace === "pixel" && <PixelPage project={project} say={say} onApply={(next) => patch(() => next)} />}
       {workspace === "studio" && <div className="workspace">
         {showLib && libOpen && (
           <aside className="library">
@@ -962,6 +964,7 @@ export default function App() {
               <a className="btn" href="#crud" onClick={(event) => { event.preventDefault(); setModal(null); setWorkspace("crud"); }}>CRUD</a>
               <a className="btn" href="#repl" onClick={(event) => { event.preventDefault(); setModal(null); setWorkspace("repl"); }}>REPL</a>
               <a className="btn" href="#canvas" onClick={(event) => { event.preventDefault(); setModal(null); setWorkspace("canvas"); }}>Canvas</a>
+              <a className="btn" href="#pixel" onClick={(event) => { event.preventDefault(); setModal(null); setWorkspace("pixel"); }}>8-bit</a>
               <a className="btn" href="#help" onClick={(event) => { event.preventDefault(); setModal("help"); }}>Help</a>
               <a className="btn" href="https://cursor.com/codebase/vaughn-scott/fraymus-css" target="_blank" rel="noreferrer">Repository</a>
             </div>
