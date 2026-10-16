@@ -1,0 +1,26 @@
+---
+description: Fraymus Web Studio conventions - design system, workspace pattern, and the user's working rules
+alwaysApply: true
+---
+
+# Fraymus Web Studio
+
+Read `docs/STUDIO_HANDBOOK.md` before building or changing an app in this repo. It covers the design tokens, the workspace contract, the 8-bit pipeline, and the session history.
+
+## Build new apps the same way
+
+- New apps are workspaces in `client/src/tools/<Name>Page.jsx` with the props `{ project, say, onApply }`, registered in the workspace list in `client/src/App.jsx`. A separate page reuses the same shell, tokens, and footer.
+- Layout: `.tool` > `aside.tool-side` (steps or bin) + `section.tool-main` (`.codebar` title bar + `.tool-body`) + `aside.tool-side` (output or inspector).
+- Use the CSS variables in `client/src/styles.css`: `--bg`, `--panel*`, `--line*`, `--acc` `#3dff9a`, `--text`, `--dim`, and `--mono`. Use `.btn`, `.btn.on`, `.seg`, `.card`, `.muted`, `.field`, and `.note`. Don't hard-code new colors without a reason. Canvas is purple (Obsidian); 8-bit is cyan `#00e5ff`.
+- Put changes into a project through a pure `applyX(project, ...)` that handles both static (html/css/js) and MERN (`ensureMern`, `pages`, `files`, `buildAppSource`).
+- Server routes go under `/api/<area>/<verb>` in `server/index.js`. Validate input, bind to `127.0.0.1`, and read secrets from env vars or gitignored files.
+- Keep the brand: ◈ FRAYMUS WEB STUDIO, and the footer `© 2026 Fraymus Web Studio · φ^75 = 4721424167835376.00 · One Seed = Reborn · FRAY 0x46524159`. Never add a personal legal name.
+
+## The user's rules
+
+- Research first and test against the user's reference. Verify in the browser with screenshots, then ask for feedback before saying it's done. Don't burn credits on likely failures.
+- Never commit, push, or leave in `localStorage` the user's face photo. Use an AI-generated stand-in for demos.
+- Never print or commit the Hugging Face token (`hf-token.txt`, `HF_TOKEN`). Scan diffs for `hf_` before committing.
+- Push to `main` only when the user asks. Don't edit the README unless asked.
+- Localhost only. No `node --watch`. Restart the API after editing `server/`. If port 4177 is taken, free it and tell the user to rerun `npm run dev`.
+- In AI image prompts, never name a skin color. Keep the subject's own skin tone and ethnicity.
