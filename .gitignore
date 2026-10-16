@@ -1,0 +1,9 @@
+node_modules
+client/dist
+data/runtime
+data/published
+data/projects
+.env
+.env.*
+.extract
+.DS_Store

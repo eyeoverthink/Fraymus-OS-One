@@ -1,0 +1,28 @@
+{
+  "name": "fraymus-studio",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Fraymus web creation studio — static, React, and MERN with live server, Node, VM, publish, and export.",
+  "scripts": {
+    "dev": "concurrently -n server,client -c green,cyan \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "node server/index.js",
+    "dev:client": "vite --config client/vite.config.js",
+    "start": "node server/index.js",
+    "build": "vite build --config client/vite.config.js"
+  },
+  "dependencies": {
+    "@babel/standalone": "^7.26.2",
+    "archiver": "^7.0.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "mongoose": "^8.9.5",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "vite": "^6.0.6"
+  }
+}
