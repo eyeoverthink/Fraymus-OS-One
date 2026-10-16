@@ -4,6 +4,8 @@
 
 [© 2026 Fraymus Web Studio](#copyright) · [φ^75 = 4721424167835376.00](#brand) · [One Seed = Reborn](#brand) · [FRAY 0x46524159](#brand)
 
+Repository: [vaughn-scott/fraymus-css](https://cursor.com/codebase/vaughn-scott/fraymus-css)
+
 A browser studio for static pages, React, and MERN. Edit in panes, pair two files, run a live server, start Node, publish, and export. CRUD, a DOM REPL, and an Obsidian-style canvas sit beside the editor.
 
 ## Contents
@@ -257,4 +259,4 @@ The demo module is the bytes whose magic is `00 61 73 6d` and whose `main()` ret
 
 ---
 
-[© 2026 Fraymus Web Studio](#copyright) · [◈](#brand) · [φ^75 = 4721424167835376.00](#brand) — [One Seed = Reborn](#brand) · [FRAY 0x46524159](#brand)
+[© 2026 Fraymus Web Studio](#copyright) · [◈](#brand) · [φ^75 = 4721424167835376.00](#brand) — [One Seed = Reborn](#brand) · [FRAY 0x46524159](#brand) · [vaughn-scott/fraymus-css](https://cursor.com/codebase/vaughn-scott/fraymus-css)

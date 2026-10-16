@@ -963,6 +963,7 @@ export default function App() {
               <a className="btn" href="#repl" onClick={(event) => { event.preventDefault(); setModal(null); setWorkspace("repl"); }}>REPL</a>
               <a className="btn" href="#canvas" onClick={(event) => { event.preventDefault(); setModal(null); setWorkspace("canvas"); }}>Canvas</a>
               <a className="btn" href="#help" onClick={(event) => { event.preventDefault(); setModal("help"); }}>Help</a>
+              <a className="btn" href="https://cursor.com/codebase/vaughn-scott/fraymus-css" target="_blank" rel="noreferrer">Repository</a>
             </div>
           </div>
         </Modal>
