@@ -31,6 +31,40 @@ export const PRESETS = [
 ];
 const SAMPLES = Object.fromEntries(PRESETS.flatMap(([, items]) => items.map(([name, src]) => [name, src])));
 
+// ---- document nodes: a labelled token whose single emoji invisibly carries a whole program ----
+const DOC_KEY = "fraymus.wasm.doc";
+const NODE_CARRIER = "🧩";
+// ⟦label⟧ followed by one carrier code point plus its trailing variation selectors (the hidden bytes).
+const NODE_RE = /⟦([^⟧]+)⟧(.[\uFE00-\uFE0F\u{E0100}-\u{E01EF}]*)/gu;
+
+function nodeToken(label, src) {
+  return `⟦${label}⟧${encodeGlyph(toBytecode(assemble(src)), NODE_CARRIER)}`;
+}
+
+function resolveDoc(text) {
+  const nodes = [];
+  for (const match of text.matchAll(NODE_RE)) {
+    const label = match[1];
+    const glyph = match[2];
+    try {
+      const bytes = decodeGlyph(glyph).bytes;
+      if (!bytes.length) continue;
+      const code = fromBytecode(bytes);
+      const asm = disassemble(code).replace(/^\d+:\s*/gm, "");
+      nodes.push({ label, glyph, visible: label.length + 2 + [...glyph].length, hidden: bytes.length, instructions: code.length, asm, out: runProgram(code).output });
+    } catch (error) { nodes.push({ label, glyph, error: error.message }); }
+  }
+  return nodes;
+}
+
+function defaultDoc() {
+  try {
+    const picks = ["Fibonacci < 100", "Primes up to 40"];
+    const body = picks.map((name) => `${name}\n${nodeToken(name, SAMPLES[name])}`).join("\n\n");
+    return `# A document woven from compressed program nodes.\n# Each line below has a label, then ONE emoji that invisibly carries the whole program.\n# Click "Resolve" to expand every node back into its full block and run it.\n\n${body}\n`;
+  } catch { return ""; }
+}
+
 function download(name, data, type = "application/octet-stream") {
   const url = URL.createObjectURL(new Blob([data], { type }));
   const link = document.createElement("a");
@@ -81,9 +115,27 @@ export default function WasmPage({ project, say, onApply }) {
   const [probe, setProbe] = useState(null);
   const [carrier, setCarrier] = useState("🧩");
   const [glyph, setGlyph] = useState("");
+  const [doc, setDoc] = useState(() => localStorage.getItem(DOC_KEY) || defaultDoc());
   const probeRef = useRef(null);
 
   useEffect(() => { localStorage.setItem(SRC_KEY, src); }, [src]);
+  useEffect(() => { localStorage.setItem(DOC_KEY, doc); }, [doc]);
+
+  const nodes = useMemo(() => resolveDoc(doc), [doc]);
+  const nodeStats = useMemo(() => {
+    const good = nodes.filter((node) => !node.error);
+    return {
+      count: nodes.length,
+      visible: good.reduce((sum, node) => sum + node.visible, 0),
+      asmChars: good.reduce((sum, node) => sum + node.asm.length, 0),
+      bytes: good.reduce((sum, node) => sum + node.hidden, 0)
+    };
+  }, [nodes]);
+
+  function insertNode(name) {
+    try { setDoc((current) => `${current}${current && !current.endsWith("\n") ? "\n" : ""}${name}\n${nodeToken(name, SAMPLES[name])}\n`); say?.(`Wove "${name}" into the document as one ${NODE_CARRIER}`); }
+    catch (error) { say?.(error.message); }
+  }
 
   const assembled = useMemo(() => {
     try { return { code: assemble(src), error: null }; }
@@ -206,7 +258,7 @@ export default function WasmPage({ project, say, onApply }) {
           <div className="coder-view">
             <div className="webjs-head">
               <div className="seg">
-                {[["run", "Run"], ["build", "Build"], ["probe", "Probe"], ["merkle", "Merkle"], ["golden", "Golden"]].map(([id, label]) => (
+                {[["run", "Run"], ["build", "Build"], ["probe", "Probe"], ["nodes", "Nodes"], ["merkle", "Merkle"], ["golden", "Golden"]].map(([id, label]) => (
                   <button key={id} className={view === id ? "on" : ""} onClick={() => setView(id)}>{label}</button>
                 ))}
               </div>
@@ -255,6 +307,41 @@ export default function WasmPage({ project, say, onApply }) {
                   <label className="btn">Load .wasm…<input ref={probeRef} type="file" accept=".wasm,application/wasm" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) file.arrayBuffer().then((buffer) => runProbe(new Uint8Array(buffer), file.name)); event.target.value = ""; }} /></label>
                 </div>
               ))}
+              {view === "nodes" && (
+                <div className="stack">
+                  <span className="muted">A node is a whole program compressed into one emoji. Drop nodes into a document, and each huge block collapses to a single labelled glyph — invisible bytes, recoverable on demand, nothing to read if you only see the carrier.</span>
+                  <b>Palette — click to weave a node in</b>
+                  <div className="wasm-palette">
+                    {PRESETS.flatMap(([, items]) => items).map(([name]) => (
+                      <button key={name} className="btn" onClick={() => insertNode(name)} title={`Insert ${name} as one ${NODE_CARRIER}`}>{NODE_CARRIER} {name}</button>
+                    ))}
+                  </div>
+                  <div className="webjs-head"><b>Document</b><span className="muted">{[...doc].length} code points</span></div>
+                  <textarea className="dispatch-code" rows={6} value={doc} spellCheck={false} onChange={(event) => setDoc(event.target.value)} aria-label="Node document" />
+                  <div className="row">
+                    <button className="btn" onClick={() => copy(doc, "the document")}>Copy document</button>
+                    <button className="btn" onClick={() => setDoc(defaultDoc())}>Reset</button>
+                    <button className="btn" onClick={() => setDoc("")}>Clear</button>
+                  </div>
+                  {nodes.length > 0 && (
+                    <span className="wasm-badge compiled">{nodeStats.count} nodes · {nodeStats.visible} visible chars carry {nodeStats.bytes} bytes = {nodeStats.asmChars} chars of assembly{nodeStats.visible ? ` · ${(nodeStats.asmChars / nodeStats.visible).toFixed(1)}× denser` : ""}</span>
+                  )}
+                  <b>Resolved nodes</b>
+                  {nodes.length === 0 && <span className="muted">No nodes found. Click the palette above to weave one in.</span>}
+                  {nodes.map((node, index) => (
+                    <div key={index} className="stack wasm-node">
+                      {node.error ? (
+                        <div className="wasm-err">⟦{node.label}⟧ — {node.error}</div>
+                      ) : (
+                        <>
+                          <div className="row"><code>⟦{node.label}⟧ {node.glyph}</code><small className="muted">{node.hidden} B → {node.instructions} instructions · runs to "{node.out}"</small></div>
+                          <pre className="wasm-hex">{node.asm}</pre>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
               {view === "merkle" && (
                 <div className="stack">
                   <span className="muted">True Merkle 41: the source text becomes DNA, 8192 bases, 256 words, 32 FaceBlock hashes, 8 parents, 1 root — all FNV-1a 64-bit.</span>

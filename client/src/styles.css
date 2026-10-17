@@ -257,6 +257,10 @@ textarea.pad { flex: 1; min-width: 0; min-height: 0; border: 0; resize: none; ba
 .wasm-golden.ok span { color: var(--acc); } .wasm-golden.bad { border-color: #ff6b6b; } .wasm-golden.bad span { color: #ff6b6b; }
 .wasm-golden code { font-family: var(--mono); font-size: 11px; flex: none; min-width: 120px; }
 .wasm-golden small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wasm-palette { display: flex; flex-wrap: wrap; gap: 5px; }
+.wasm-palette .btn { font-size: 11px; }
+.wasm-node { gap: 4px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel2); }
+.wasm-node code { font-family: var(--mono); font-size: 12px; }
 @media (max-width: 980px) { .wasm-body { grid-template-columns: minmax(0, 1fr); } }
 .dispatch a.btn { text-decoration: none; color: var(--text); }
 .dispatch a.btn.on { color: var(--acc); }
