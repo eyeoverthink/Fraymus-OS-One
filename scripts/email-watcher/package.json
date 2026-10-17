@@ -1,0 +1,17 @@
+{
+  "name": "fraymus-email-watcher",
+  "version": "1.0.0",
+  "description": "FRAYMUS v16 — email-launched payload watcher. Monitors Gmail for signed emoji payloads, decodes, verifies, and dispatches to agents.",
+  "type": "module",
+  "main": "watcher.mjs",
+  "scripts": {
+    "start": "node watcher.mjs",
+    "dry-run": "node watcher.mjs --dry-run",
+    "decode-test": "node decode.mjs"
+  },
+  "author": "Fraymus Web Studio",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "imapflow": "^1.0.171"
+  }
+}
