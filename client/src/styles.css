@@ -157,6 +157,7 @@ textarea.pad { flex: 1; min-width: 0; min-height: 0; border: 0; resize: none; ba
 .pixel-roll .x { position: absolute; top: 1px; right: 3px; color: #fff; font-size: 14px; line-height: 1; text-shadow: 0 0 4px #000; }
 .pixel-empty { position: absolute; color: #8b978e; margin: 0; pointer-events: none; }
 .pixel-video { width: 100%; max-height: 150px; background: #000; object-fit: cover; }
+.pixel-clip { position: absolute; width: 2px; height: 2px; opacity: 0; pointer-events: none; }
 .field input[type="checkbox"] { width: auto; align-self: flex-start; }
 .chip.on { border-color: var(--acc); background: var(--acc-dim); }
 .webjs .chip, .emoji .chip { cursor: pointer; }

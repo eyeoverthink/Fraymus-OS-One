@@ -437,6 +437,35 @@ export function traceCut(image, mask, points, radius) {
   return mask;
 }
 
+function faceDetailBand(image) {
+  const { width, height, data } = image;
+  const x0 = Math.round(width * 0.28);
+  const x1 = Math.round(width * 0.72);
+  const rows = new Array(height).fill(0);
+  for (let y = 0; y < height; y += 1) {
+    let grad = 0;
+    let n = 0;
+    for (let x = x0; x < x1 - 2; x += 2) {
+      const i = (y * width + x) * 4;
+      const j = (y * width + (x + 2)) * 4;
+      grad += Math.abs(data[i] - data[j]) + Math.abs(data[i + 1] - data[j + 1]) + Math.abs(data[i + 2] - data[j + 2]);
+      n += 1;
+    }
+    rows[y] = n ? grad / n : 0;
+  }
+  let best = null;
+  let start = -1;
+  for (let y = 0; y <= height; y += 1) {
+    const hot = y < height && rows[y] > 20;
+    if (hot && start < 0) start = y;
+    if (!hot && start >= 0) {
+      if (y - start > 24 && (!best || y - start > best.end - best.start)) best = { start, end: y };
+      start = -1;
+    }
+  }
+  return best;
+}
+
 function faceBox(image, mask) {
   const { width, height, data } = image;
   const column = new Array(width).fill(0);
@@ -532,6 +561,21 @@ export function liftMask(image, mask, steps) {
   return fillHoles(rounds >= 1 ? trimSides(image, cutBars(image, out)) : out, width, height);
 }
 
+export function portraitPhoto(image, mask) {
+  const window = portraitWindow(image, mask);
+  if (!window) return image;
+  const { left, top, size } = window;
+  const { data, width } = image;
+  const next = new Uint8ClampedArray(size * size * 4);
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const color = read(data, left + x, top + y, width);
+      paint(next, x, y, size, color);
+    }
+  }
+  return { data: next, width: size, height: size };
+}
+
 export function trimCeiling(image, mask) {
   const box = faceBox(image, mask);
   if (!box) return mask;
@@ -570,8 +614,8 @@ export function trimSides(image, mask) {
   return out;
 }
 
-function cropSquare(image, subject) {
-  const { data, width, height } = image;
+function portraitWindow(image, subject) {
+  const { width, height } = image;
   let minX = width;
   let minY = height;
   let maxX = 0;
@@ -587,21 +631,44 @@ function cropSquare(image, subject) {
       maxY = Math.max(maxY, y);
     }
   }
-  if (!count) return { image, subject, empty: true };
+  if (!count) return null;
   const padX = Math.round((maxX - minX) * 0.1);
   const padY = Math.round((maxY - minY) * 0.16);
   minX = Math.max(0, minX - padX);
   maxX = Math.min(width - 1, maxX + padX);
   minY = Math.max(0, minY - padY);
   maxY = Math.min(height - 1, maxY + padY);
-  const side = Math.max(maxX - minX, maxY - minY);
-  const cx = (minX + maxX) / 2;
-  const cy = (minY + maxY) / 2 - side * 0.04;
-  let left = Math.round(cx - side / 2);
-  let top = Math.round(cy - side / 2);
-  left = Math.max(0, Math.min(left, width - side));
-  top = Math.max(0, Math.min(top, height - side));
-  const size = Math.max(1, Math.min(side, width - left, height - top));
+  const boxW = Math.max(1, maxX - minX);
+  const boxH = Math.max(1, maxY - minY);
+  const band = faceDetailBand(image);
+  let size;
+  let left;
+  let top;
+  if (band) {
+    const span = Math.max(8, band.end - band.start);
+    const cx = (minX + maxX) / 2;
+    size = Math.max(1, Math.min(width, height, Math.round(span * 1.35)));
+    left = Math.round(cx - size / 2);
+    top = Math.round(band.start - span * 0.22);
+  } else {
+    const cx = (minX + maxX) / 2;
+    const headShot = boxH > boxW * 1.15 && boxH > height * 0.5;
+    const side = headShot ? Math.min(width, height, Math.round(boxW * 1.2)) : Math.max(boxW, boxH);
+    size = Math.max(1, Math.min(side, width, height));
+    const cy = headShot ? minY + size * 0.42 : (minY + maxY) / 2 - size * 0.04;
+    left = Math.round(cx - size / 2);
+    top = Math.round(headShot ? minY - size * 0.04 : cy - size / 2);
+  }
+  left = Math.max(0, Math.min(left, width - size));
+  top = Math.max(0, Math.min(top, height - size));
+  return { left, top, size };
+}
+
+function cropSquare(image, subject) {
+  const { data, width } = image;
+  const window = portraitWindow(image, subject);
+  if (!window) return { image, subject, empty: true };
+  const { left, top, size } = window;
   const next = new Uint8ClampedArray(size * size * 4);
   const mask = new Uint8Array(size * size);
   for (let y = 0; y < size; y += 1) {
@@ -984,7 +1051,7 @@ export function renderPixel(image, options) {
   const cropped = cropSquare(image, subject);
   const source = cropped.image;
   const mask = cropped.subject;
-  const pixel = Math.max(3, Math.round(options.pixelSize || 6));
+  const pixel = Math.max(2, Math.round(options.pixelSize || 6));
   const colors = Math.max(8, Math.round(options.colors || 32));
   const sat = options.saturation || 1.4;
   const small = boxDownscale(source, mask, pixel);

@@ -28,6 +28,13 @@
 </p>
 
 <p align="center">
+  Chapters:
+  <a href="docs/8BIT_STATUS.md">8-bit status</a> ·
+  <a href="docs/8BIT_MOTION.md">8-bit motion</a> ·
+  <a href="docs/AVATAR_STUDIO.md">Avatar studio</a>
+</p>
+
+<p align="center">
   <img src="docs/showcase/code.png" alt="The Code workspace: library, MERN file tree, editor, and live preview" width="100%">
 </p>
 
@@ -45,7 +52,7 @@ Repository: [eyeoverthink/fraymus-css](https://github.com/eyeoverthink/fraymus-c
 | **[CRUD](#crud)** | Name a resource, then `POST`, `GET`, `PUT`, `PATCH`, `DELETE` it, then compile it into the project |
 | **[REPL](#repl)** | JavaScript and DOM commands on a live stage, with draggable methods |
 | **[Canvas](#canvas)** | Drop blocks on a 2×2, 3×3, or 4×4 cube and compile it to a page |
-| **[8-bit](#8-bit-studio)** | Photo in, 8-bit pixel portrait out — AI render, filters, edit, place in project |
+| **[8-bit](#8-bit-studio)** | Photo, camera, or video. Style video is the filter. Cartoon video is the AI sprite. See the [chapters](docs/8BIT_STATUS.md). |
 | **Emoji** | Text, DNA, and zero-width, hidden behind a glyph |
 | **Emoji Coder** | Emoji markup to HTML, CSS, JavaScript, and Java |
 | **WASM** | FrayVM bytecode, a real WebAssembly module, one emoji |
@@ -154,6 +161,29 @@ Every view is built from the AI render, so you can restyle it without rendering 
 **How it works**
 
 1. **New picture** or **Take picture** with the webcam. JPG, PNG, GIF, and WebP open directly. HEIC, TIFF, RAW, PSD, PDF, Word, Pages, and Keynote are converted on the studio server with macOS `sips` and Quick Look. PDFs and documents use the first page.
+
+**Live camera and video**
+
+The camera uses the offline Character filter, because one AI still takes about 7 seconds. An uploaded video has two paths. **Style video** is that filter at 10 frames a second. **Cartoon video** is the AI sprite at 2 frames a second, with one locked seed. Trace and Abstract follow the view buttons on the filter path. The write-up is in three chapters: [status](docs/8BIT_STATUS.md), [steps](docs/8BIT_MOTION.md), and the [frame-buffer outline](docs/AVATAR_STUDIO.md).
+
+1. **Take picture** starts the webcam. The small window is the raw camera. The stage is the 8-bit filter, updated as fast as the filter can run (the source is scaled to 240px on the long edge so the page stays responsive). Move **Block**, **Colors**, **Reach**, **Saturation**, **Outline**, and **Cyan** and the live view follows.
+2. **Shutter** stores the full camera frame as the picture. Edit, AI Render, PNG, Save, and Place in project then work the same way they do for an uploaded photo. **Stop** turns the camera off.
+3. **New video**, or drop an MP4, WebM, or MOV on the stage. **Style video** reads the clip at 10 frames a second, scales each frame to 480px on the long edge, squares it on the face, and uses 2-pixel blocks. The stage shows each frame as it finishes. **Stop** keeps the frames already made.
+4. **Play** loops the styled frames. **WebM** records them to `fraymus-8bit.webm` at the same rate and writes the length into the file, so a player does not open it as 0:00. **Edit this frame** loads that instant of the original video into the still editor.
+5. **Cartoon video** is the AI sprite, the same drawing as AI Render: flat colors, hard edges, black background. It samples 2 frames a second and locks the seed so the character does not change clothes between frames. Real outfit keeps the clothes in the video. Avatar uses the studio costume. A style reference, if one is set, is sent with every frame.
+
+<p align="center">
+  <img src="docs/showcase/8bit-motion.png" alt="8-bit frame from a real smiling video: eyes, nose, mustache, and beard, black background, cyan outline" width="360">
+</p>
+
+<sub>Test frame from <a href="https://commons.wikimedia.org/wiki/File:20140529_-_Smiling.webm">20140529 - Smiling.webm</a> by Clément Bucco-Lechat, <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>.</sub>
+
+The capture controls, as they stand. Style video is the fast filter. Cartoon video is the sprite. Play and WebM read frames that are already stored.
+
+<p align="center">
+  <img src="docs/showcase/8bit-capture.png" alt="Capture: New picture, New video, Take picture" width="280">
+  <img src="docs/showcase/8bit-video-actions.png" alt="Style video, Cartoon video, Play, WebM, and AI Render" width="280">
+</p>
 2. **AI Render** sends the photo to [FLUX.2 Klein](https://huggingface.co/spaces/prithivMLmods/Flux.2-Klein-Edit-Ultra-Fast) on Hugging Face. A render takes about 7 seconds. Pick **Real outfit** or **Avatar** first.
 3. **Skin** is matched to the photo automatically. The prompt keeps the person's own skin tone and ethnicity. The studio then compares skin brightness in the photo and the render and corrects the render. The **Skin** slider moves it darker or lighter without another render.
 4. **Style reference** adds a second image to copy the look from. **Pixel lock** snaps the render onto a coarser pixel grid.

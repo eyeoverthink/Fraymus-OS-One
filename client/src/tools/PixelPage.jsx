@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { buildAppSource, ensureMern } from "../model.js";
 import { brushMask, buildSubjectMask, drawCrisp, fitSource, liftMask, offsetMask, renderPixel, traceCut, trimCeiling, trimSides } from "./pixelEngine.js";
+import { CARTOON_FPS, CLIP_EDGE, CLIP_FPS, EXPORT_EDGE, LIVE_EDGE, isVideoFile, measureDuration, motionView, packFrame, portraitJpeg, seekVideo, stampWebmDuration, styleImage, webmMime } from "./pixelMotion.js";
 
 const ROLL_KEY = "fraymus.pixel.roll";
 
@@ -208,6 +209,17 @@ export default function Sprite() {
 
 export default function PixelPage({ project, onApply, say }) {
   const videoRef = useRef(null);
+  const clipRef = useRef(null);
+  const clipUrlRef = useRef("");
+  const framesRef = useRef([]);
+  const playIndexRef = useRef(0);
+  const liveRef = useRef(false);
+  const playingRef = useRef(false);
+  const stylingRef = useRef(false);
+  const videoCancelRef = useRef(false);
+  const durationRef = useRef(0);
+  const fpsRef = useRef(CLIP_FPS);
+  const videoFileRef = useRef(null);
   const resultRef = useRef(null);
   const streamRef = useRef(null);
   const sourceRef = useRef(null);
@@ -245,9 +257,16 @@ export default function PixelPage({ project, onApply, say }) {
   const [styleRef, setStyleRef] = useState(null);
   const [lock, setLock] = useState(0);
   const [skin, setSkin] = useState(0);
+  const [clip, setClip] = useState(null);
+  const [frameCount, setFrameCount] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [videoBusy, setVideoBusy] = useState(false);
+  const [videoJob, setVideoJob] = useState("");
+  const [videoProgress, setVideoProgress] = useState({ done: 0, total: 0 });
 
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
+    if (clipUrlRef.current) URL.revokeObjectURL(clipUrlRef.current);
   }, []);
 
   useEffect(() => {
@@ -274,7 +293,12 @@ export default function PixelPage({ project, onApply, say }) {
     paint();
   }
 
+  function motionOptions() {
+    return { pixelSize: Math.min(2, pixelSize), colors, tolerance, saturation, outline, cyan, view: motionView(view) };
+  }
+
   function paint() {
+    if (liveRef.current || playingRef.current || stylingRef.current) return;
     const source = sourceRef.current;
     const canvas = resultRef.current;
     if (!source || !canvas) return;
@@ -316,6 +340,72 @@ export default function PixelPage({ project, onApply, say }) {
   useEffect(() => {
     paint();
   }, [pixelSize, colors, saturation, outline, cyan, view, editing, aiImage, lock]);
+
+  useEffect(() => {
+    if (!cameraOn) return undefined;
+    liveRef.current = true;
+    playingRef.current = false;
+    let stop = false;
+    let frames = 0;
+    let stamp = performance.now();
+    let busy = false;
+    const tick = () => {
+      if (stop) return;
+      if (!busy) {
+        const video = videoRef.current;
+        if (video?.videoWidth) {
+          busy = true;
+          try {
+            const styled = styleImage(video, motionOptions(), LIVE_EDGE);
+            if (resultRef.current) drawCrisp(resultRef.current, styled.shown, 520);
+            frames += 1;
+            const now = performance.now();
+            if (now - stamp >= 1000) {
+              setPaletteCount(styled.palette);
+              setNote(`Live 8-bit · ${frames} fps. Shutter saves this moment into the editor.`);
+              frames = 0;
+              stamp = now;
+            }
+          } catch {
+            setNote("Waiting for the camera frame.");
+          }
+          busy = false;
+        }
+      }
+      requestAnimationFrame(tick);
+    };
+    const id = requestAnimationFrame(tick);
+    return () => {
+      stop = true;
+      liveRef.current = false;
+      cancelAnimationFrame(id);
+    };
+  }, [cameraOn, pixelSize, colors, tolerance, saturation, outline, cyan, view]);
+
+  useEffect(() => {
+    playingRef.current = playing;
+    if (!playing) return undefined;
+    const frames = framesRef.current;
+    if (!frames.length) return undefined;
+    liveRef.current = false;
+    let index = playIndexRef.current % frames.length;
+    let last = 0;
+    let raf = 0;
+    const step = 1000 / fpsRef.current;
+    const loop = (now) => {
+      if (!playingRef.current) return;
+      if (now - last >= step) {
+        last = now;
+        const frame = frames[index];
+        if (resultRef.current && frame) drawCrisp(resultRef.current, frame, 520);
+        playIndexRef.current = index;
+        index = (index + 1) % frames.length;
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [playing, frameCount]);
 
   function aiComposite() {
     const src = sourceRef.current;
@@ -427,8 +517,10 @@ export default function PixelPage({ project, onApply, say }) {
       });
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = stream;
+      playingRef.current = false;
+      setPlaying(false);
       setCameraOn(true);
-      setNote("Camera live. Take the picture when the subject fills the frame.");
+      setNote("Camera live. The stage shows the 8-bit filter. Shutter saves the photo into the editor.");
     } catch (error) {
       setNote(error.name === "NotAllowedError" ? "Camera permission was blocked." : "No camera is available.");
       say?.("error", "Camera unavailable");
@@ -436,6 +528,7 @@ export default function PixelPage({ project, onApply, say }) {
   }
 
   function stopCamera() {
+    liveRef.current = false;
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
@@ -449,9 +542,270 @@ export default function PixelPage({ project, onApply, say }) {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext("2d").drawImage(video, 0, 0);
+    liveRef.current = false;
+    stopCamera();
     const img = await loadImage(canvas.toDataURL("image/png"));
     await useSource(img);
     say?.("ok", "Picture taken");
+  }
+
+  async function onVideoFile(file) {
+    if (!file) return;
+    if (!isVideoFile(file)) {
+      setNote("That file is not a video. Use MP4, WebM, or MOV.");
+      return;
+    }
+    stopCamera();
+    playingRef.current = false;
+    setPlaying(false);
+    framesRef.current = [];
+    setFrameCount(0);
+    playIndexRef.current = 0;
+    if (clipUrlRef.current) URL.revokeObjectURL(clipUrlRef.current);
+    const url = URL.createObjectURL(file);
+    clipUrlRef.current = url;
+    const video = clipRef.current;
+    if (!video) return;
+    setBusy(true);
+    try {
+      await new Promise((resolve, reject) => {
+        const cleanup = () => {
+          video.removeEventListener("loadedmetadata", onReady);
+          video.removeEventListener("error", onErr);
+        };
+        const onReady = () => {
+          cleanup();
+          resolve();
+        };
+        const onErr = () => {
+          cleanup();
+          reject(new Error("That video could not be opened."));
+        };
+        video.addEventListener("loadeddata", onReady);
+        video.addEventListener("error", onErr);
+        video.src = url;
+        video.load();
+      });
+      const duration = await measureDuration(video);
+      if (!(duration > 0)) throw new Error("That video has no readable length.");
+      await seekVideo(video, 0);
+      durationRef.current = duration;
+      const next = {
+        name: file.name,
+        duration,
+        width: video.videoWidth,
+        height: video.videoHeight
+      };
+      setClip(next);
+      const frames = Math.max(1, Math.ceil(next.duration * CLIP_FPS));
+      setNote(`${next.name} · ${next.duration.toFixed(1)}s · ${frames} frames at ${CLIP_FPS} fps. Style video keeps the face large and uses 2-pixel blocks on every frame.`);
+    } catch (error) {
+      setClip(null);
+      setNote(error.message);
+      say?.("error", error.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function styleClip() {
+    const video = clipRef.current;
+    const duration = durationRef.current;
+    if (!video || !(duration > 0)) return;
+    stopCamera();
+    playingRef.current = false;
+    setPlaying(false);
+    videoCancelRef.current = false;
+    stylingRef.current = true;
+    setVideoJob("style");
+    setVideoBusy(true);
+    const total = Math.max(1, Math.ceil(duration * CLIP_FPS));
+    const made = [];
+    fpsRef.current = CLIP_FPS;
+    const options = motionOptions();
+    setVideoProgress({ done: 0, total });
+    try {
+      for (let i = 0; i < total; i += 1) {
+        if (videoCancelRef.current) throw new Error("Stopped.");
+        const time = Math.min(Math.max(0, duration - 0.05), i / CLIP_FPS);
+        await seekVideo(video, time);
+        const styled = styleImage(video, options, CLIP_EDGE);
+        const packed = packFrame(styled.shown);
+        made.push(packed);
+        if (resultRef.current) drawCrisp(resultRef.current, packed, 520);
+        setPaletteCount(styled.palette);
+        setVideoProgress({ done: i + 1, total });
+        setNote(`Styling frame ${i + 1} of ${total}.`);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      framesRef.current = made;
+      playIndexRef.current = 0;
+      setFrameCount(made.length);
+      stylingRef.current = false;
+      setPlaying(true);
+      say?.("ok", `${made.length} frames styled`);
+    } catch (error) {
+      stylingRef.current = false;
+      if (made.length) {
+        framesRef.current = made;
+        setFrameCount(made.length);
+      }
+      setNote(error.message === "Stopped." ? `Stopped at frame ${made.length} of ${total}.` : error.message);
+      if (error.message !== "Stopped.") say?.("error", error.message);
+    } finally {
+      stylingRef.current = false;
+      setVideoJob("");
+      setVideoBusy(false);
+    }
+  }
+
+  async function cartoonClip() {
+    const video = clipRef.current;
+    const duration = durationRef.current;
+    if (!video || !(duration > 0)) return;
+    stopCamera();
+    playingRef.current = false;
+    setPlaying(false);
+    videoCancelRef.current = false;
+    stylingRef.current = true;
+    setVideoJob("cartoon");
+    setVideoBusy(true);
+    const total = Math.max(1, Math.ceil(duration * CARTOON_FPS));
+    const made = [];
+    let seed = null;
+    fpsRef.current = CARTOON_FPS;
+    setVideoProgress({ done: 0, total });
+    try {
+      for (let i = 0; i < total; i += 1) {
+        if (videoCancelRef.current) throw new Error("Stopped.");
+        const time = Math.min(Math.max(0, duration - 0.05), i / CARTOON_FPS);
+        await seekVideo(video, time);
+        setNote(`Cartoon frame ${i + 1} of ${total}. The model redraws each frame, about 10 seconds.`);
+        const response = await fetch("/api/pixel/render", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image: portraitJpeg(video, 768),
+            style: styleRef,
+            mode: aiMode,
+            seed,
+            note: "One frame of a video. Keep this exact character, palette, hat and clothes. Only the pose changes between frames."
+          })
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || `Render failed (${response.status})`);
+        if (Number.isInteger(body.seed)) seed = body.seed;
+        const rendered = await loadImage(body.image);
+        const canvas = document.createElement("canvas");
+        canvas.width = rendered.width;
+        canvas.height = rendered.height;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(rendered, 0, 0);
+        const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        made.push(frame);
+        if (resultRef.current) drawCrisp(resultRef.current, frame, 520);
+        setVideoProgress({ done: i + 1, total });
+      }
+      framesRef.current = made;
+      playIndexRef.current = 0;
+      setFrameCount(made.length);
+      stylingRef.current = false;
+      setPlaying(true);
+      setNote(`Cartoon ready · ${made.length} frames · seed ${seed}.`);
+      say?.("ok", `${made.length} cartoon frames`);
+    } catch (error) {
+      stylingRef.current = false;
+      if (made.length) {
+        framesRef.current = made;
+        setFrameCount(made.length);
+      }
+      setNote(error.message === "Stopped." ? `Stopped at cartoon frame ${made.length} of ${total}.` : error.message);
+      if (error.message !== "Stopped.") say?.("error", error.message);
+    } finally {
+      stylingRef.current = false;
+      setVideoJob("");
+      setVideoBusy(false);
+    }
+  }
+
+  async function downloadClip() {
+    const frames = framesRef.current;
+    if (!frames.length) return;
+    const mime = webmMime();
+    if (!mime) {
+      setNote("This browser cannot record WebM. Edit this frame, then use PNG.");
+      return;
+    }
+    setVideoJob("export");
+    setVideoBusy(true);
+    playingRef.current = false;
+    setPlaying(false);
+    try {
+      const canvas = document.createElement("canvas");
+      drawCrisp(canvas, frames[0], EXPORT_EDGE);
+      const stream = canvas.captureStream(0);
+      const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12_000_000 });
+      const chunks = [];
+      rec.ondataavailable = (event) => {
+        if (event.data.size) chunks.push(event.data);
+      };
+      const stopped = new Promise((resolve) => {
+        rec.onstop = resolve;
+      });
+      rec.start();
+      const track = stream.getVideoTracks()[0];
+      for (let i = 0; i < frames.length; i += 1) {
+        drawCrisp(canvas, frames[i], EXPORT_EDGE);
+        if (resultRef.current) drawCrisp(resultRef.current, frames[i], 520);
+        if (typeof track.requestFrame === "function") track.requestFrame();
+        setNote(`Writing WebM frame ${i + 1} of ${frames.length}.`);
+        await new Promise((resolve) => setTimeout(resolve, Math.round(1000 / fpsRef.current)));
+      }
+      if (typeof rec.requestData === "function") rec.requestData();
+      rec.stop();
+      await stopped;
+      stream.getTracks().forEach((track) => track.stop());
+      const raw = await new Blob(chunks, { type: "video/webm" }).arrayBuffer();
+      const durationMs = Math.round((frames.length / fpsRef.current) * 1000);
+      stampWebmDuration(raw, durationMs);
+      const blob = new Blob([raw], { type: "video/webm" });
+      if (blob.size < 100) throw new Error("The WebM file came out empty.");
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "fraymus-8bit.webm";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 4000);
+      setNote(`Saved fraymus-8bit.webm · ${frames.length} frames · ${fpsRef.current} fps.`);
+      say?.("ok", "8-bit video saved");
+    } catch (error) {
+      setNote(error.message);
+      say?.("error", error.message);
+    } finally {
+      setVideoJob("");
+      setVideoBusy(false);
+    }
+  }
+
+  async function useClipFrame() {
+    const video = clipRef.current;
+    if (!video?.videoWidth) return;
+    playingRef.current = false;
+    setPlaying(false);
+    stylingRef.current = false;
+    const time = Math.min(Math.max(0, (durationRef.current || video.duration) - 0.05), playIndexRef.current / fpsRef.current);
+    try {
+      await seekVideo(video, time);
+    } catch (error) {
+      setNote(error.message);
+      return;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0);
+    const img = await loadImage(canvas.toDataURL("image/png"));
+    await useSource(img);
+    say?.("ok", "Frame loaded into the editor");
   }
 
   function characterCanvas() {
@@ -666,17 +1020,33 @@ export default function PixelPage({ project, onApply, say }) {
     <div className="tool">
       <aside className="tool-side">
         <p className="fh">Capture</p>
-        <p className="muted">AI Render redraws the photo as an 8-bit portrait. Character is the offline filter.</p>
-        <input ref={fileRef} hidden type="file" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ""; }} />
-        <button className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>New picture</button>
-        {!cameraOn && <button className="btn" onClick={startCamera}>Take picture</button>}
+        <p className="muted">Style video is the fast pixel filter. Cartoon video is the AI sprite, the same drawing as AI Render, two frames a second with one locked seed.</p>
+        <input ref={fileRef} hidden type="file" accept="image/*,.heic,.tif,.tiff,.pdf,.psd,.doc,.docx,.pages,.key" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ""; }} />
+        <input ref={videoFileRef} hidden type="file" accept="video/mp4,video/webm,video/quicktime,video/*" onChange={(event) => { onVideoFile(event.target.files?.[0]); event.target.value = ""; }} />
+        <button className="btn" onClick={() => fileRef.current?.click()} disabled={busy || videoBusy}>New picture</button>
+        <button className="btn" onClick={() => videoFileRef.current?.click()} disabled={busy || videoBusy}>New video</button>
+        {!cameraOn && <button className="btn" onClick={startCamera} disabled={videoBusy}>Take picture</button>}
         {cameraOn && (
           <div className="stack">
             <video ref={videoRef} className="pixel-video" playsInline muted autoPlay />
+            <p className="muted">Raw camera. The stage is the 8-bit view.</p>
             <div className="row">
               <button className="btn on" onClick={shutter}>Shutter</button>
               <button className="btn" onClick={stopCamera}>Stop</button>
             </div>
+          </div>
+        )}
+        {clip && (
+          <div className="stack">
+            <p className="muted">{clip.name} · {clip.duration.toFixed(1)}s · {clip.width}×{clip.height}</p>
+            <button className="btn" onClick={styleClip} disabled={videoBusy}>{videoJob === "style" ? `Frame ${videoProgress.done}/${videoProgress.total}` : videoJob === "export" ? "Saving WebM…" : "Style video"}</button>
+            <button className="btn on" onClick={cartoonClip} disabled={videoBusy}>{videoJob === "cartoon" ? `Cartoon ${videoProgress.done}/${videoProgress.total}` : "Cartoon video"}</button>
+            {(videoJob === "style" || videoJob === "cartoon") && <button className="btn" onClick={() => { videoCancelRef.current = true; }}>Stop</button>}
+            <div className="row">
+              <button className="btn" onClick={() => setPlaying((on) => !on)} disabled={!frameCount || videoBusy}>{playing ? "Pause" : "Play"}</button>
+              <button className="btn" onClick={downloadClip} disabled={!frameCount || videoBusy}>WebM</button>
+            </div>
+            <button className="btn" onClick={useClipFrame} disabled={videoBusy}>Edit this frame</button>
           </div>
         )}
         <p className="fh">AI render</p>
@@ -707,7 +1077,7 @@ export default function PixelPage({ project, onApply, say }) {
         </label>
         <p className="fh">Pixel portrait</p>
         <label className="field">Block {pixelSize}
-          <input type="range" min={3} max={12} value={pixelSize} onChange={(event) => setPixelSize(Number(event.target.value))} />
+          <input type="range" min={2} max={12} value={pixelSize} onChange={(event) => setPixelSize(Number(event.target.value))} />
         </label>
         <label className="field">Colors {colors}
           <input type="range" min={12} max={40} value={colors} onChange={(event) => setColors(Number(event.target.value))} />
@@ -728,13 +1098,16 @@ export default function PixelPage({ project, onApply, say }) {
         onDrop={(event) => {
           event.preventDefault();
           const file = event.dataTransfer.files?.[0];
-          if (file) onFile(file);
+          if (!file) return;
+          if (isVideoFile(file)) onVideoFile(file);
+          else onFile(file);
         }}
       >
         <div className="codebar pixel-bar">
           <b>8-bit</b>
           <span className="muted">{paletteCount ? `${paletteCount} colors` : "character studio"}</span>
-          <button className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>New picture</button>
+          <button className="btn" onClick={() => fileRef.current?.click()} disabled={busy || videoBusy}>New picture</button>
+          <button className="btn" onClick={() => videoFileRef.current?.click()} disabled={busy || videoBusy}>New video</button>
           <button className="btn on" onClick={aiRender} disabled={!hasSource || aiBusy}>{aiBusy ? "Rendering…" : "AI Render"}</button>
           <button className={`btn ${editing ? "on" : ""}`} onClick={toggleEdit} disabled={!hasSource}>Edit</button>
           <button className="btn" onClick={removeBackground} disabled={!hasSource}>Remove background</button>
@@ -773,7 +1146,8 @@ export default function PixelPage({ project, onApply, say }) {
           onPointerLeave={onPointerUp}
         >
           <canvas ref={resultRef} aria-label="8-bit character" />
-          {!hasSource && <p className="pixel-empty">{note}</p>}
+          <video ref={clipRef} className="pixel-clip" playsInline muted />
+          {!hasSource && !cameraOn && !frameCount && !videoBusy && <p className="pixel-empty">{note}</p>}
         </div>
         <div className="pixel-roll" aria-label="Gallery">
           {!roll.length && <span className="muted">Roll is empty. Save a character to keep it here.</span>}
@@ -787,7 +1161,7 @@ export default function PixelPage({ project, onApply, say }) {
             </button>
           ))}
         </div>
-        <p className="muted" style={{ padding: "8px 12px" }}>{view === "ai" && aiNote ? aiNote : note}</p>
+        <p className="muted" style={{ padding: "8px 12px" }}>{videoJob || clip || frameCount ? note : (view === "ai" && aiNote ? aiNote : note)}</p>
       </section>
     </div>
   );

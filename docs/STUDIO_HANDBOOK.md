@@ -18,7 +18,7 @@ The studio has one shell (`client/src/App.jsx`) and five workspaces switched fro
 | CRUD | `crud` | `tools/CrudPage.jsx` | Schema, then POST/GET/PUT/PATCH/DELETE, then compile into the project |
 | REPL | `repl` | `tools/ReplPage.jsx` | DOM and JS commands, draggable methods |
 | Canvas | `canvas` | `tools/CanvasPage.jsx` | Blocks on a cube grid, compiled to a page |
-| 8-bit | `pixel` | `tools/PixelPage.jsx` and `tools/pixelEngine.js` | Photo to 8-bit portrait with AI |
+| 8-bit | `pixel` | `tools/PixelPage.jsx`, `tools/pixelEngine.js`, `tools/pixelMotion.js` | Photo, camera, or video. Status and steps: `docs/8BIT_STATUS.md`, `docs/8BIT_MOTION.md`. Next: `docs/AVATAR_STUDIO.md` |
 
 ## 2. Design system
 
