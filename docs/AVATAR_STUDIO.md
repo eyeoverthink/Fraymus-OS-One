@@ -1,6 +1,6 @@
 # Chapter — Avatar studio
 
-The first slice is in the 8-bit tab: one approved sprite, four mouth frames, a voice that picks the frame. The timeline, captions, and payments in the rest of this chapter are not built. The workspace it builds on is described in [8-bit status](8BIT_STATUS.md) and [8-bit motion](8BIT_MOTION.md). The short tour stays in the [README](../README.md#8-bit-studio).
+**Production** is the cast. Add a face, make the avatar, give that face a voice. Add another face and the same steps run again. The 8-bit tab still edits one picture. Payments are not built. The workspace it builds on is described in [8-bit status](8BIT_STATUS.md) and [8-bit motion](8BIT_MOTION.md). The short tour stays in the [README](../README.md#8-bit-studio).
 
 The aim is an animated avatar that someone else can order: one face in, a cartoon sprite that talks, many videos out, without sending every frame back through the model.
 
@@ -18,7 +18,7 @@ The buffer is the avatar's RAM. A small set of finished frames sits in the proje
 
 1. A face photo goes in once.
 2. **AI Render** makes the master sprite. That is the flat cartoon already in the app: hard edges, solid colors, black background, cyan rim. The person approves this still before anything is animated.
-3. The model sees that sprite again, not the original video. It draws a small set from it: mouth closed, mouth a little open, mouth open, a blink, a slight turn. About 8 to 12 frames. Those frames are the buffer.
+3. The mouth and the blink are painted on that sprite. Closed, a small opening, a full opening, and eyes shut. The face is not drawn again.
 4. The buffer stays in the project. Nothing calls Hugging Face while the video runs, so the rate stays steady.
 5. A voice track picks the cell. Louder, or an open-mouth moment, shows the open mouth. Quiet shows the closed mouth. The picture is not invented again.
 
@@ -46,18 +46,28 @@ What it does not need in the first slice: a general effects stack, color wheels,
 
 The product unit is a filled buffer, then as many timelines as they want from it.
 
-- Creating the avatar spends the model calls: one master sprite, then the mouth and pose cells. That is the paid render.
+- Creating the avatar spends one model call: the master sprite. The mouth and the blink are painted on it. That is the paid render.
 - Making a video spends the timeline: drop a voice, the mouth follows, export a WebM. Playback and export do not spend another model call.
 - A second script is another timeline on the same buffer, not another face render.
 
 The studio stays on `127.0.0.1` until that order flow exists. This chapter does not add accounts or payments. It names the thing those would sell.
 
+## Production
+
+**Production** is the cast, in the app. It is a workspace of its own, next to 8-bit. Each card is one face. **Make avatar** draws the master sprite once. The mouth and the blink are painted on that picture. The voice lines belong to the selected face. Selecting another face shows that face's picture and that face's lines. **Play** and **WebM** read the stored frames. They do not call the model.
+
+The mouth is not a second drawing of the face. One sprite stays put. Closed, mid, and open change only the mouth pixels, and the words in the line decide when it opens. That is why the hair, the shirt, and the outline do not jump.
+
+**Keep cast** writes the faces into the open project: the photo, the sprite, the four mouth frames, the line text, and the voice. The studio saves that project under `data/projects`, which is gitignored. Nothing from the cast is written to `localStorage`, and a face photo is not committed. A refresh opens the same project and the cast comes back, so the next face can be added and run through the same steps.
+
+The four frames are stored as JPEG. A voice is stored as WAV. The project file stays under the studio's size limit. If a cast is too large, remove a face and keep it again.
+
 ## First slice
 
-This is in the app, under **Talk** on the 8-bit tab. The steps are in [8-bit motion](8BIT_MOTION.md).
+**Talk** on the 8-bit tab is one picture. The steps are in [8-bit motion](8BIT_MOTION.md). Production is the cast of many faces.
 
 1. **AI Render** approves the sprite.
-2. **Build mouth buffer** draws four frames from that sprite only: `closed`, `mid`, `open`, `blink`. Same seed. The sprite is the style reference.
+2. **Build mouth buffer** paints `closed`, `mid`, `open`, and `blink` on that sprite. The model is not called again.
 3. The cells stay in memory for the session. They are not written to `localStorage`.
 4. Each **Line** has words and a voice. A vowel or a tone opens the mouth. A hiss stays smaller. Silence closes it. The lines play in order, with the words on a black bar.
 5. **Play** and **WebM** read the buffer. They do not call the model. The WebM is `fraymus-talk.webm` and includes every line.
@@ -77,4 +87,4 @@ Phonemes can replace loudness later without changing the buffer. A timeline of s
 | [README](../README.md#8-bit-studio) | The tour of the studio as it stands |
 | [8-bit status](8BIT_STATUS.md) | What works today, including Cartoon video |
 | [8-bit motion](8BIT_MOTION.md) | The controls, in order |
-| This chapter | Mouth buffer is in the app. Timeline and payments are not |
+| This chapter | Production is the cast. Keep stores it in the project. Payments are not built |

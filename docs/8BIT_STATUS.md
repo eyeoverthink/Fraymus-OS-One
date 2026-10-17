@@ -6,7 +6,7 @@ Related chapters:
 
 - [README · 8-bit studio](../README.md#8-bit-studio) — the short tour and the still images
 - [8-bit motion](8BIT_MOTION.md) — camera, Style video, and Cartoon video, step by step
-- [Avatar studio](AVATAR_STUDIO.md) — what is next: one sprite, a frame buffer, a voice track
+- [Avatar studio](AVATAR_STUDIO.md) — Production, the cast of faces, and the mouth buffer
 
 ## What the workspace does now
 
@@ -54,17 +54,18 @@ Private photos and phone videos used to judge this path are not in the repo. The
 
 The model is not in the camera loop and not in playback. A still is about 7 seconds. A camera that waited on that would not be a camera. Style video can keep up because the filter is local. Cartoon video finishes the frames first, stores them, and only then plays.
 
-That split is the reason for the next chapter. Calling the model once per frame, even at 2 fps with a locked seed, still lets the face drift, and it spends a model call for every moment of the video. The avatar people can reuse is one approved sprite, plus a small buffer of mouths and poses drawn from that sprite. [Avatar studio](AVATAR_STUDIO.md) is that outline.
+That split is why Production exists. Calling the model once per frame, even at 2 fps with a locked seed, still lets the face drift, and it spends a model call for every moment of the video. The avatar people can reuse is one approved sprite, plus a small buffer of mouths and poses drawn from that sprite. [Avatar studio](AVATAR_STUDIO.md) is the cast: many faces, each with that buffer, kept in the project.
 
 ## Files
 
 | File | Role |
 | --- | --- |
-| `client/src/tools/PixelPage.jsx` | The workspace: stills, camera, Style video, Cartoon video, Play, WebM |
+| `client/src/tools/PixelPage.jsx` | The 8-bit workspace: stills, camera, Style video, Cartoon video, Talk |
+| `client/src/tools/StudioPage.jsx` | Production: a cast of faces, each with its own avatar and voice |
 | `client/src/tools/pixelEngine.js` | Mask, face band, crop, the offline filter, `portraitPhoto` |
 | `client/src/tools/pixelMotion.js` | Frame grab, 10 fps filter, 2 fps cartoon input, seek, WebM duration |
 | `client/src/tools/pixelTalk.js` | The four mouth names, and which one a voice sample picks |
 | `client/src/styles.css` | `.pixel-clip` keeps the decoder element decoded without showing it |
 | `server/index.js` | `POST /api/pixel/render` — FLUX.2 Klein, seed, style image, real or avatar |
 | [8BIT_MOTION.md](8BIT_MOTION.md) | The steps |
-| [AVATAR_STUDIO.md](AVATAR_STUDIO.md) | The next build |
+| [AVATAR_STUDIO.md](AVATAR_STUDIO.md) | Production, the cast, and why the buffer is the avatar |

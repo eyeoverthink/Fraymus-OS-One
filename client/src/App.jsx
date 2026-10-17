@@ -3,6 +3,7 @@ import CrudPage from "./tools/CrudPage.jsx";
 import ReplPage from "./tools/ReplPage.jsx";
 import CanvasPage from "./tools/CanvasPage.jsx";
 import PixelPage from "./tools/PixelPage.jsx";
+import StudioPage from "./tools/StudioPage.jsx";
 import WebJsPage from "./tools/WebJsPage.jsx";
 import EmojiPage from "./tools/EmojiPage.jsx";
 import EmojiCoderPage from "./tools/EmojiCoderPage.jsx";
@@ -591,11 +592,11 @@ export default function App() {
       </header>
       <div className="top" style={{ paddingTop: 0 }}>
         <div className="seg">
-          {[["studio", "Code"], ["crud", "CRUD"], ["repl", "REPL"], ["canvas", "Canvas"], ["pixel", "8-bit"], ["webjs", "HTML·JS"], ["emoji", "Emoji"], ["coder", "Emoji Coder"], ["dispatch", "Dispatch"], ["wasm", "WASM"], ["mail", "Mail"]].map(([id, label]) => (
+          {[["studio", "Code"], ["crud", "CRUD"], ["repl", "REPL"], ["canvas", "Canvas"], ["pixel", "8-bit"], ["production", "Production"], ["webjs", "HTML·JS"], ["emoji", "Emoji"], ["coder", "Emoji Coder"], ["dispatch", "Dispatch"], ["wasm", "WASM"], ["mail", "Mail"]].map(([id, label]) => (
             <button key={id} className={workspace === id ? "on" : ""} onClick={() => setWorkspace(id)}>{label}</button>
           ))}
         </div>
-        <span className="muted">{workspace === "mail" ? "Gmail or the local mailbox: read, send, import, export" : workspace === "wasm" ? "FrayVM → bytecode → WebAssembly → one emoji" : workspace === "dispatch" ? "Signed emoji payloads: compose, verify, run, mail" : workspace === "coder" ? "Emoji markup to HTML, CSS, JavaScript, and Java" : workspace === "emoji" ? "Text ↔ glyph ↔ DNA ↔ zero-width" : workspace === "webjs" ? "HTML and JavaScript, live preview" : workspace === "pixel" ? "Photo to 8-bit character" : workspace === "canvas" ? "Blocks, cube grid, entity components" : workspace === "repl" ? "JavaScript and DOM" : workspace === "crud" ? "GET POST PUT PATCH DELETE" : "Editor"}</span>
+        <span className="muted">{workspace === "mail" ? "Gmail or the local mailbox: read, send, import, export" : workspace === "wasm" ? "FrayVM → bytecode → WebAssembly → one emoji" : workspace === "dispatch" ? "Signed emoji payloads: compose, verify, run, mail" : workspace === "coder" ? "Emoji markup to HTML, CSS, JavaScript, and Java" : workspace === "emoji" ? "Text ↔ glyph ↔ DNA ↔ zero-width" : workspace === "webjs" ? "HTML and JavaScript, live preview" : workspace === "production" ? "Add a face, animate it with a voice, then add another face" : workspace === "pixel" ? "Photo to 8-bit character" : workspace === "canvas" ? "Blocks, cube grid, entity components" : workspace === "repl" ? "JavaScript and DOM" : workspace === "crud" ? "GET POST PUT PATCH DELETE" : "Editor"}</span>
       </div>
       {narrow && workspace === "studio" && (
         <div className="mobile-switch seg">
@@ -607,6 +608,7 @@ export default function App() {
       {workspace === "repl" && <ReplPage />}
       {workspace === "canvas" && project && <CanvasPage project={project} say={say} onApply={(next) => patch(() => next)} />}
       {workspace === "pixel" && <PixelPage project={project} say={say} onApply={(next) => patch(() => next)} />}
+      {workspace === "production" && <StudioPage project={project} say={say} onApply={(next) => patch(() => next)} />}
       {workspace === "webjs" && project && <WebJsPage project={project} say={say} onApply={(next) => patch(() => next)} />}
       {workspace === "emoji" && project && <EmojiPage project={project} say={say} onApply={(next) => patch(() => next)} />}
       {workspace === "coder" && project && <EmojiCoderPage project={project} say={say} onApply={(next) => patch(() => next)} />}

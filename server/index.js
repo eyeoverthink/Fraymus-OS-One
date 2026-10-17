@@ -132,7 +132,7 @@ function pixelPrompt(mode, hasStyle, extra) {
   const style = hasStyle ? `Match the drawing style of image 2 only. ${PIXEL_STYLE}.` : `${PIXEL_STYLE}.`;
   const look = mode === "avatar"
     ? "Give the person a dark gray fedora, black sunglasses with small cyan highlights, and a navy jacket with glowing cyan trim. Keep their face shape, beard and hair."
-    : "Keep their real clothes, hat, hair, beard and any shirt graphics exactly as in the photo.";
+    : "Keep their real clothes, hair, beard and any shirt graphics exactly as in the photo. Do not add a hat, sunglasses, or costume that is not in the photo.";
   return `Convert the person in image 1 into an ${style} Remove the room and background completely. ${look} ${PIXEL_SKIN}. ${note}`.trim();
 }
 

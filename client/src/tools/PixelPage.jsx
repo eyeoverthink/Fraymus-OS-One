@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { buildAppSource, ensureMern } from "../model.js";
 import { brushMask, buildSubjectMask, drawCrisp, fitSource, liftMask, offsetMask, renderPixel, traceCut, trimCeiling, trimSides } from "./pixelEngine.js";
 import { CARTOON_FPS, CLIP_EDGE, CLIP_FPS, EXPORT_EDGE, LIVE_EDGE, isVideoFile, measureDuration, motionView, packFrame, portraitJpeg, seekVideo, stampWebmDuration, styleImage, webmMime } from "./pixelMotion.js";
+import { composeTalkCells } from "./pixelMouth.js";
 import { LINE_GAP, MOUTH_CELLS, TALK_FPS, frameAt, lineSchedule, talkMime, voiceEnvelope } from "./pixelTalk.js";
 
 const ROLL_KEY = "fraymus.pixel.roll";
@@ -273,6 +274,7 @@ export default function PixelPage({ project, onApply, say }) {
   const [talkReady, setTalkReady] = useState(false);
   const [lines, setLines] = useState([]);
   const [lineText, setLineText] = useState("");
+  const [previewId, setPreviewId] = useState("");
 
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -309,6 +311,10 @@ export default function PixelPage({ project, onApply, say }) {
 
   function paint() {
     if (liveRef.current || playingRef.current || stylingRef.current || talkRef.current) return;
+    if (previewId && cellsRef.current?.[previewId] && resultRef.current) {
+      drawTalkCell(resultRef.current, previewId, 520);
+      return;
+    }
     const source = sourceRef.current;
     const canvas = resultRef.current;
     if (!source || !canvas) return;
@@ -349,7 +355,7 @@ export default function PixelPage({ project, onApply, say }) {
 
   useEffect(() => {
     paint();
-  }, [pixelSize, colors, saturation, outline, cyan, view, editing, aiImage, lock]);
+  }, [pixelSize, colors, saturation, outline, cyan, view, editing, aiImage, lock, previewId]);
 
   useEffect(() => {
     if (!cameraOn) return undefined;
@@ -865,6 +871,7 @@ export default function PixelPage({ project, onApply, say }) {
       id: line.id,
       text: line.text,
       name: line.name,
+      hold: line.hold || "auto",
       duration: line.audio ? line.audio.duration : 0
     })));
   }
@@ -888,39 +895,17 @@ export default function PixelPage({ project, onApply, say }) {
     stylingRef.current = true;
     setVideoJob("talk");
     setVideoBusy(true);
-    const cells = {};
-    let seed = seedRef.current;
-    setVideoProgress({ done: 0, total: MOUTH_CELLS.length });
+    setVideoProgress({ done: 0, total: 1 });
     try {
-      for (let i = 0; i < MOUTH_CELLS.length; i += 1) {
-        if (videoCancelRef.current) throw new Error("Stopped.");
-        const cell = MOUTH_CELLS[i];
-        setNote(`Mouth ${cell.id} · ${i + 1} of ${MOUTH_CELLS.length}.`);
-        const response = await fetch("/api/pixel/render", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            image,
-            style: image,
-            mode: aiMode,
-            seed,
-            note: cell.note
-          })
-        });
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.error || `Render failed (${response.status})`);
-        if (Number.isInteger(body.seed)) {
-          seed = body.seed;
-          seedRef.current = body.seed;
-        }
-        cells[cell.id] = await imageDataFromUrl(body.image);
-        if (resultRef.current) drawCrisp(resultRef.current, cells[cell.id], 520);
-        setVideoProgress({ done: i + 1, total: MOUTH_CELLS.length });
-      }
+      if (videoCancelRef.current) throw new Error("Stopped.");
+      setNote("Painting the mouth and the blink on this sprite.");
+      const cells = composeTalkCells(await imageDataFromUrl(image));
+      if (resultRef.current) drawCrisp(resultRef.current, cells.closed, 520);
+      setVideoProgress({ done: 1, total: 1 });
       cellsRef.current = cells;
       setTalkReady(true);
       stylingRef.current = false;
-      setNote("Mouth buffer ready · closed, mid, open, blink. Add a line, then a voice. Play does not call the model.");
+      setNote("Mouth buffer ready. Closed, mid, open, and blink are painted on this sprite. Add a line, then a voice.");
       say?.("ok", "Mouth buffer ready");
     } catch (error) {
       stylingRef.current = false;
@@ -939,7 +924,7 @@ export default function PixelPage({ project, onApply, say }) {
       setNote("Write the line, then add it.");
       return;
     }
-    const line = { id: `L${Date.now().toString(36)}`, text, name: "", audio: null, envelope: [] };
+    const line = { id: `L${Date.now().toString(36)}`, text, name: "", hold: "auto", audio: null, envelope: [] };
     showLines([...linesRef.current, line]);
     setLineText("");
     voiceTargetRef.current = line.id;
@@ -948,6 +933,27 @@ export default function PixelPage({ project, onApply, say }) {
 
   function removeLine(id) {
     showLines(linesRef.current.filter((line) => line.id !== id));
+  }
+
+  function moveLine(id, dir) {
+    const list = linesRef.current.slice();
+    const index = list.findIndex((line) => line.id === id);
+    const next = index + dir;
+    if (index < 0 || next < 0 || next >= list.length) return;
+    const [row] = list.splice(index, 1);
+    list.splice(next, 0, row);
+    showLines(list);
+  }
+
+  function holdLine(id, hold) {
+    showLines(linesRef.current.map((line) => (line.id === id ? { ...line, hold } : line)));
+  }
+
+  function previewCell(id) {
+    if (!cellsRef.current?.[id]) return;
+    talkRef.current = false;
+    setPreviewId(id);
+    setNote(`${id} frame. Play returns to the voice.`);
   }
 
   async function onVoiceFile(file) {
@@ -992,7 +998,9 @@ export default function PixelPage({ project, onApply, say }) {
 
   async function playTalk() {
     const parts = spokenLines();
+    const ctx = new AudioContext();
     if (!cellsRef.current?.closed || !parts.length) {
+      ctx.close();
       setNote(cellsRef.current?.closed ? "Add a line and a voice first." : "Build the mouth buffer first.");
       return;
     }
@@ -1000,8 +1008,9 @@ export default function PixelPage({ project, onApply, say }) {
     playingRef.current = false;
     setPlaying(false);
     talkRef.current = false;
+    setPreviewId("");
     const { audio, captions } = await mixLines(parts);
-    const ctx = new AudioContext();
+    if (ctx.state === "suspended") await ctx.resume();
     const src = ctx.createBufferSource();
     src.buffer = audio;
     src.connect(ctx.destination);
@@ -1347,16 +1356,36 @@ export default function PixelPage({ project, onApply, say }) {
         <p className="muted">Four frames from the AI sprite. Each line has words and a voice. A vowel opens the mouth. Play and WebM do not call the model.</p>
         <button className="btn on" onClick={buildTalk} disabled={videoBusy || aiBusy || !aiImage}>{videoJob === "talk" ? `Mouth ${videoProgress.done}/${videoProgress.total}` : talkReady ? "Rebuild mouth buffer" : "Build mouth buffer"}</button>
         {videoJob === "talk" && <button className="btn" onClick={() => { videoCancelRef.current = true; }}>Stop</button>}
+        {talkReady && (
+          <div className="seg">
+            {MOUTH_CELLS.map((cell) => (
+              <button key={cell.id} className={previewId === cell.id ? "on" : ""} onClick={() => previewCell(cell.id)}>{cell.id}</button>
+            ))}
+          </div>
+        )}
         <label className="field">Line
           <input value={lineText} placeholder="What they say" onChange={(event) => setLineText(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") addLine(); }} />
         </label>
         <button className="btn" onClick={addLine} disabled={videoBusy}>Add line</button>
         <input ref={voiceFileRef} hidden type="file" accept="audio/*,.wav,.mp3,.m4a,.aac" onChange={(event) => { onVoiceFile(event.target.files?.[0]); event.target.value = ""; }} />
-        {lines.map((line) => (
-          <div className="row" key={line.id}>
-            <span className="muted">{line.text}</span>
-            <button className="btn" disabled={videoBusy} onClick={() => { voiceTargetRef.current = line.id; voiceFileRef.current?.click(); }}>{line.name ? `${line.duration.toFixed(1)}s` : "Voice"}</button>
-            <button className="btn" disabled={videoBusy} onClick={() => removeLine(line.id)}>×</button>
+        {lines.map((line, index) => (
+          <div className="stack" key={line.id}>
+            <div className="row">
+              <span className="muted">{line.text}</span>
+              <button className="btn" disabled={videoBusy || index === 0} onClick={() => moveLine(line.id, -1)}>Up</button>
+              <button className="btn" disabled={videoBusy || index === lines.length - 1} onClick={() => moveLine(line.id, 1)}>Down</button>
+              <button className="btn" disabled={videoBusy} onClick={() => { voiceTargetRef.current = line.id; voiceFileRef.current?.click(); }}>{line.name ? `${line.duration.toFixed(1)}s` : "Voice"}</button>
+              <button className="btn" disabled={videoBusy} onClick={() => removeLine(line.id)}>×</button>
+            </div>
+            <label className="field">Hold
+              <select value={line.hold || "auto"} onChange={(event) => holdLine(line.id, event.target.value)}>
+                <option value="auto">Follow voice</option>
+                <option value="closed">Closed</option>
+                <option value="mid">Mid</option>
+                <option value="open">Open</option>
+                <option value="blink">Blink</option>
+              </select>
+            </label>
           </div>
         ))}
         <div className="row">

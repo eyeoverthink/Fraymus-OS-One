@@ -18,6 +18,7 @@
 <p align="center">
   <a href="#email-that-runs">Email</a> ·
   <a href="#8-bit-studio">8-bit studio</a> ·
+  <a href="docs/AVATAR_STUDIO.md">Production</a> ·
   <a href="#html-react-and-pair">HTML &amp; Pair</a> ·
   <a href="#mern">MERN</a> ·
   <a href="#crud">CRUD</a> ·
@@ -171,7 +172,8 @@ The camera uses the offline Character filter, because one AI still takes about 7
 3. **New video**, or drop an MP4, WebM, or MOV on the stage. **Style video** reads the clip at 10 frames a second, scales each frame to 480px on the long edge, squares it on the face, and uses 2-pixel blocks. The stage shows each frame as it finishes. **Stop** keeps the frames already made.
 4. **Play** loops the styled frames. **WebM** records them to `fraymus-8bit.webm` at the same rate and writes the length into the file, so a player does not open it as 0:00. **Edit this frame** loads that instant of the original video into the still editor.
 5. **Cartoon video** is the AI sprite, the same drawing as AI Render: flat colors, hard edges, black background. It samples 2 frames a second and locks the seed so the character does not change clothes between frames. Real outfit keeps the clothes in the video. Avatar uses the studio costume. A style reference, if one is set, is sent with every frame.
-6. **Talk** is the mouth buffer. AI Render the sprite, then **Build mouth buffer** draws four frames of that same picture. Each **Line** is words plus a voice. The lines play in order, the words sit on the frame, and a vowel opens the mouth. Play and the talk WebM do not call the model again. The steps are in [8-bit motion](docs/8BIT_MOTION.md). The plan past this slice is [Avatar studio](docs/AVATAR_STUDIO.md).
+6. **Talk** is the mouth buffer. AI Render the sprite, then **Build mouth buffer** draws four frames of that same picture. Each **Line** is words plus a voice. **Up** and **Down** set the order. **Hold** can pin a line to one frame. Play and the talk WebM do not call the model again. The steps are in [8-bit motion](docs/8BIT_MOTION.md).
+7. **Production** is the cast. Add a face, **Make avatar**, then give that face a voice. Add another face and the same steps run again. **Keep cast** stores the faces in the open project, so a refresh brings them back. The cast is not stored in the browser. The chapter is [Avatar studio](docs/AVATAR_STUDIO.md).
 
 <p align="center">
   <img src="docs/showcase/8bit-motion.png" alt="8-bit frame from a real smiling video: eyes, nose, mustache, and beard, black background, cyan outline" width="360">
