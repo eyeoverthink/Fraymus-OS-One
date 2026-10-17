@@ -59,6 +59,8 @@ export function createGmail(dir) {
       auth: { user: config.user, pass: config.pass },
       logger: false
     });
+    // A late socket timeout must not crash the studio API.
+    client.on("error", () => {});
     try {
       await client.connect();
     } catch (error) {
