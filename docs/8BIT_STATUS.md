@@ -19,6 +19,7 @@ Open **8-bit**. A photo becomes a pixel portrait. A webcam can be filtered live.
 | **Take picture** | The webcam, then the offline filter | A live stage. **Shutter** stores the full frame for Edit, AI Render, PNG, and Place. |
 | **Style video** | The offline filter, 10 frames a second | A pixel video of the whole clip. Fast. The picture stays photographic, so fine detail looks grainy. |
 | **Cartoon video** | The same model as AI Render, 2 frames a second, one locked seed | A flat sprite: hard edges, solid colors, black background, cyan rim. This is the drawing that matches the still AI portrait. |
+| **Talk** | Four model calls, then the voice only | `closed`, `mid`, `open`, `blink` from the approved sprite. Play and WebM do not call the model. |
 
 <p align="center">
   <img src="showcase/8bit-capture.png" alt="Capture panel: New picture, New video, Take picture" width="280">
@@ -62,6 +63,7 @@ That split is the reason for the next chapter. Calling the model once per frame,
 | `client/src/tools/PixelPage.jsx` | The workspace: stills, camera, Style video, Cartoon video, Play, WebM |
 | `client/src/tools/pixelEngine.js` | Mask, face band, crop, the offline filter, `portraitPhoto` |
 | `client/src/tools/pixelMotion.js` | Frame grab, 10 fps filter, 2 fps cartoon input, seek, WebM duration |
+| `client/src/tools/pixelTalk.js` | The four mouth names, and which one a voice sample picks |
 | `client/src/styles.css` | `.pixel-clip` keeps the decoder element decoded without showing it |
 | `server/index.js` | `POST /api/pixel/render` — FLUX.2 Klein, seed, style image, real or avatar |
 | [8BIT_MOTION.md](8BIT_MOTION.md) | The steps |

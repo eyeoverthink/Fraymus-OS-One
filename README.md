@@ -171,6 +171,7 @@ The camera uses the offline Character filter, because one AI still takes about 7
 3. **New video**, or drop an MP4, WebM, or MOV on the stage. **Style video** reads the clip at 10 frames a second, scales each frame to 480px on the long edge, squares it on the face, and uses 2-pixel blocks. The stage shows each frame as it finishes. **Stop** keeps the frames already made.
 4. **Play** loops the styled frames. **WebM** records them to `fraymus-8bit.webm` at the same rate and writes the length into the file, so a player does not open it as 0:00. **Edit this frame** loads that instant of the original video into the still editor.
 5. **Cartoon video** is the AI sprite, the same drawing as AI Render: flat colors, hard edges, black background. It samples 2 frames a second and locks the seed so the character does not change clothes between frames. Real outfit keeps the clothes in the video. Avatar uses the studio costume. A style reference, if one is set, is sent with every frame.
+6. **Talk** is the mouth buffer. AI Render the sprite, then **Build mouth buffer** draws four frames of that same picture. Each **Line** is words plus a voice. The lines play in order, the words sit on the frame, and a vowel opens the mouth. Play and the talk WebM do not call the model again. The steps are in [8-bit motion](docs/8BIT_MOTION.md). The plan past this slice is [Avatar studio](docs/AVATAR_STUDIO.md).
 
 <p align="center">
   <img src="docs/showcase/8bit-motion.png" alt="8-bit frame from a real smiling video: eyes, nose, mustache, and beard, black background, cyan outline" width="360">
@@ -184,6 +185,12 @@ The capture controls, as they stand. Style video is the fast filter. Cartoon vid
   <img src="docs/showcase/8bit-capture.png" alt="Capture: New picture, New video, Take picture" width="280">
   <img src="docs/showcase/8bit-video-actions.png" alt="Style video, Cartoon video, Play, WebM, and AI Render" width="280">
 </p>
+
+<p align="center">
+  <img src="docs/showcase/8bit-talk.png" alt="Talk buffer cell of the AI demo sprite" width="280">
+</p>
+
+<sub>Talk cell of the AI demo sprite. Not a real person.</sub>
 2. **AI Render** sends the photo to [FLUX.2 Klein](https://huggingface.co/spaces/prithivMLmods/Flux.2-Klein-Edit-Ultra-Fast) on Hugging Face. A render takes about 7 seconds. Pick **Real outfit** or **Avatar** first.
 3. **Skin** is matched to the photo automatically. The prompt keeps the person's own skin tone and ethnicity. The studio then compares skin brightness in the photo and the render and corrects the render. The **Skin** slider moves it darker or lighter without another render.
 4. **Style reference** adds a second image to copy the look from. **Pixel lock** snaps the render onto a coarser pixel grid.

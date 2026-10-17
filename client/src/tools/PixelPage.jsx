@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { buildAppSource, ensureMern } from "../model.js";
 import { brushMask, buildSubjectMask, drawCrisp, fitSource, liftMask, offsetMask, renderPixel, traceCut, trimCeiling, trimSides } from "./pixelEngine.js";
 import { CARTOON_FPS, CLIP_EDGE, CLIP_FPS, EXPORT_EDGE, LIVE_EDGE, isVideoFile, measureDuration, motionView, packFrame, portraitJpeg, seekVideo, stampWebmDuration, styleImage, webmMime } from "./pixelMotion.js";
+import { LINE_GAP, MOUTH_CELLS, TALK_FPS, frameAt, lineSchedule, talkMime, voiceEnvelope } from "./pixelTalk.js";
 
 const ROLL_KEY = "fraymus.pixel.roll";
 
@@ -219,6 +220,12 @@ export default function PixelPage({ project, onApply, say }) {
   const videoCancelRef = useRef(false);
   const durationRef = useRef(0);
   const fpsRef = useRef(CLIP_FPS);
+  const talkRef = useRef(false);
+  const cellsRef = useRef(null);
+  const linesRef = useRef([]);
+  const voiceTargetRef = useRef("");
+  const seedRef = useRef(null);
+  const voiceFileRef = useRef(null);
   const videoFileRef = useRef(null);
   const resultRef = useRef(null);
   const streamRef = useRef(null);
@@ -263,6 +270,9 @@ export default function PixelPage({ project, onApply, say }) {
   const [videoBusy, setVideoBusy] = useState(false);
   const [videoJob, setVideoJob] = useState("");
   const [videoProgress, setVideoProgress] = useState({ done: 0, total: 0 });
+  const [talkReady, setTalkReady] = useState(false);
+  const [lines, setLines] = useState([]);
+  const [lineText, setLineText] = useState("");
 
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -298,7 +308,7 @@ export default function PixelPage({ project, onApply, say }) {
   }
 
   function paint() {
-    if (liveRef.current || playingRef.current || stylingRef.current) return;
+    if (liveRef.current || playingRef.current || stylingRef.current || talkRef.current) return;
     const source = sourceRef.current;
     const canvas = resultRef.current;
     if (!source || !canvas) return;
@@ -474,6 +484,7 @@ export default function PixelPage({ project, onApply, say }) {
       const rendered = await loadImage(body.image);
       adoptAi(rendered);
       setAiImage(rendered);
+      if (Number.isInteger(body.seed)) seedRef.current = body.seed;
       setAiNote(`AI render ready · seed ${body.seed}. Render again for another take.`);
       say?.("ok", "AI render ready");
     } catch (error) {
@@ -808,6 +819,289 @@ export default function PixelPage({ project, onApply, say }) {
     say?.("ok", "Frame loaded into the editor");
   }
 
+  function spriteJpeg() {
+    if (!aiImage) return "";
+    const canvas = document.createElement("canvas");
+    drawAi(canvas, aiComposite(), lock);
+    const scale = Math.min(1, 768 / Math.max(canvas.width, canvas.height));
+    const chip = document.createElement("canvas");
+    chip.width = Math.max(1, Math.round(canvas.width * scale));
+    chip.height = Math.max(1, Math.round(canvas.height * scale));
+    chip.getContext("2d").drawImage(canvas, 0, 0, chip.width, chip.height);
+    return chip.toDataURL("image/jpeg", 0.92);
+  }
+
+  async function imageDataFromUrl(url) {
+    const rendered = await loadImage(url);
+    const canvas = document.createElement("canvas");
+    canvas.width = rendered.width;
+    canvas.height = rendered.height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(rendered, 0, 0);
+    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  }
+
+  function drawTalkCell(canvas, id, size, caption = "") {
+    const cells = cellsRef.current;
+    const frame = cells?.[id] || cells?.closed;
+    if (!frame || !canvas) return;
+    drawCrisp(canvas, frame, size);
+    if (!caption) return;
+    const ctx = canvas.getContext("2d");
+    const bar = Math.max(36, Math.round(canvas.height * 0.12));
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, canvas.height - bar, canvas.width, bar);
+    ctx.fillStyle = "#e7eee8";
+    ctx.font = `${Math.max(14, Math.round(bar * 0.42))}px ui-monospace, monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const text = caption.length > 48 ? `${caption.slice(0, 47)}…` : caption;
+    ctx.fillText(text, canvas.width / 2, canvas.height - bar / 2);
+  }
+
+  function showLines(next) {
+    linesRef.current = next;
+    setLines(next.map((line) => ({
+      id: line.id,
+      text: line.text,
+      name: line.name,
+      duration: line.audio ? line.audio.duration : 0
+    })));
+  }
+
+  function spokenLines() {
+    return linesRef.current.filter((line) => line.audio);
+  }
+
+  async function buildTalk() {
+    if (!aiImage || videoBusy) {
+      setNote("AI Render the sprite first. The mouth buffer copies that picture.");
+      return;
+    }
+    const image = spriteJpeg();
+    if (!image) return;
+    stopCamera();
+    playingRef.current = false;
+    setPlaying(false);
+    talkRef.current = false;
+    videoCancelRef.current = false;
+    stylingRef.current = true;
+    setVideoJob("talk");
+    setVideoBusy(true);
+    const cells = {};
+    let seed = seedRef.current;
+    setVideoProgress({ done: 0, total: MOUTH_CELLS.length });
+    try {
+      for (let i = 0; i < MOUTH_CELLS.length; i += 1) {
+        if (videoCancelRef.current) throw new Error("Stopped.");
+        const cell = MOUTH_CELLS[i];
+        setNote(`Mouth ${cell.id} · ${i + 1} of ${MOUTH_CELLS.length}.`);
+        const response = await fetch("/api/pixel/render", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image,
+            style: image,
+            mode: aiMode,
+            seed,
+            note: cell.note
+          })
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || `Render failed (${response.status})`);
+        if (Number.isInteger(body.seed)) {
+          seed = body.seed;
+          seedRef.current = body.seed;
+        }
+        cells[cell.id] = await imageDataFromUrl(body.image);
+        if (resultRef.current) drawCrisp(resultRef.current, cells[cell.id], 520);
+        setVideoProgress({ done: i + 1, total: MOUTH_CELLS.length });
+      }
+      cellsRef.current = cells;
+      setTalkReady(true);
+      stylingRef.current = false;
+      setNote("Mouth buffer ready · closed, mid, open, blink. Add a line, then a voice. Play does not call the model.");
+      say?.("ok", "Mouth buffer ready");
+    } catch (error) {
+      stylingRef.current = false;
+      setNote(error.message === "Stopped." ? "Mouth buffer stopped." : error.message);
+      if (error.message !== "Stopped.") say?.("error", error.message);
+    } finally {
+      stylingRef.current = false;
+      setVideoJob("");
+      setVideoBusy(false);
+    }
+  }
+
+  function addLine() {
+    const text = lineText.trim();
+    if (!text) {
+      setNote("Write the line, then add it.");
+      return;
+    }
+    const line = { id: `L${Date.now().toString(36)}`, text, name: "", audio: null, envelope: [] };
+    showLines([...linesRef.current, line]);
+    setLineText("");
+    voiceTargetRef.current = line.id;
+    setNote(`“${text}” is on the timeline. Attach a voice.`);
+  }
+
+  function removeLine(id) {
+    showLines(linesRef.current.filter((line) => line.id !== id));
+  }
+
+  async function onVoiceFile(file) {
+    if (!file) return;
+    const target = voiceTargetRef.current || linesRef.current.find((line) => !line.audio)?.id;
+    if (!target) {
+      setNote("Add a line first, then attach the voice.");
+      return;
+    }
+    try {
+      const ctx = new AudioContext();
+      const audio = await ctx.decodeAudioData(await file.arrayBuffer());
+      await ctx.close();
+      const next = linesRef.current.map((line) => (
+        line.id === target ? { ...line, name: file.name, audio, envelope: voiceEnvelope(audio) } : line
+      ));
+      showLines(next);
+      voiceTargetRef.current = "";
+      setNote(`${file.name} · ${audio.duration.toFixed(1)}s on that line.`);
+    } catch {
+      setNote("That audio could not be read. Use WAV, MP3, or M4A.");
+    }
+  }
+
+  function stopTalk() {
+    talkRef.current = false;
+  }
+
+  async function mixLines(parts) {
+    const plan = lineSchedule(parts, LINE_GAP);
+    const rate = 44100;
+    const offline = new OfflineAudioContext(1, Math.max(1, Math.ceil(plan.duration * rate)), rate);
+    parts.forEach((line, index) => {
+      const src = offline.createBufferSource();
+      src.buffer = line.audio;
+      src.connect(offline.destination);
+      src.start(plan.captions[index].start);
+    });
+    const audio = await offline.startRendering();
+    return { audio, ...plan };
+  }
+
+  async function playTalk() {
+    const parts = spokenLines();
+    if (!cellsRef.current?.closed || !parts.length) {
+      setNote(cellsRef.current?.closed ? "Add a line and a voice first." : "Build the mouth buffer first.");
+      return;
+    }
+    stopCamera();
+    playingRef.current = false;
+    setPlaying(false);
+    talkRef.current = false;
+    const { audio, captions } = await mixLines(parts);
+    const ctx = new AudioContext();
+    const src = ctx.createBufferSource();
+    src.buffer = audio;
+    src.connect(ctx.destination);
+    talkRef.current = true;
+    const start = ctx.currentTime;
+    src.start();
+    const loop = () => {
+      if (!talkRef.current) {
+        try { src.stop(); } catch { /* already stopped */ }
+        ctx.close().catch(() => {});
+        return;
+      }
+      const time = ctx.currentTime - start;
+      if (time >= audio.duration) {
+        talkRef.current = false;
+        ctx.close().catch(() => {});
+        setNote("Lines finished.");
+        return;
+      }
+      const frame = frameAt(captions, time);
+      drawTalkCell(resultRef.current, frame.id, 520, frame.text);
+      requestAnimationFrame(loop);
+    };
+    src.onended = () => {
+      talkRef.current = false;
+      ctx.close().catch(() => {});
+    };
+    requestAnimationFrame(loop);
+  }
+
+  async function downloadTalk() {
+    const parts = spokenLines();
+    if (!cellsRef.current?.closed || !parts.length) return;
+    const mime = talkMime();
+    if (!mime) {
+      setNote("This browser cannot record WebM.");
+      return;
+    }
+    talkRef.current = false;
+    playingRef.current = false;
+    setPlaying(false);
+    setVideoJob("export");
+    setVideoBusy(true);
+    const audioCtx = new AudioContext();
+    try {
+      const { audio, captions, duration } = await mixLines(parts);
+      const dest = audioCtx.createMediaStreamDestination();
+      const src = audioCtx.createBufferSource();
+      src.buffer = audio;
+      src.connect(dest);
+      const canvas = document.createElement("canvas");
+      drawTalkCell(canvas, "closed", EXPORT_EDGE, captions[0]?.text || "");
+      const videoStream = canvas.captureStream(0);
+      const mixed = new MediaStream([...videoStream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
+      const rec = new MediaRecorder(mixed, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+      const chunks = [];
+      rec.ondataavailable = (event) => {
+        if (event.data.size) chunks.push(event.data);
+      };
+      const stopped = new Promise((resolve) => {
+        rec.onstop = resolve;
+      });
+      rec.start();
+      src.start();
+      const track = videoStream.getVideoTracks()[0];
+      const total = Math.max(1, Math.ceil(duration * TALK_FPS));
+      for (let i = 0; i < total; i += 1) {
+        const frame = frameAt(captions, i / TALK_FPS);
+        drawTalkCell(canvas, frame.id, EXPORT_EDGE, frame.text);
+        if (resultRef.current) drawTalkCell(resultRef.current, frame.id, 520, frame.text);
+        if (typeof track.requestFrame === "function") track.requestFrame();
+        setNote(`Writing talk frame ${i + 1} of ${total}.`);
+        await new Promise((resolve) => setTimeout(resolve, Math.round(1000 / TALK_FPS)));
+      }
+      try { src.stop(); } catch { /* already ended */ }
+      if (typeof rec.requestData === "function") rec.requestData();
+      rec.stop();
+      await stopped;
+      mixed.getTracks().forEach((item) => item.stop());
+      const raw = await new Blob(chunks, { type: "video/webm" }).arrayBuffer();
+      stampWebmDuration(raw, Math.round(duration * 1000));
+      const blob = new Blob([raw], { type: "video/webm" });
+      if (blob.size < 100) throw new Error("The WebM file came out empty.");
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "fraymus-talk.webm";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 4000);
+      setNote(`Saved fraymus-talk.webm · ${parts.length} lines · ${duration.toFixed(1)}s.`);
+      say?.("ok", "Talking avatar saved");
+    } catch (error) {
+      setNote(error.message);
+      say?.("error", error.message);
+    } finally {
+      audioCtx.close().catch(() => {});
+      setVideoJob("");
+      setVideoBusy(false);
+    }
+  }
+
   function characterCanvas() {
     const source = sourceRef.current;
     if (!source) return null;
@@ -1049,6 +1343,27 @@ export default function PixelPage({ project, onApply, say }) {
             <button className="btn" onClick={useClipFrame} disabled={videoBusy}>Edit this frame</button>
           </div>
         )}
+        <p className="fh">Talk</p>
+        <p className="muted">Four frames from the AI sprite. Each line has words and a voice. A vowel opens the mouth. Play and WebM do not call the model.</p>
+        <button className="btn on" onClick={buildTalk} disabled={videoBusy || aiBusy || !aiImage}>{videoJob === "talk" ? `Mouth ${videoProgress.done}/${videoProgress.total}` : talkReady ? "Rebuild mouth buffer" : "Build mouth buffer"}</button>
+        {videoJob === "talk" && <button className="btn" onClick={() => { videoCancelRef.current = true; }}>Stop</button>}
+        <label className="field">Line
+          <input value={lineText} placeholder="What they say" onChange={(event) => setLineText(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") addLine(); }} />
+        </label>
+        <button className="btn" onClick={addLine} disabled={videoBusy}>Add line</button>
+        <input ref={voiceFileRef} hidden type="file" accept="audio/*,.wav,.mp3,.m4a,.aac" onChange={(event) => { onVoiceFile(event.target.files?.[0]); event.target.value = ""; }} />
+        {lines.map((line) => (
+          <div className="row" key={line.id}>
+            <span className="muted">{line.text}</span>
+            <button className="btn" disabled={videoBusy} onClick={() => { voiceTargetRef.current = line.id; voiceFileRef.current?.click(); }}>{line.name ? `${line.duration.toFixed(1)}s` : "Voice"}</button>
+            <button className="btn" disabled={videoBusy} onClick={() => removeLine(line.id)}>×</button>
+          </div>
+        ))}
+        <div className="row">
+          <button className="btn" onClick={playTalk} disabled={!talkReady || !lines.some((line) => line.duration) || videoBusy}>Play</button>
+          <button className="btn" onClick={stopTalk} disabled={!talkReady}>Stop</button>
+          <button className="btn" onClick={downloadTalk} disabled={!talkReady || !lines.some((line) => line.duration) || videoBusy}>WebM</button>
+        </div>
         <p className="fh">AI render</p>
         <div className="seg">
           <button className={aiMode === "real" ? "on" : ""} onClick={() => setAiMode("real")}>Real outfit</button>

@@ -31,11 +31,24 @@ The sliders that apply are Block, Colors, Reach, Saturation, Outline, and Cyan. 
 
 Changing a slider does not restyle a clip that is already playing. Press **Style video** again to rebuild it.
 
+## Talk
+
+The mouth buffer is the frame buffer from [Avatar studio](AVATAR_STUDIO.md). It animates one approved sprite. It does not restyle a video.
+
+1. **AI Render** the picture you want to keep. Real outfit or Avatar, and a style reference if you use one.
+2. **Build mouth buffer** asks the model for four frames of that sprite: mouth closed, mouth slightly open, mouth open, and a blink. The button counts `Mouth n/4`. **Stop** drops the set. The four frames are the only pictures Play will use.
+3. Write a **Line** and press **Add line**. Press **Voice** on that row and choose a WAV, MP3, or M4A. Add another line the same way. The lines play in order, with a short pause between them.
+4. **Play** reads the buffer. A vowel, or a tone, opens the mouth. A hiss or a consonant keeps it smaller. Silence closes it, and about every 3 seconds of quiet the blink frame shows. The words of the current line sit on a black bar at the bottom. **Stop** cuts the voice.
+5. **WebM** writes `fraymus-talk.webm` for the whole timeline, picture, words, and voice, and writes the length into the file.
+
+Building the buffer calls the model four times. Playing a line does not.
+
 ## Files
 
 | File | Role |
 | --- | --- |
 | `client/src/tools/pixelMotion.js` | Frame grab, filter, seek, WebM mime check |
+| `client/src/tools/pixelTalk.js` | Mouth names, voice loudness, talk WebM mime |
 | `client/src/tools/PixelPage.jsx` | Camera loop, video controls, playback, export |
 | `client/src/tools/pixelEngine.js` | The filter itself (`renderPixel`) |
 | `client/src/styles.css` | `.pixel-clip` hides the decoder element without `display: none`, so the browser still decodes frames |

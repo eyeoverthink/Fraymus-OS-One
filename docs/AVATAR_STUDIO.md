@@ -1,6 +1,6 @@
 # Chapter — Avatar studio
 
-Outline only. None of this chapter is in the app yet. The workspace it builds on is the 8-bit tab described in [8-bit status](8BIT_STATUS.md) and [8-bit motion](8BIT_MOTION.md). The short tour stays in the [README](../README.md#8-bit-studio).
+The first slice is in the 8-bit tab: one approved sprite, four mouth frames, a voice that picks the frame. The timeline, captions, and payments in the rest of this chapter are not built. The workspace it builds on is described in [8-bit status](8BIT_STATUS.md) and [8-bit motion](8BIT_MOTION.md). The short tour stays in the [README](../README.md#8-bit-studio).
 
 The aim is an animated avatar that someone else can order: one face in, a cartoon sprite that talks, many videos out, without sending every frame back through the model.
 
@@ -54,14 +54,21 @@ The studio stays on `127.0.0.1` until that order flow exists. This chapter does 
 
 ## First slice
 
-Build this before a timeline full of tracks.
+This is in the app, under **Talk** on the 8-bit tab. The steps are in [8-bit motion](8BIT_MOTION.md).
 
-1. Approve one sprite with the AI Render that already exists.
-2. Generate the mouth buffer from that sprite only, same seed, same style reference.
-3. Store the cells in the project as images, addressable by name (`closed`, `mid`, `open`, `blink`).
-4. Accept a voice file. Map its loudness to those names. Four levels is enough to start. Phonemes can replace loudness later without changing the buffer.
-5. Play the result from the buffer at a steady rate. Export WebM with a real duration, the same way Cartoon video already does.
-6. Document the steps in a new section of [8-bit motion](8BIT_MOTION.md) when they exist, and add a picture to this chapter. Do not put a private face in `docs/showcase`.
+1. **AI Render** approves the sprite.
+2. **Build mouth buffer** draws four frames from that sprite only: `closed`, `mid`, `open`, `blink`. Same seed. The sprite is the style reference.
+3. The cells stay in memory for the session. They are not written to `localStorage`.
+4. Each **Line** has words and a voice. A vowel or a tone opens the mouth. A hiss stays smaller. Silence closes it. The lines play in order, with the words on a black bar.
+5. **Play** and **WebM** read the buffer. They do not call the model. The WebM is `fraymus-talk.webm` and includes every line.
+
+<p align="center">
+  <img src="showcase/8bit-talk.png" alt="A mouth-buffer cell of the studio demo sprite: hat, glasses, closed mouth, cyan rim" width="360">
+</p>
+
+<sub>The person above is the AI demo sprite already in this repo. They are not a real person.</sub>
+
+Phonemes can replace loudness later without changing the buffer. A timeline of several voice clips is still the later chapter.
 
 ## Continuity
 
@@ -70,4 +77,4 @@ Build this before a timeline full of tracks.
 | [README](../README.md#8-bit-studio) | The tour of the studio as it stands |
 | [8-bit status](8BIT_STATUS.md) | What works today, including Cartoon video |
 | [8-bit motion](8BIT_MOTION.md) | The controls, in order |
-| This chapter | The frame buffer and the talking avatar, not built yet |
+| This chapter | Mouth buffer is in the app. Timeline and payments are not |
