@@ -3,6 +3,11 @@ import CrudPage from "./tools/CrudPage.jsx";
 import ReplPage from "./tools/ReplPage.jsx";
 import CanvasPage from "./tools/CanvasPage.jsx";
 import PixelPage from "./tools/PixelPage.jsx";
+import WebJsPage from "./tools/WebJsPage.jsx";
+import EmojiPage from "./tools/EmojiPage.jsx";
+import EmojiCoderPage from "./tools/EmojiCoderPage.jsx";
+import DispatchPage from "./tools/DispatchPage.jsx";
+import WasmPage from "./tools/WasmPage.jsx";
 import {
   BRAND,
   PHI,
@@ -585,11 +590,11 @@ export default function App() {
       </header>
       <div className="top" style={{ paddingTop: 0 }}>
         <div className="seg">
-          {[["studio", "Code"], ["crud", "CRUD"], ["repl", "REPL"], ["canvas", "Canvas"], ["pixel", "8-bit"]].map(([id, label]) => (
+          {[["studio", "Code"], ["crud", "CRUD"], ["repl", "REPL"], ["canvas", "Canvas"], ["pixel", "8-bit"], ["webjs", "HTML·JS"], ["emoji", "Emoji"], ["coder", "Emoji Coder"], ["dispatch", "Dispatch"], ["wasm", "WASM"]].map(([id, label]) => (
             <button key={id} className={workspace === id ? "on" : ""} onClick={() => setWorkspace(id)}>{label}</button>
           ))}
         </div>
-        <span className="muted">{workspace === "pixel" ? "Photo to 8-bit character" : workspace === "canvas" ? "Blocks, cube grid, entity components" : workspace === "repl" ? "JavaScript and DOM" : workspace === "crud" ? "GET POST PUT PATCH DELETE" : "Editor"}</span>
+        <span className="muted">{workspace === "wasm" ? "FrayVM → bytecode → WebAssembly → one emoji" : workspace === "dispatch" ? "Signed emoji payloads: compose, verify, run, mail" : workspace === "coder" ? "Emoji markup to HTML, CSS, JavaScript, and Java" : workspace === "emoji" ? "Text ↔ glyph ↔ DNA ↔ zero-width" : workspace === "webjs" ? "HTML and JavaScript, live preview" : workspace === "pixel" ? "Photo to 8-bit character" : workspace === "canvas" ? "Blocks, cube grid, entity components" : workspace === "repl" ? "JavaScript and DOM" : workspace === "crud" ? "GET POST PUT PATCH DELETE" : "Editor"}</span>
       </div>
       {narrow && workspace === "studio" && (
         <div className="mobile-switch seg">
@@ -601,6 +606,11 @@ export default function App() {
       {workspace === "repl" && <ReplPage />}
       {workspace === "canvas" && project && <CanvasPage project={project} say={say} onApply={(next) => patch(() => next)} />}
       {workspace === "pixel" && <PixelPage project={project} say={say} onApply={(next) => patch(() => next)} />}
+      {workspace === "webjs" && project && <WebJsPage project={project} say={say} onApply={(next) => patch(() => next)} />}
+      {workspace === "emoji" && project && <EmojiPage project={project} say={say} onApply={(next) => patch(() => next)} />}
+      {workspace === "coder" && project && <EmojiCoderPage project={project} say={say} onApply={(next) => patch(() => next)} />}
+      {workspace === "dispatch" && project && <DispatchPage project={project} say={say} onApply={(next) => patch(() => next)} />}
+      {workspace === "wasm" && project && <WasmPage project={project} say={say} onApply={(next) => patch(() => next)} />}
       {workspace === "studio" && <div className="workspace">
         {showLib && libOpen && (
           <aside className="library">
@@ -965,6 +975,11 @@ export default function App() {
               <a className="btn" href="#repl" onClick={(event) => { event.preventDefault(); setModal(null); setWorkspace("repl"); }}>REPL</a>
               <a className="btn" href="#canvas" onClick={(event) => { event.preventDefault(); setModal(null); setWorkspace("canvas"); }}>Canvas</a>
               <a className="btn" href="#pixel" onClick={(event) => { event.preventDefault(); setModal(null); setWorkspace("pixel"); }}>8-bit</a>
+              <a className="btn" href="#webjs" onClick={(event) => { event.preventDefault(); setModal(null); setWorkspace("webjs"); }}>HTML·JS</a>
+              <a className="btn" href="#emoji" onClick={(event) => { event.preventDefault(); setModal(null); setWorkspace("emoji"); }}>Emoji</a>
+              <a className="btn" href="#coder" onClick={(event) => { event.preventDefault(); setModal(null); setWorkspace("coder"); }}>Emoji Coder</a>
+              <a className="btn" href="#dispatch" onClick={(event) => { event.preventDefault(); setModal(null); setWorkspace("dispatch"); }}>Dispatch</a>
+              <a className="btn" href="#wasm" onClick={(event) => { event.preventDefault(); setModal(null); setWorkspace("wasm"); }}>WASM</a>
               <a className="btn" href="#help" onClick={(event) => { event.preventDefault(); setModal("help"); }}>Help</a>
               <a className="btn" href="https://cursor.com/codebase/vaughn-scott/fraymus-css" target="_blank" rel="noreferrer">Repository</a>
             </div>
