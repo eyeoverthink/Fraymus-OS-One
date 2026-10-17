@@ -6,6 +6,7 @@
  */
 import http from "node:http";
 
+const FX_NUMBER = /^fx-[0-9a-f]{4}(-[0-9a-f]{4}){3}$/;
 const PORT = Number(process.env.HUB_PORT || 8787);
 const HOST = "127.0.0.1";
 const ROUTES = new Set(["/api/dispatch", "/api/fraynix/feel", "/api/mail/forward"]);
@@ -21,8 +22,13 @@ const server = http.createServer(async (req, res) => {
   let body = {};
   try { body = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}"); }
   catch { body = { raw: Buffer.concat(chunks).toString("utf8") }; }
-  const to = body.dispatchTo || body.to || "?";
-  console.log(`${new Date().toISOString()} ${req.url} from=${body.from || "?"} to=${to} subject=${body.subject || ""}`);
+  const to = body.dispatchTo || body.to || "";
+  if (req.url === "/api/dispatch" && to !== "BROADCAST" && !FX_NUMBER.test(to)) {
+    res.writeHead(400, { "content-type": "application/json" });
+    res.end(JSON.stringify({ ok: false, error: "recipient must be a FRAYMUS number fx-xxxx-xxxx-xxxx-xxxx" }));
+    return;
+  }
+  console.log(`${new Date().toISOString()} ${req.url} from=${body.from || "?"} to=${to || "?"} subject=${body.subject || ""}`);
   const reply = req.url === "/api/fraynix/feel"
     ? { ok: true, quick: "received", primary: `felt ${to}`, intensity: 1 }
     : { ok: true, to, accepted: true };

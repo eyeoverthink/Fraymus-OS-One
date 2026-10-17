@@ -23,6 +23,15 @@ const STEPS = [
 ];
 const freshSteps = () => STEPS.map(([label, detail], index) => ({ id: index + 1, label, detail, status: "idle", proof: "" }));
 const LONG_LINK = 8000;
+const MAILBOX = "fx-4041-f10e-7ee2-2bdc";
+const FX_NUMBER = /^fx-[0-9a-f]{4}(-[0-9a-f]{4}){3}$/;
+const NAMED_TARGET = new Set(["FRAYNIX", "BROADCAST"]);
+
+function dispatchTarget(value) {
+  const to = String(value || "").trim();
+  if (NAMED_TARGET.has(to) || FX_NUMBER.test(to)) return to;
+  return "";
+}
 
 function readJson(key, fallback) {
   try {
@@ -64,7 +73,11 @@ export default function Robot() {
 }
 
 export default function DispatchPage({ project, say, onApply }) {
-  const [form, setForm] = useState(() => readJson(FORM_KEY, { from: "me@fraymus.world", to: "fx-4041@fraymus.world", subject: "FRAYMUS-OP" }));
+  const [form, setForm] = useState(() => {
+    const saved = readJson(FORM_KEY, { from: "me@fraymus.world", to: MAILBOX, subject: "FRAYMUS-OP" });
+    if (!dispatchTarget(saved.to)) saved.to = MAILBOX;
+    return saved;
+  });
   const [program, setProgram] = useState(() => readJson(PROGRAM_KEY, DEFAULT_PROGRAM));
   const [part, setPart] = useState("css");
   const [scheme, setScheme] = useState("emoji64");
@@ -132,8 +145,13 @@ export default function DispatchPage({ project, say, onApply }) {
 
   async function seal() {
     if (!keys) return;
+    const to = dispatchTarget(form.to);
+    if (!to) {
+      say?.("err", "To must be a FRAYMUS number fx-xxxx-xxxx-xxxx-xxxx, FRAYNIX, or BROADCAST.");
+      return;
+    }
     const prev = localStorage.getItem(PREV_KEY) || GENESIS;
-    const env = await buildEnvelope({ ...form, program, prev, keys });
+    const env = await buildEnvelope({ ...form, to, program, prev, keys });
     const wire = await packEnvelope(env, compress);
     const text = encodeWire(wire, scheme === "glyph" ? cleanCarrier(carrier) || "🤖" : null);
     localStorage.setItem(PREV_KEY, await sha256(textBytes(env.canon)));
@@ -276,9 +294,10 @@ export default function DispatchPage({ project, say, onApply }) {
     <div className="tool dispatch">
       <aside className="tool-side">
         <b>Compose</b>
-        <span className="muted">A signed program travels inside emoji. The recipient's studio verifies it and runs it in a sandbox.</span>
+        <span className="muted">A signed program travels inside emoji. To is a FRAYMUS number, fx-xxxx-xxxx-xxxx-xxxx. The mailbox on this machine is {MAILBOX}.</span>
         <label className="field"><span>From</span><input value={form.from} onChange={(event) => setForm({ ...form, from: event.target.value })} /></label>
         <label className="field"><span>To (dispatchTo)</span><input value={form.to} onChange={(event) => setForm({ ...form, to: event.target.value })} /></label>
+        {!dispatchTarget(form.to) && <span className="muted">That is not a FRAYMUS number. An email address is not a mailbox on the hub.</span>}
         <label className="field"><span>Subject</span><input value={form.subject} onChange={(event) => setForm({ ...form, subject: event.target.value })} /></label>
         <b style={{ marginTop: 6 }}>Program</b>
         <div className="seg">

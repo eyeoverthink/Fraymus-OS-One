@@ -52,10 +52,10 @@ Repository: [eyeoverthink/fraymus-css](https://github.com/eyeoverthink/fraymus-c
 
 ## Email that runs
 
-On 17 Oct 2026 a Gmail inbox was polled, an emoji body was decoded, and the hub at `127.0.0.1:8787` accepted a dispatch addressed to `agent@fraymus.cloud`. That is the whole point of this studio's mail path: the message is the program.
+A deploy message is a program hidden in emoji. The recipient inside it is a FRAYMUS number, `fx-` plus four groups of four hex digits. The mailbox for this studio is `fx-4041-f10e-7ee2-2bdc`. An email address, including `fx-4041@fraymus.world` and `agent@fraymus.cloud`, is not that number. Dispatch will not sign one, and the hub on `127.0.0.1:8787` will not accept one.
 
 <p align="center">
-  <img src="docs/showcase/dispatch.png" alt="Dispatch workspace, addressed to agent@fraymus.cloud, heartbeat ready" width="100%">
+  <img src="docs/showcase/dispatch.png" alt="Dispatch workspace with the heartbeat ready" width="100%">
 </p>
 
 **Compose** in the Dispatch tab builds the envelope: from, to, subject, and a program (CSS, JS, HTML, or WASM). **Sign (Ed25519) & encode** writes a real signature over the canon and turns the bytes into the 64-emoji alphabet. `💤` is the padding character. **Run heartbeat** then does the six ticks on that text: decode, verify the signature, Merkle and the time window, unpack the files, run the program in a sandbox, and hand it to mail.
@@ -89,8 +89,8 @@ Five deploy messages were already in that inbox. Each one took a different branc
 | `FRAYMUS-DEPLOY-test` | `fx-4041@fraymus.world` | Decoded. Signature failed, so it was not sent. |
 | `FRAYMUS-DEPLOY-test` | `FRAYNIX` | Accepted. The hub replied `felt FRAYNIX`. |
 | `FRAYMUS-DEPLOY-test` | none | The emoji line was damaged. Decode failed. |
-| `FRAYMUS-DEPLOY-agent` | `agent@fraymus.cloud` | Accepted by `/api/dispatch`. |
-| `FRAYMUS-DEPLOY-test` | `agent@fraymus.cloud` | Accepted by `/api/dispatch`. |
+| `FRAYMUS-DEPLOY-agent` | `agent@fraymus.cloud` | The old hub accepted it. That address is not a FRAYMUS number, so this hub now rejects it. |
+| `FRAYMUS-DEPLOY-test` | `agent@fraymus.cloud` | Same wrong address. Rejected by the number check. |
 
 `decode` and `sig` have to pass. `merkle` and the timestamp are warnings, which is why a row can show `merkle:✕` and still be dispatched. The signature check in the watcher confirms the key and signature are present and the right length. The Dispatch tab is where Ed25519 is actually signed and verified. The hub in this repo is the local stand-in: it binds `127.0.0.1:8787`, logs from, to, and subject, and answers. It does not re-check the signature.
 
@@ -100,9 +100,9 @@ Where a verified payload goes:
 | --- | --- |
 | Canon contains `COMMAND:EMAIL` | `/api/mail/forward` |
 | `dispatchTo` is `FRAYNIX` | `/api/fraynix/feel` |
-| Any other agent, including `BROADCAST` | `/api/dispatch` |
+| A FRAYMUS number `fx-xxxx-xxxx-xxxx-xxxx`, or `BROADCAST` | `/api/dispatch` |
 
-The address inside the envelope is the agent. The watcher reads a mailbox that already exists. Sending straight to `agent@fraymus.cloud` bounced (`550 5.1.1`, address not found). The copy in the watched Gmail inbox is the one the watcher decoded.
+The watcher reads a Gmail inbox that already exists. The number inside the emoji is the hub mailbox. `fx-4041-f10e-7ee2-2bdc` is that mailbox. Fraymus Academy is a separate app; this studio only uses the same number rule.
 
 ```bash
 # credentials live in ~/.fraymus-v13/email-watcher.env

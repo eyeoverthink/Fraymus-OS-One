@@ -35,6 +35,9 @@ function loadEnvFile(file) {
 loadEnvFile(ENV_FILE);
 
 const HUB_URL = process.env.HUB_URL || "http://127.0.0.1:8787";
+// A v16 recipient is fx- plus four groups of four hex digits, derived from the agent's public key.
+// fx-4041@fraymus.world and a bare prefix are not numbers. Same rule as fraymusMail.js send().
+const FX_NUMBER = /^fx-[0-9a-f]{4}(-[0-9a-f]{4}){3}$/;
 const IMAP_HOST = process.env.IMAP_HOST || "imap.gmail.com";
 const IMAP_PORT = Number(process.env.IMAP_PORT || 993);
 const IMAP_USER = process.env.IMAP_USER || "";
@@ -105,8 +108,11 @@ export async function dispatchToAgent(decoded) {
     if (dispatchTo === "FRAYNIX")
       return { ok: true, reply: await post("/api/fraynix/feel", payload) };
 
-    // Agent by name/fx, or BROADCAST fan-out → same signed endpoint.
-    return { ok: true, reply: await post("/api/dispatch", { ...payload, to: dispatchTo || payload.to }) };
+    // Agent by full FX number, or BROADCAST fan-out → same signed endpoint.
+    const to = dispatchTo || payload.to || "";
+    if (to !== "BROADCAST" && !FX_NUMBER.test(to))
+      return { ok: false, error: `recipient must be a FRAYMUS number fx-xxxx-xxxx-xxxx-xxxx (got ${to || "none"})` };
+    return { ok: true, reply: await post("/api/dispatch", { ...payload, to }) };
   } catch (error) {
     return { ok: false, error: error.message };
   }
@@ -178,7 +184,8 @@ async function dryRun() {
   log("DRY RUN — routing fixtures through dispatchToAgent (no network calls made if hub is down)");
   const base = { pub: "x".repeat(64), sig: "y".repeat(96), merkle: { root: "r", proof: ["s"], leaf: "l..." }, prev: "p", ts: Date.now() };
   const fixtures = [
-    ["agent fx", { ...base, to: "fx-4041@fraymus.world", canon: "v16|fx-4041" }],
+    ["claude-code", { ...base, to: "fx-4041-f10e-7ee2-2bdc", canon: "v16|fx-4041-f10e-7ee2-2bdc" }],
+    ["not a number", { ...base, to: "fx-4041@fraymus.world", canon: "v16|fx-4041" }],
     ["broadcast", { ...base, to: "BROADCAST", canon: "v16|BROADCAST" }],
     ["fraynix", { ...base, dispatchTo: "FRAYNIX", canon: "v16|FRAYNIX" }],
     ["email carrier", { ...base, to: "mailbox", canon: "COMMAND:EMAIL|to=ops@fraymus.world" }],
