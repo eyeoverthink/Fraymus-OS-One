@@ -25,10 +25,11 @@ const B64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345678
  */
 export function emojiToBase64(emojiStr) {
   let b64 = '';
-  const chars = [...emojiStr];
-  for (const ch of chars) {
-    if (ch === PAD_EMOJI) { b64 += '='; continue; }
-    const idx = EMOJI_ALPHABET.indexOf(ch);
+  const segmenter = new Intl.Segmenter();
+  for (const { segment } of segmenter.segment(String(emojiStr))) {
+    const ch = segment.replace(/\uFE0F/g, "");
+    if (ch === PAD_EMOJI || segment === PAD_EMOJI) { b64 += '='; continue; }
+    const idx = EMOJI_ALPHABET.findIndex((glyph) => glyph.replace(/\uFE0F/g, "") === ch);
     if (idx >= 0) b64 += B64_CHARS[idx];
     // skip whitespace / unknown chars silently
   }

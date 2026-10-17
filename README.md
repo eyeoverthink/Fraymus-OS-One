@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <b>A browser studio for HTML, React, and MERN — with a CRUD builder, a DOM REPL, a cube canvas, and an AI 8-bit portrait studio.</b>
+  <b>A browser studio for HTML, React, and MERN — and a mailbox that can launch a signed program.</b>
 </p>
 
 <p align="center">
@@ -16,6 +16,7 @@
 </p>
 
 <p align="center">
+  <a href="#email-that-runs">Email</a> ·
   <a href="#8-bit-studio">8-bit studio</a> ·
   <a href="#html-react-and-pair">HTML &amp; Pair</a> ·
   <a href="#mern">MERN</a> ·
@@ -30,19 +31,87 @@
   <img src="docs/showcase/code.png" alt="The Code workspace: library, MERN file tree, editor, and live preview" width="100%">
 </p>
 
-Write a page, see it render as you type, pair it with its stylesheet, give it a REST API, poke the DOM from a REPL, lay it out on a cube grid, turn a selfie into an 8-bit game character, and ship the result as a zip, a Docker bundle, or a single HTML file. Everything runs on your machine at `127.0.0.1`.
+Write a page, see it render as you type, pair it with its stylesheet, give it a REST API, poke the DOM from a REPL, lay it out on a cube grid, turn a selfie into an 8-bit game character, and ship the result as a zip, a Docker bundle, or a single HTML file. A message whose subject starts with `FRAYMUS-DEPLOY-` can carry a whole program as emoji. The watcher reads it, checks it, and posts it to a hub on this machine. Everything runs at `127.0.0.1`.
 
-Repository: [vaughn-scott/fraymus-css](https://cursor.com/codebase/vaughn-scott/fraymus-css)
+Repository: [eyeoverthink/fraymus-css](https://github.com/eyeoverthink/fraymus-css)
 
 ## At a glance
 
 | Workspace | What you do there |
 | --- | --- |
+| **[Dispatch](#email-that-runs)** | Sign a program, hide it in emoji, verify it, run it |
+| **[Mail](#email-that-runs)** | Read and send from Gmail or the mailbox on this machine |
 | **[Code](#html-react-and-pair)** | Snippet library, editor, Pair view, live preview, console |
 | **[CRUD](#crud)** | Name a resource, then `POST`, `GET`, `PUT`, `PATCH`, `DELETE` it, then compile it into the project |
 | **[REPL](#repl)** | JavaScript and DOM commands on a live stage, with draggable methods |
 | **[Canvas](#canvas)** | Drop blocks on a 2×2, 3×3, or 4×4 cube and compile it to a page |
 | **[8-bit](#8-bit-studio)** | Photo in, 8-bit pixel portrait out — AI render, filters, edit, place in project |
+| **Emoji** | Text, DNA, and zero-width, hidden behind a glyph |
+| **Emoji Coder** | Emoji markup to HTML, CSS, JavaScript, and Java |
+| **WASM** | FrayVM bytecode, a real WebAssembly module, one emoji |
+
+## Email that runs
+
+On 17 Oct 2026 a Gmail inbox was polled, an emoji body was decoded, and the hub at `127.0.0.1:8787` accepted a dispatch addressed to `agent@fraymus.cloud`. That is the whole point of this studio's mail path: the message is the program.
+
+<p align="center">
+  <img src="docs/showcase/dispatch.png" alt="Dispatch workspace, addressed to agent@fraymus.cloud, heartbeat ready" width="100%">
+</p>
+
+**Compose** in the Dispatch tab builds the envelope: from, to, subject, and a program (CSS, JS, HTML, or WASM). **Sign (Ed25519) & encode** writes a real signature over the canon and turns the bytes into the 64-emoji alphabet. `💤` is the padding character. **Run heartbeat** then does the six ticks on that text: decode, verify the signature, Merkle and the time window, unpack the files, run the program in a sandbox, and hand it to mail.
+
+<p align="center">
+  <img src="docs/showcase/mail.png" alt="Mail workspace on the local mailbox, with a deploy message in the inbox" width="100%">
+</p>
+
+**Mail** is the mailbox in the studio. Gmail uses IMAP and SMTP once an app password is saved on this machine. Local mail is `data/mailbox/box.json`. Folders, compose, reply, reply all, forward, flag, move, trash, and import or export as `.eml` or `.mbox` are all there.
+
+The live run did not depend on the Mail tab being open. `scripts/email-watcher/watcher.mjs` polls Gmail for unread and already-read subjects that start with `FRAYMUS-DEPLOY-`. Mail you send to yourself arrives already marked read, so an unread-only search would miss it. The watcher remembers which messages it has already handled.
+
+This is the pass that reached the hub:
+
+```text
+→ FRAYMUS-DEPLOY-agent
+  checks decode:✓ sig:✓ merkle:✕ ts:✓ · to=agent@fraymus.cloud
+  ✓ dispatched → {"ok":true,"to":"agent@fraymus.cloud","accepted":true}
+```
+
+The hub printed:
+
+```text
+/api/dispatch from=eyeoverthink@gmail.com to=agent@fraymus.cloud subject=FRAYMUS-DEPLOY-test
+```
+
+Five deploy messages were already in that inbox. Each one took a different branch:
+
+| Subject | Target | What happened |
+| --- | --- | --- |
+| `FRAYMUS-DEPLOY-test` | `fx-4041@fraymus.world` | Decoded. Signature failed, so it was not sent. |
+| `FRAYMUS-DEPLOY-test` | `FRAYNIX` | Accepted. The hub replied `felt FRAYNIX`. |
+| `FRAYMUS-DEPLOY-test` | none | The emoji line was damaged. Decode failed. |
+| `FRAYMUS-DEPLOY-agent` | `agent@fraymus.cloud` | Accepted by `/api/dispatch`. |
+| `FRAYMUS-DEPLOY-test` | `agent@fraymus.cloud` | Accepted by `/api/dispatch`. |
+
+`decode` and `sig` have to pass. `merkle` and the timestamp are warnings, which is why a row can show `merkle:✕` and still be dispatched. The signature check in the watcher confirms the key and signature are present and the right length. The Dispatch tab is where Ed25519 is actually signed and verified. The hub in this repo is the local stand-in: it binds `127.0.0.1:8787`, logs from, to, and subject, and answers. It does not re-check the signature.
+
+Where a verified payload goes:
+
+| Condition | POST |
+| --- | --- |
+| Canon contains `COMMAND:EMAIL` | `/api/mail/forward` |
+| `dispatchTo` is `FRAYNIX` | `/api/fraynix/feel` |
+| Any other agent, including `BROADCAST` | `/api/dispatch` |
+
+The address inside the envelope is the agent. The watcher reads a mailbox that already exists. Sending straight to `agent@fraymus.cloud` bounced (`550 5.1.1`, address not found). The copy in the watched Gmail inbox is the one the watcher decoded.
+
+```bash
+# credentials live in ~/.fraymus-v13/email-watcher.env
+# IMAP_USER, IMAP_PASS (a Gmail app password), HUB_URL=http://127.0.0.1:8787
+node scripts/email-watcher/hub.mjs
+node scripts/email-watcher/watcher.mjs
+```
+
+The app password stays in that file. It is not in the repo.
 
 ## 8-bit studio
 
@@ -214,6 +283,7 @@ npm run dev
 - Studio UI: [http://127.0.0.1:5173](http://127.0.0.1:5173)
 - Studio API: [http://127.0.0.1:4177](http://127.0.0.1:4177)
 - Health: [http://127.0.0.1:4177/api/health](http://127.0.0.1:4177/api/health)
+- Dispatch hub: [http://127.0.0.1:8787](http://127.0.0.1:8787) when `scripts/email-watcher/hub.mjs` is running
 
 Both processes bind to `127.0.0.1`. Vite proxies `/api`, `/live`, `/published`, and `/vendor` to the API.
 
@@ -312,6 +382,10 @@ Sync and start keep the session's records, so a CRUD collection survives a previ
 | `MONGODB_URI` | unset | Turns on Mongoose for the Item model |
 | `HF_TOKEN` | unset | Hugging Face token for AI Render. `hf-token.txt` works too |
 | `FRAYMUS_PIXEL_SPACE` | `prithivMLmods/Flux.2-Klein-Edit-Ultra-Fast` | Hugging Face Space used for AI Render |
+| `HUB_URL` | `http://127.0.0.1:8787` | Where the email watcher posts a verified payload |
+| `HUB_PORT` | `8787` | Port the local hub binds |
+| `IMAP_USER` | unset | Gmail account the watcher reads. Set in `~/.fraymus-v13/email-watcher.env` |
+| `IMAP_PASS` | unset | Gmail app password for that account. Same file. Never commit it |
 
 ### Layout
 
@@ -322,9 +396,12 @@ client/                 Vite root, port 5173
   src/model.js          Projects, preview, MERN source, brand constants
   src/library.json      Snippet library
   src/scaffold/         Express, pages, and site CSS stamped into new MERN apps
-  src/tools/            CrudPage, ReplPage, CanvasPage, PixelPage, pixelEngine
-server/index.js         Studio API, live sessions, publish, export, 8-bit render
+  src/tools/            CrudPage, ReplPage, CanvasPage, PixelPage, Dispatch, Mail, Emoji, WASM
+server/index.js         Studio API, live sessions, publish, export, 8-bit render, mail
+server/mailbox.js       Local mailbox: folders, eml, mbox
+server/gmailBox.js      Gmail over IMAP and SMTP
 server/runtime.js       Node and Docker process manager
+scripts/email-watcher/  Decoder, Gmail watcher, local hub on port 8787
 docs/showcase/          README images
 data/projects/          Saved projects (gitignored)
 data/runtime/           Running project trees (gitignored)
@@ -337,6 +414,7 @@ data/published/         Publish output (gitignored)
 | --- | --- |
 | UI | `127.0.0.1:5173` |
 | API | `127.0.0.1:4177` (`FRAYMUS_PORT`) |
+| Dispatch hub | `127.0.0.1:8787` (`HUB_PORT`) |
 | Node project | port chosen at start, often `4180`+ |
 | Mongo | off until `MONGODB_URI` is set |
 | Docker | used when the `docker` binary exists. Compose ports stay on `127.0.0.1` |
@@ -360,5 +438,5 @@ The demo module is the bytes whose magic is `00 61 73 6d` and whose `main()` ret
 ---
 
 <p align="center">
-  <a href="#copyright">© 2026 Fraymus Web Studio</a> · <a href="#brand">◈</a> · <a href="#brand">φ^75 = 4721424167835376.00</a> — <a href="#brand">One Seed = Reborn</a> · <a href="#brand">FRAY 0x46524159</a> · <a href="https://cursor.com/codebase/vaughn-scott/fraymus-css">vaughn-scott/fraymus-css</a>
+  <a href="#copyright">© 2026 Fraymus Web Studio</a> · <a href="#brand">◈</a> · <a href="#brand">φ^75 = 4721424167835376.00</a> — <a href="#brand">One Seed = Reborn</a> · <a href="#brand">FRAY 0x46524159</a> · <a href="https://github.com/eyeoverthink/fraymus-css">eyeoverthink/fraymus-css</a>
 </p>

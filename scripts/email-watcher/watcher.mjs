@@ -8,10 +8,32 @@
  *   node watcher.mjs            # live: poll Gmail and dispatch
  *   node watcher.mjs --dry-run  # offline: route built-in fixtures through dispatchToAgent
  */
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { decodePipeline } from "./decode.mjs";
 
-// ─── Config (env-driven; localhost by default) ───
+// ─── Config: shell env wins, then ~/.fraymus-v13/email-watcher.env ───
+const ENV_FILE = process.env.FRAYMUS_WATCHER_ENV || path.join(os.homedir(), ".fraymus-v13", "email-watcher.env");
+
+function loadEnvFile(file) {
+  let text;
+  try { text = fs.readFileSync(file, "utf8"); }
+  catch { return; }
+  for (const line of text.split(/\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq < 1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let value = trimmed.slice(eq + 1).trim();
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
+    if (process.env[key] === undefined) process.env[key] = value;
+  }
+}
+loadEnvFile(ENV_FILE);
+
 const HUB_URL = process.env.HUB_URL || "http://127.0.0.1:8787";
 const IMAP_HOST = process.env.IMAP_HOST || "imap.gmail.com";
 const IMAP_PORT = Number(process.env.IMAP_PORT || 993);
@@ -31,6 +53,27 @@ export function extractEmojiPayload(text) {
   if (!emoji) return "";
   // The payload is the longest emoji run in the message.
   return emoji.sort((a, b) => b.length - a.length)[0];
+}
+
+// Gmail stores a self-sent body as base64 or quoted-printable. Decode those
+// parts so the emoji run is visible in the raw IMAP source.
+function readableMail(raw) {
+  const chunks = [raw];
+  for (const match of raw.matchAll(/Content-Transfer-Encoding:\s*base64\s*(?:\r?\n[^\r\n]+)*\r?\n\r?\n([A-Za-z0-9+/=\r\n]+)/gi)) {
+    try { chunks.push(Buffer.from(match[1].replace(/\s/g, ""), "base64").toString("utf8")); } catch { /* skip a bad part */ }
+  }
+  for (const match of raw.matchAll(/Content-Transfer-Encoding:\s*quoted-printable\s*(?:\r?\n[^\r\n]+)*\r?\n\r?\n([\s\S]*?)(?:\r?\n--|\s*$)/gi)) {
+    const folded = match[1].replace(/=\r?\n/g, "");
+    const bytes = [];
+    for (let i = 0; i < folded.length; i++) {
+      if (folded[i] === "=" && /[0-9A-Fa-f]{2}/.test(folded.slice(i + 1, i + 3))) {
+        bytes.push(parseInt(folded.slice(i + 1, i + 3), 16));
+        i += 2;
+      } else bytes.push(folded.charCodeAt(i) & 0xff);
+    }
+    chunks.push(Buffer.from(bytes).toString("utf8"));
+  }
+  return chunks.join("\n");
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -87,24 +130,38 @@ async function handleMessage({ subject, body }) {
 // ─── Live IMAP poll loop ───
 async function watch() {
   if (!IMAP_USER || !IMAP_PASS) {
-    console.error("Set IMAP_USER and IMAP_PASS (a Gmail app password) to run live, or use --dry-run.");
+    console.error(`Set IMAP_USER and IMAP_PASS in ${ENV_FILE} (a Gmail app password), or use --dry-run.`);
     process.exit(1);
   }
   const { ImapFlow } = await import("imapflow"); // lazy so --dry-run needs no install
   const client = new ImapFlow({ host: IMAP_HOST, port: IMAP_PORT, secure: true, auth: { user: IMAP_USER, pass: IMAP_PASS }, logger: false });
-  await client.connect();
+  client.on("error", () => {});
+  try { await client.connect(); }
+  catch (error) {
+    if (error.authenticationFailed || /application-specific password/i.test(error.responseText || "")) {
+      console.error("Gmail refused the login. IMAP_PASS must be a Google app password, not the normal account password.");
+      console.error("Create one at https://myaccount.google.com/apppasswords and put it in " + ENV_FILE);
+      process.exit(1);
+    }
+    throw error;
+  }
   log(`Connected to ${IMAP_HOST} as ${IMAP_USER} · watching "${SUBJECT_PREFIX}*" every ${POLL_MS}ms`);
 
+  // Mail you send to yourself arrives already read, so an unread-only search
+  // never sees it. Remember UIDs this process has already dispatched.
+  const handled = new Set();
   const poll = async () => {
     const lock = await client.getMailboxLock("INBOX");
     try {
-      const uids = await client.search({ seen: false, subject: SUBJECT_PREFIX }, { uid: true });
+      const uids = await client.search({ subject: SUBJECT_PREFIX }, { uid: true });
       for (const uid of uids || []) {
+        if (handled.has(uid)) continue;
         const msg = await client.fetchOne(uid, { source: true, envelope: true }, { uid: true });
         if (!msg) continue;
         const subject = msg.envelope?.subject || "";
-        if (!subject.startsWith(SUBJECT_PREFIX)) continue;
-        await handleMessage({ subject, body: msg.source.toString("utf8") });
+        if (!subject.startsWith(SUBJECT_PREFIX)) { handled.add(uid); continue; }
+        await handleMessage({ subject, body: readableMail(msg.source.toString("utf8")) });
+        handled.add(uid);
         await client.messageFlagsAdd(uid, ["\\Seen"], { uid: true });
       }
     } finally {
