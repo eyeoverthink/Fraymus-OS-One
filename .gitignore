@@ -3,6 +3,7 @@ client/dist
 data/runtime
 data/published
 data/projects
+data/mailbox
 .env
 hf-token.txt
 .env.*

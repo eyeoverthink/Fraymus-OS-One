@@ -6,6 +6,8 @@ import express from "express";
 import cors from "cors";
 import archiver from "archiver";
 import mongoose from "mongoose";
+import { createGmail } from "./gmailBox.js";
+import { createStore } from "./mailbox.js";
 import {
   STATIC_SERVER,
   commandVersion,
@@ -215,6 +217,107 @@ app.post("/api/pixel/render", async (req, res) => {
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, mongo: mongoState, port: PORT });
+});
+
+const mailDir = path.join(process.cwd(), "data", "mailbox");
+const mailbox = createStore(mailDir);
+const gmail = createGmail(mailDir);
+const mailFail = (res, error) => res.status(error.status || 500).json({ error: error.message || "Mail request failed" });
+
+app.get("/api/mail/status", (_req, res) => {
+  res.json(mailbox.status());
+});
+
+app.get("/api/mail/messages", (req, res) => {
+  try { res.json({ messages: mailbox.list(String(req.query.folder || "inbox"), req.query.q) }); }
+  catch (error) { mailFail(res, error); }
+});
+
+app.get("/api/mail/messages/:id", (req, res) => {
+  try { res.json(mailbox.get(req.params.id)); }
+  catch (error) { mailFail(res, error); }
+});
+
+app.post("/api/mail/messages", (req, res) => {
+  try { res.status(201).json(mailbox.add(req.body || {}, req.body?.folder)); }
+  catch (error) { mailFail(res, error); }
+});
+
+app.patch("/api/mail/messages/:id", (req, res) => {
+  try { res.json(mailbox.patch(req.params.id, req.body || {})); }
+  catch (error) { mailFail(res, error); }
+});
+
+app.delete("/api/mail/messages/:id", (req, res) => {
+  try { res.json(mailbox.remove(req.params.id)); }
+  catch (error) { mailFail(res, error); }
+});
+
+app.post("/api/mail/import", (req, res) => {
+  try { res.json(mailbox.importText(req.body?.text, req.body?.folder || "inbox")); }
+  catch (error) { mailFail(res, error); }
+});
+
+app.get("/api/mail/gmail/status", async (_req, res) => {
+  try { res.json(await gmail.status()); }
+  catch (error) { mailFail(res, error); }
+});
+
+app.post("/api/mail/gmail/connect", async (req, res) => {
+  try { res.json(await gmail.connect(req.body?.user, req.body?.pass)); }
+  catch (error) { mailFail(res, error); }
+});
+
+app.delete("/api/mail/gmail/connect", (_req, res) => {
+  res.json(gmail.disconnect());
+});
+
+app.get("/api/mail/gmail/messages", async (req, res) => {
+  try { res.json({ messages: await gmail.list(String(req.query.folder || "inbox"), req.query.q) }); }
+  catch (error) { mailFail(res, error); }
+});
+
+app.get("/api/mail/gmail/messages/:id", async (req, res) => {
+  try { res.json(await gmail.get(req.params.id)); }
+  catch (error) { mailFail(res, error); }
+});
+
+app.post("/api/mail/gmail/messages", async (req, res) => {
+  try { res.status(201).json(await gmail.add(req.body || {}, req.body?.folder)); }
+  catch (error) { mailFail(res, error); }
+});
+
+app.patch("/api/mail/gmail/messages/:id", async (req, res) => {
+  try { res.json(await gmail.patch(req.params.id, req.body || {})); }
+  catch (error) { mailFail(res, error); }
+});
+
+app.delete("/api/mail/gmail/messages/:id", async (req, res) => {
+  try { res.json(await gmail.remove(req.params.id)); }
+  catch (error) { mailFail(res, error); }
+});
+
+app.post("/api/mail/gmail/import", async (req, res) => {
+  try { res.json(await gmail.importText(req.body?.text, req.body?.folder || "inbox")); }
+  catch (error) { mailFail(res, error); }
+});
+
+app.get("/api/mail/gmail/export", async (req, res) => {
+  try {
+    const file = await gmail.exportText({ id: req.query.id, folder: String(req.query.folder || "inbox"), format: String(req.query.format || "mbox") });
+    res.setHeader("Content-Type", `${file.type}; charset=utf-8`);
+    res.setHeader("Content-Disposition", `attachment; filename="${file.filename}"`);
+    res.send(file.body);
+  } catch (error) { mailFail(res, error); }
+});
+
+app.get("/api/mail/export", (req, res) => {
+  try {
+    const file = mailbox.exportText({ id: req.query.id, folder: String(req.query.folder || "inbox"), format: String(req.query.format || "mbox") });
+    res.setHeader("Content-Type", `${file.type}; charset=utf-8`);
+    res.setHeader("Content-Disposition", `attachment; filename="${file.filename}"`);
+    res.send(file.body);
+  } catch (error) { mailFail(res, error); }
 });
 
 app.get("/api/system", async (req, res) => {
