@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { drawCrisp } from "./pixelEngine.js";
 import { stampWebmDuration } from "./pixelMotion.js";
-import { composeTalkCells } from "./pixelMouth.js";
+import { composeTalkCells, inspectTalk } from "./pixelMouth.js";
 import { LINE_GAP, TALK_FPS, frameAt, lineSchedule, talkMime, voiceEnvelope } from "./pixelTalk.js";
 
 function faceView(face) {
@@ -151,6 +151,15 @@ async function packFace(face) {
   };
 }
 
+function gateMouth(cells) {
+  const report = inspectTalk(cells.closed, cells.open);
+  if (!report.ok) {
+    cells.mid = cells.closed;
+    cells.open = cells.closed;
+  }
+  return report.ok;
+}
+
 async function unpackFace(saved) {
   const cells = {};
   for (const [id, src] of Object.entries(saved.cells || {})) {
@@ -178,12 +187,14 @@ async function unpackFace(saved) {
   }
   const ready = Boolean(cells.closed);
   const settled = ready ? composeTalkCells(cells.closed) : null;
+  const mouthOk = settled ? gateMouth(settled) : true;
   return {
     id: saved.id,
     name: saved.name || "Face",
     photo: saved.photo,
     sprite: saved.sprite || "",
     cells: settled,
+    mouthOk,
     seed: Number.isInteger(saved.seed) ? saved.seed : null,
     status: ready ? "ready" : "photo",
     progress: { done: ready ? 5 : 0, total: 5 },
@@ -360,7 +371,9 @@ export default function StudioPage({ project, onApply, say }) {
           setFaces(next.map(faceView));
           selectedRef.current = next[0]?.id || "";
           setSelected(next[0]?.id || "");
-          setNote(`Cast restored. ${next.length} face${next.length === 1 ? "" : "s"}. Add another face and the same steps run again.`);
+          setNote(next[0]?.mouthOk !== false
+            ? `Cast restored. ${next.length} face${next.length === 1 ? "" : "s"}. Add another face and the same steps run again.`
+            : "Cast restored. The mouth check failed on the saved opening, so play stays on the closed mouth.");
         } catch (error) {
           if (!cancelled) setNote(error.message || "The saved cast could not be opened.");
         }
@@ -430,9 +443,12 @@ export default function StudioPage({ project, onApply, say }) {
       if (cancelRef.current) throw new Error("Stopped.");
       if (Number.isInteger(master.seed)) seed = master.seed;
       const cells = composeTalkCells(await toImageData(master.image));
+      const mouthOk = gateMouth(cells);
       patchFace(face.id, { sprite: master.image, cells, seed, status: "ready", progress: { done: 1, total: 1 } });
       if (selectedRef.current === face.id && stageRef.current) drawCell(stageRef.current, cells.closed, 520);
-      setNote(`${face.name} can talk. Add a line and a voice. Add another face to do this again.`);
+      setNote(mouthOk
+        ? `${face.name} can talk. The mouth check puts the opening on the lips. Add a line, or make a voice. A recording you attach is kept.`
+        : `${face.name} is drawn. The mouth check failed, so the mouth stays closed.`);
       say?.("ok", `${face.name} is ready`);
     } catch (error) {
       patchFace(face.id, { status: facesRef.current.find((item) => item.id === face.id)?.cells?.closed ? "ready" : "photo" });
@@ -500,6 +516,80 @@ export default function StudioPage({ project, onApply, say }) {
       setNote(`${file.name} · ${audio.duration.toFixed(1)}s on ${face.name}.`);
     } catch {
       setNote("That audio could not be read. Use WAV, MP3, or M4A.");
+    }
+  }
+
+  async function makeVoice(line) {
+    if (!line?.text || line.audio || busy) return;
+    setBusy(true);
+    try {
+      const response = await fetch("/api/voice/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: line.text })
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || "VoiceStudio did not speak.");
+      const blob = await (await fetch(body.audio)).blob();
+      const file = new File([blob], "voicestudio.wav", { type: blob.type || "audio/wav" });
+      voiceTargetRef.current = line.id;
+      await onVoiceFile(file);
+      setNote("VoiceStudio spoke this line. A recording already on a line is left as it is.");
+      say?.("ok", "Voice ready");
+    } catch (error) {
+      setNote(error.message);
+      say?.("error", error.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function downloadHyperframes() {
+    const face = facesRef.current.find((item) => item.id === selectedRef.current);
+    const parts = face?.lines.filter((line) => line.audio) || [];
+    if (!face?.cells?.closed || !parts.length) {
+      setNote("Keep the cast, add a line, and give it a voice. HyperFrames reads those saved frames.");
+      return;
+    }
+    const plan = lineSchedule(parts, LINE_GAP);
+    const hop = 1 / TALK_FPS;
+    const clips = [];
+    for (let time = 0; time < plan.duration - 0.0001; time += hop) {
+      const frame = frameAt(plan.captions, time);
+      const last = clips[clips.length - 1];
+      if (last && last.id === frame.id) last.duration += hop;
+      else clips.push({ id: frame.id, start: time, duration: hop });
+    }
+    setBusy(true);
+    try {
+      const response = await fetch("/api/cast/hyperframes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: projectRef.current?.id,
+          faceId: face.id,
+          duration: plan.duration,
+          clips,
+          lines: plan.captions.map((line, index) => ({ id: parts[index].id, text: line.text, start: line.start, duration: line.end - line.start }))
+        })
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "HyperFrames export failed.");
+      }
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${face.name.replace(/[^\w\-]+/g, "-") || "face"}-hyperframes.zip`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 4000);
+      setNote(`Saved ${link.download}. The sprite frames are the picture. HyperFrames does not redraw the face.`);
+      say?.("ok", "HyperFrames export saved");
+    } catch (error) {
+      setNote(error.message);
+      say?.("error", error.message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -662,6 +752,7 @@ export default function StudioPage({ project, onApply, say }) {
           <button className="btn" onClick={playTalk} disabled={!current?.ready || !current.lines.some((line) => line.duration) || busy}>Play</button>
           <button className="btn" onClick={stopTalk} disabled={!current}>Stop</button>
           <button className="btn" onClick={downloadTalk} disabled={!current?.ready || !current.lines.some((line) => line.duration) || busy}>WebM</button>
+          <button className="btn" onClick={downloadHyperframes} disabled={!current?.ready || !current.lines.some((line) => line.duration) || busy}>HyperFrames</button>
         </div>
         <div className="pixel-stage smooth">
           <canvas ref={stageRef} aria-label="Production stage" />
@@ -688,6 +779,7 @@ export default function StudioPage({ project, onApply, say }) {
               <button className="btn" disabled={busy || index === 0} onClick={() => moveLine(line.id, -1)}>Up</button>
               <button className="btn" disabled={busy || index === current.lines.length - 1} onClick={() => moveLine(line.id, 1)}>Down</button>
               <button className="btn" disabled={busy} onClick={() => { voiceTargetRef.current = line.id; voiceRef.current?.click(); }}>{line.duration ? `${line.duration.toFixed(1)}s` : "Voice"}</button>
+              {!line.duration && <button className="btn" disabled={busy} onClick={() => makeVoice(line)}>Make voice</button>}
               <button className="btn" disabled={busy} onClick={() => removeLine(line.id)}>×</button>
             </div>
           </div>

@@ -185,6 +185,27 @@ function asImage(image) {
   return image;
 }
 
+export function inspectTalk(closed, open) {
+  const mouth = findMouth(closed);
+  let lip = 0;
+  let other = 0;
+  const { data: before, width, height } = closed;
+  const after = open.data;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = (y * width + x) * 4;
+      const delta = Math.abs(before[index] - after[index])
+        + Math.abs(before[index + 1] - after[index + 1])
+        + Math.abs(before[index + 2] - after[index + 2]);
+      if (delta < 48) continue;
+      const distance = Math.hypot((x - mouth.cx) / mouth.rx, (y - mouth.cy) / mouth.ryOpen);
+      if (distance < 1.6) lip += 1;
+      else other += 1;
+    }
+  }
+  return { ok: lip >= 30 && other <= lip * 0.35, lip, other, cy: mouth.cy };
+}
+
 export function composeTalkCells(base) {
   const closed = copyImage(base);
   const mid = copyImage(base);

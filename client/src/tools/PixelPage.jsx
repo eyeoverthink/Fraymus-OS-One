@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { buildAppSource, ensureMern } from "../model.js";
 import { brushMask, buildSubjectMask, drawCrisp, fitSource, liftMask, offsetMask, renderPixel, traceCut, trimCeiling, trimSides } from "./pixelEngine.js";
-import { CARTOON_FPS, CLIP_EDGE, CLIP_FPS, EXPORT_EDGE, LIVE_EDGE, isVideoFile, measureDuration, motionView, packFrame, portraitJpeg, seekVideo, stampWebmDuration, styleImage, webmMime } from "./pixelMotion.js";
+import { CARTOON_FPS, CLIP_EDGE, CLIP_FPS, EXPORT_EDGE, LIVE_EDGE, buildMosaic, isVideoFile, measureDuration, motionView, packFrame, paintMosaic, portraitJpeg, seekVideo, stampWebmDuration, styleImage, webmMime } from "./pixelMotion.js";
 import { composeTalkCells } from "./pixelMouth.js";
 import { LINE_GAP, MOUTH_CELLS, TALK_FPS, frameAt, lineSchedule, talkMime, voiceEnvelope } from "./pixelTalk.js";
 
@@ -625,6 +625,15 @@ export default function PixelPage({ project, onApply, say }) {
     }
   }
 
+  function keepLoop(made) {
+    const mosaic = buildMosaic(made);
+    const frames = mosaic.maps.map((_, index) => paintMosaic(mosaic, index));
+    framesRef.current = frames;
+    playIndexRef.current = 0;
+    setFrameCount(frames.length);
+    return mosaic;
+  }
+
   async function styleClip() {
     const video = clipRef.current;
     const duration = durationRef.current;
@@ -655,19 +664,15 @@ export default function PixelPage({ project, onApply, say }) {
         setNote(`Styling frame ${i + 1} of ${total}.`);
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
-      framesRef.current = made;
-      playIndexRef.current = 0;
-      setFrameCount(made.length);
+      const mosaic = keepLoop(made);
       stylingRef.current = false;
       setPlaying(true);
-      say?.("ok", `${made.length} frames styled`);
+      setNote(`Styled loop · ${mosaic.maps.length} frames · ${mosaic.chunks} mosaic chunks cover ${mosaic.tiles} tiles. Playback reads the chunks.`);
+      say?.("ok", `${mosaic.maps.length} frames styled`);
     } catch (error) {
       stylingRef.current = false;
-      if (made.length) {
-        framesRef.current = made;
-        setFrameCount(made.length);
-      }
-      setNote(error.message === "Stopped." ? `Stopped at frame ${made.length} of ${total}.` : error.message);
+      if (made.length) keepLoop(made);
+      setNote(error.message === "Stopped." ? `Stopped at frame ${made.length} of ${total}. The finished frames are a mosaic loop.` : error.message);
       if (error.message !== "Stopped.") say?.("error", error.message);
     } finally {
       stylingRef.current = false;
@@ -723,20 +728,15 @@ export default function PixelPage({ project, onApply, say }) {
         if (resultRef.current) drawCrisp(resultRef.current, frame, 520);
         setVideoProgress({ done: i + 1, total });
       }
-      framesRef.current = made;
-      playIndexRef.current = 0;
-      setFrameCount(made.length);
+      const mosaic = keepLoop(made);
       stylingRef.current = false;
       setPlaying(true);
-      setNote(`Cartoon ready · ${made.length} frames · seed ${seed}.`);
-      say?.("ok", `${made.length} cartoon frames`);
+      setNote(`Cartoon loop · ${mosaic.maps.length} frames · seed ${seed} · ${mosaic.chunks} mosaic chunks cover ${mosaic.tiles} tiles.`);
+      say?.("ok", `${mosaic.maps.length} cartoon frames`);
     } catch (error) {
       stylingRef.current = false;
-      if (made.length) {
-        framesRef.current = made;
-        setFrameCount(made.length);
-      }
-      setNote(error.message === "Stopped." ? `Stopped at cartoon frame ${made.length} of ${total}.` : error.message);
+      if (made.length) keepLoop(made);
+      setNote(error.message === "Stopped." ? `Stopped at cartoon frame ${made.length} of ${total}. The finished frames are a mosaic loop.` : error.message);
       if (error.message !== "Stopped.") say?.("error", error.message);
     } finally {
       stylingRef.current = false;

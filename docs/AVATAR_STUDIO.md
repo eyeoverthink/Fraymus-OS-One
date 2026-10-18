@@ -62,6 +62,8 @@ The mouth is not a second drawing of the face. One sprite stays put. Closed, mid
 
 The four frames are stored as JPEG. A voice is stored as WAV. The project file stays under the studio's size limit. If a cast is too large, remove a face and keep it again.
 
+A line with no recording can ask VoiceStudio, on `127.0.0.1:3900`, to speak the words. A line that already has a recording is left alone. **HyperFrames** downloads a zip of those saved frames, the voice, and the captions. It does not call the model. Before the mouth is used, a check measures the opening against the lip slit. If that opening sits outside the lips, the face stays closed. A save that forgets the cast does not erase a cast already on disk.
+
 ## First slice
 
 **Talk** on the 8-bit tab is one picture. The steps are in [8-bit motion](8BIT_MOTION.md). Production is the cast of many faces.

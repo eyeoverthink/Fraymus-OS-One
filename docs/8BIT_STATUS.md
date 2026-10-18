@@ -39,7 +39,7 @@ The still views (photo, Real outfit, Avatar, Character, Trace, Abstract) stay in
 
 **Style video** seeks the whole clip at 10 frames a second. Nothing is dropped. Each frame is scaled to 480px on the long edge. The square follows the band of the frame that has facial detail, so a flat wall does not become the picture. Blocks are 2 pixels. Frames are kept up to 720px and the WebM is written at a high bitrate so a player does not blur the edges. The file length is written into the WebM, because a browser recording otherwise opens as 0:00.
 
-This path is the one to use for a live camera and for a quick pixel pass. It is not the cartoon. A 2-pixel grid of a real photo still reads as a grainy photograph.
+This path is the one to use for a live camera and for a quick pixel pass. A 2-pixel grid of a real photo still reads as a grainy photograph. When the clip is finished, each frame is stored as mosaic chunks: an 8-pixel tile is reused while it stays the same, and playback reads that set.
 
 ## Cartoon video
 

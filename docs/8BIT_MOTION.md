@@ -24,10 +24,10 @@ The sliders that apply are Block, Colors, Reach, Saturation, Outline, and Cyan. 
 2. The note shows the file name, length, size, and how many frames will be styled. The sample rate is 10 frames a second for the whole clip. Nothing is dropped to save time. Some WebM files, including ones recorded in the browser, report an infinite length until the player seeks to the end. The studio does that measurement first, then seeks back to the start. If the length still cannot be read, styling does not start.
 3. Set the sliders and the view, then press **Style video**. Each frame is seeked and scaled to 480px on the long edge. The square follows the band of the frame that has facial detail, so a flat wall or a wide hat does not become the picture and the face fills it. Video blocks are 2 pixels. Frames are kept at the render size, up to 720px, and the WebM is written at a high bitrate so the player does not blur them back into mush. A wide frame stays square on the person. The stage shows the frame that just finished, and the button counts `Frame n/total`.
 4. **Stop** keeps the frames already finished. It does not invent the rest.
-5. **Play** loops those frames at 10 fps. **Pause** holds the current one.
+5. **Play** loops those frames at 10 fps. Before play starts, the frames are cut into 8-pixel mosaic chunks. A chunk that still matches the one before it is kept, so a still background does not flicker, and the end of the loop reuses the opening chunk when the picture has returned. **Pause** holds the current one.
 6. **WebM** records the styled frames with `MediaRecorder` to `fraymus-8bit.webm` at 10 fps, then writes the real length into the file. A browser recording otherwise saves with a length of 0:00, and the player will not move. The browser has to support WebM. If it does not, the note says so, and **Edit this frame** plus **PNG** is the still export.
 7. **Edit this frame** seeks the original video to the frame on screen and loads that full-resolution image into the still editor. AI Render and the mask tools then apply to that one picture, not to the clip.
-8. **Cartoon video** sends each frame to `/api/pixel/render`. It samples 2 frames a second, because one still takes about 10 seconds. The first frame's seed is reused for the rest. Real outfit keeps the clothes in the video. Avatar uses the studio costume. A style reference, if one is set, is the drawing every frame copies. Stop keeps the frames already drawn. Play and WebM use that 2 fps rate. The progress line stays visible while a video is loaded.
+8. **Cartoon video** sends each frame to `/api/pixel/render`. It samples 2 frames a second, because one still takes about 10 seconds. The first frame's seed is reused for the rest. Real outfit keeps the clothes in the video. Avatar uses the studio costume. A style reference, if one is set, is the drawing every frame copies. Stop keeps the frames already drawn. Those frames then become the same mosaic chunks as Style video, and Play and WebM read that loop at 2 fps. The progress line stays visible while a video is loaded.
 
 Changing a slider does not restyle a clip that is already playing. Press **Style video** again to rebuild it.
 
@@ -47,7 +47,7 @@ Building the buffer paints the mouth and the blink on the approved sprite. Playi
 
 | File | Role |
 | --- | --- |
-| `client/src/tools/pixelMotion.js` | Frame grab, filter, seek, WebM mime check |
+| `client/src/tools/pixelMotion.js` | Frame grab, filter, mosaic chunks, seek, WebM mime check |
 | `client/src/tools/pixelTalk.js` | Mouth names, voice loudness, talk WebM mime |
 | `client/src/tools/PixelPage.jsx` | Camera loop, video controls, playback, export |
 | `client/src/tools/pixelEngine.js` | The filter itself (`renderPixel`) |

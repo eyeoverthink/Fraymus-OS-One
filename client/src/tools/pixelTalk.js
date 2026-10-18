@@ -81,20 +81,28 @@ function voicedSpan(envelope, hop) {
 
 function wordAt(text, envelope, time, hop) {
   const words = String(text || "").split(/\s+/).filter(Boolean);
-  if (!words.length) return null;
+  if (!words.length) return { word: "", start: 0, end: 0 };
   const span = voicedSpan(envelope, hop);
   const weights = words.map((word) => Math.max(1, word.replace(/[^a-z]/gi, "").length));
   const total = weights.reduce((sum, weight) => sum + weight, 0);
   let cursor = span.start;
   for (let i = 0; i < words.length; i += 1) {
     const width = ((span.end - span.start) * weights[i]) / total;
-    const end = cursor + width * 0.9;
+    const spoken = cursor + width * 0.9;
     if (time >= cursor && time < cursor + width) {
-      return time < end ? words[i] : "";
+      return { word: time < spoken ? words[i] : "", start: cursor, end: spoken };
     }
     cursor += width;
   }
-  return "";
+  return { word: "", start: cursor, end: cursor };
+}
+
+function letterAt(word, start, end, time) {
+  const letters = String(word || "").replace(/[^a-z]/gi, "");
+  if (!letters) return "";
+  const span = Math.max(0.001, end - start);
+  const index = Math.min(letters.length - 1, Math.floor(((time - start) / span) * letters.length));
+  return letters[index].toLowerCase();
 }
 
 export function frameAt(captions, time) {
@@ -104,13 +112,10 @@ export function frameAt(captions, time) {
     if (line.hold && line.hold !== "auto") return { id: line.hold, text: line.text };
     const energy = mouthAt(line.envelope, local);
     if (energy === "blink") return { id: "blink", text: line.text };
-    const word = wordAt(line.text, line.envelope, local, TALK_HOP);
-    if (word === "") return { id: "closed", text: line.text };
-    const vowels = (word.match(/[aeiouy]/gi) || []).length;
-    let id = energy;
-    if (word && energy === "closed") id = "mid";
-    if (word && (vowels >= 2 || word.length > 4) && energy !== "closed") id = "open";
-    return { id, text: line.text };
+    const spot = wordAt(line.text, line.envelope, local, TALK_HOP);
+    if (!spot.word || energy === "closed") return { id: "closed", text: line.text };
+    const letter = letterAt(spot.word, spot.start, spot.end, local);
+    return { id: "aeiou".includes(letter) ? "open" : "mid", text: line.text };
   }
   const upcoming = captions.find((item) => time < item.start);
   return { id: "closed", text: upcoming?.text || captions[captions.length - 1]?.text || "" };

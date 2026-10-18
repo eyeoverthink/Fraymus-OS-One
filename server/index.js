@@ -65,10 +65,23 @@ function readProjects() {
     .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 }
 
+function rememberCast(doc) {
+  if (!validId(doc.id) || Object.prototype.hasOwnProperty.call(doc, "cast")) return doc;
+  const file = safeJoin(projectDir, `${doc.id}.json`);
+  if (!fs.existsSync(file)) return doc;
+  try {
+    const saved = JSON.parse(fs.readFileSync(file, "utf8"));
+    if (saved.cast?.faces?.length) return { ...doc, cast: saved.cast };
+  } catch {
+    return doc;
+  }
+  return doc;
+}
+
 function writeProject(doc) {
   if (!validId(doc.id)) throw new Error("Bad project id");
   const file = safeJoin(projectDir, `${doc.id}.json`);
-  const next = { ...doc, updatedAt: Date.now() };
+  const next = { ...rememberCast(doc), updatedAt: Date.now() };
   const raw = JSON.stringify(next);
   if (raw.length > 8_000_000) throw new Error("Project is too large");
   fs.writeFileSync(file, raw);
@@ -699,6 +712,142 @@ for (const [name, file] of Object.entries(vendorSources())) {
     res.sendFile(file);
   });
 }
+
+const VOICE_URL = process.env.VOICESTUDIO_URL || "http://127.0.0.1:3900";
+
+app.get("/api/voice/health", async (req, res) => {
+  try {
+    const response = await fetch(`${VOICE_URL}/health`);
+    const body = await response.json().catch(() => ({}));
+    res.status(response.ok ? 200 : 502).json({ ok: response.ok, voice: "VoiceStudio", ...body });
+  } catch {
+    res.status(503).json({ ok: false, error: "VoiceStudio is not running on 127.0.0.1:3900." });
+  }
+});
+
+app.post("/api/voice/speak", async (req, res) => {
+  const text = String(req.body?.text || "").trim().slice(0, 4096);
+  if (!text) return res.status(400).json({ error: "Write the line first." });
+  try {
+    const response = await fetch(`${VOICE_URL}/v1/audio/speech`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer local" },
+      body: JSON.stringify({
+        model: "tts-1",
+        voice: req.body?.voice || "default",
+        input: text,
+        response_format: "wav",
+        speed: 1
+      })
+    });
+    if (!response.ok) {
+      const err = await response.text();
+      return res.status(502).json({ error: err.slice(0, 240) || "VoiceStudio did not speak." });
+    }
+    const audio = Buffer.from(await response.arrayBuffer());
+    const mime = response.headers.get("content-type") || "audio/wav";
+    res.json({ audio: `data:${mime.split(";")[0]};base64,${audio.toString("base64")}`, bytes: audio.length });
+  } catch {
+    res.status(503).json({ error: "VoiceStudio is not running on 127.0.0.1:3900. Open it, then make the voice." });
+  }
+});
+
+function dataBuffer(url) {
+  const match = String(url || "").match(/^data:[^;]+;base64,(.+)$/);
+  return match ? Buffer.from(match[1], "base64") : null;
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[ch]));
+}
+
+app.post("/api/cast/hyperframes", (req, res) => {
+  try {
+    const projectId = String(req.body?.projectId || "");
+    const faceId = String(req.body?.faceId || "");
+    if (!validId(projectId)) return res.status(400).json({ error: "Bad project id" });
+    const file = safeJoin(projectDir, `${projectId}.json`);
+    if (!fs.existsSync(file)) return res.status(404).json({ error: "That project is not saved." });
+    const project = JSON.parse(fs.readFileSync(file, "utf8"));
+    const face = (project.cast?.faces || []).find((item) => item.id === faceId);
+    if (!face?.cells?.closed) return res.status(400).json({ error: "Keep the cast first. HyperFrames reads the saved sprite." });
+    const clips = Array.isArray(req.body?.clips) ? req.body.clips : [];
+    const lines = Array.isArray(req.body?.lines) ? req.body.lines : [];
+    const duration = Number(req.body?.duration);
+    if (!clips.length || !Number.isFinite(duration) || duration <= 0) {
+      return res.status(400).json({ error: "The timeline is empty." });
+    }
+    const cells = ["closed", "mid", "open", "blink"];
+    const pictures = {};
+    for (const id of cells) {
+      const body = dataBuffer(face.cells[id] || face.cells.closed);
+      if (!body) return res.status(400).json({ error: "A mouth frame is missing from the saved cast." });
+      pictures[id] = body;
+    }
+    const voices = [];
+    for (const line of face.lines || []) {
+      const wav = dataBuffer(line.wav);
+      if (wav) voices.push({ id: line.id, wav });
+    }
+    const width = 768;
+    const height = 768;
+    const frames = clips.map((clip, index) => {
+      const id = cells.includes(clip.id) ? clip.id : "closed";
+      const start = Number(clip.start) || 0;
+      const span = Math.max(0.001, Number(clip.duration) || 0);
+      return `<img id="frame-${index}" data-start="${start.toFixed(3)}" data-duration="${span.toFixed(3)}" data-track-index="1" src="${id}.jpg" alt="" style="width:${width}px;height:${height}px;object-fit:contain">`;
+    }).join("\n");
+    const voiceTags = lines.map((line, index) => {
+      const voice = voices.find((item) => item.id === line.id) || voices[index];
+      if (!voice) return "";
+      const start = Number(line.start) || 0;
+      const span = Math.max(0.1, Number(line.duration) || 0);
+      return `<audio id="voice-${index}" data-start="${start.toFixed(3)}" data-duration="${span.toFixed(3)}" data-track-index="2" src="voice-${index}.wav" data-volume="1"></audio>`;
+    }).filter(Boolean).join("\n");
+    const captions = lines.map((line, index) => {
+      const start = Number(line.start) || 0;
+      const span = Math.max(0.1, Number(line.duration) || 0);
+      return `<div class="cap" id="cap-${index}" data-start="${start.toFixed(3)}" data-duration="${span.toFixed(3)}" data-track-index="3">${escapeHtml(line.text || "")}</div>`;
+    }).join("\n");
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>${escapeHtml(face.name || "cast")}</title>
+<style>
+  html, body { margin: 0; background: #0a0a0b; }
+  [data-composition-id="fraymus-cast"] { position: relative; background: #0a0a0b; overflow: hidden; }
+  [data-composition-id="fraymus-cast"] img { display: block; }
+  .cap { position: absolute; left: 0; right: 0; bottom: 28px; color: #e7eee8; font: 28px ui-monospace, monospace; text-align: center; }
+</style>
+</head>
+<body>
+<div data-composition-id="fraymus-cast" data-start="0" data-duration="${duration.toFixed(3)}" data-width="${width}" data-height="${height}">
+${frames}
+${voiceTags}
+${captions}
+</div>
+</body>
+</html>`;
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", `attachment; filename="${String(face.name || "cast").replace(/[^\w\-]+/g, "-")}-hyperframes.zip"`);
+    const archive = archiver("zip", { zlib: { level: 9 } });
+    archive.on("error", (error) => {
+      console.error(error);
+      if (!res.headersSent) res.status(500).end();
+    });
+    archive.pipe(res);
+    archive.append(html, { name: "index.html" });
+    for (const id of cells) archive.append(pictures[id], { name: `${id}.jpg` });
+    lines.forEach((line, index) => {
+      const voice = voices.find((item) => item.id === line.id) || voices[index];
+      if (voice) archive.append(voice.wav, { name: `voice-${index}.wav` });
+    });
+    archive.finalize();
+  } catch (error) {
+    if (!res.headersSent) res.status(400).json({ error: error.message || "HyperFrames export failed." });
+  }
+});
 
 app.use("/published", express.static(publishedDir, { index: "index.html" }));
 
