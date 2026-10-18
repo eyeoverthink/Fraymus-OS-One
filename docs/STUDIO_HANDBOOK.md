@@ -191,3 +191,31 @@ What the user approved, after filter-only versions were rejected as "horrible":
 7. Verify it in the browser with screenshots, show the user, and ask for feedback.
 8. Add a README section with screenshots in `docs/showcase/`, but only if asked.
 9. Commit after scanning for secrets and faces. Push only when the user says so.
+
+## 9. Living Seal (`SealPage.jsx`)
+
+The `Seal` workspace (`seal`) bridges the studio's three pillars—Production avatars (`composeTalkCells`, `inspectTalk`, `frameAt`), ProtocolZero single-glyph variation-selector steganography (`encodeWire`/`decodeWire`), and Dispatch's cryptographic envelope (`Ed25519` / `ECDSA-P256` + 4-leaf Merkle tree + `FSEL` v1 deflate wire)—into a single copy-pasteable emoji that carries:
+
+1. **Master 8-bit sprite** (compact WebP/PNG) that locally recomposes `closed`, `mid`, `open`, and `blink` frames on the recipient's stage and passes the `inspectTalk` lip-slit REA check.
+2. **Embedded WAV voice** (either downsampled from a project Cast member's line or synthesized on the fly) + precomputed lip-sync timeline spans (`clips`).
+3. **4-leaf Merkle proof** (`sprite`, `voice`, `timeline`, `script`) + `Ed25519`/`ECDSA-P256` signature + FRAYMUS number addressing (`fx-xxxx-xxxx-xxxx-xxxx`) + one-click delivery into the local `Mail` inbox or current `Code` project (`applySeal`).
+
+## 10. Ouroboros Quantum Brain (`BrainPage.jsx`)
+
+The `Brain` workspace (`brain`) brings the Ouroboros 5-Stage Quantum RSI + $\mathcal{PT}$-Symmetric $EP_3$ Oracle + Centripetal Orbital Memory engine into the studio:
+
+1. **Centripetal Orbital Memory (`CentripetalMemoryEngine` + `PolarGenomeNode`)**: Polar lattice using the Golden Angle $\theta_g = 2\pi(1 - 1/\phi) \approx 137.507764^\circ$, genome orbital radius $r_k = (1 - \min(1, I_k))^\phi \times 10$, falsifiable continuity metric $I_k(0.5 + 0.5\min(100, \text{access})/100)$, and data memory orbitals $r_k(t+1) = \max(0, r_k(t) - \alpha\Phi + \beta\Xi_{\text{Rule30}})$ with a $R_{\text{horizon}} = 21.0$ Holographic Boundary Lattice (`DigitalBlackHole`).
+2. **Wolfram Rule 30 Deterministic Chaos (`WolframRule30`)**: Class III cellular automaton ($s_i^{(t+1)} = s_{i-1}^{(t)} \oplus (s_i^{(t)} \lor s_{i+1}^{(t)})$) seeded by SHA-256 bytes, driving both Timeline $\beta$ stochastic mutations and centrifugal memory drift.
+3. **5-Stage Quantum + $\mathcal{PT}$-Symmetric $EP_3$ Verification Gauntlet ($\epsilon = 10^{-12}$)**:
+   - Stage 1: CHSH Bell Entanglement ($S = 2\sqrt{2}$ Tsirelson bound).
+   - Stage 2: 3-Qubit Grover Amplitude Amplification ($P_1 = 25/32$, $P_2 = 121/128$ on $|101\rangle$).
+   - Stage 3: Complex Phase Quantum Teleportation ($F = 1.0$, $P = 0.25$ across all 4 classical Bell branches).
+   - Stage 4: Unitary Reversibility $U^\dagger U = I$ across a 7-gate non-commuting circuit.
+   - Stage 5: $\mathcal{PT}$-Symmetric Non-Hermitian $EP_3$ Exceptional Point at $\gamma_{\text{EP3}} = \sqrt{2}$ ($\|H(\sqrt{2})v_{\text{EP3}}\|_2 = 0$, $\|H(\sqrt{2})^2\|_F = 4.0$, $\|H(\sqrt{2})^3\|_F = 0.0$, unbroken real split $= 1.0$, broken imaginary split $= 1.0$).
+4. **Tri-Timeline Evolution, Temporal Fossil Archive (`.bak`), and `FBRN` Signed Brain Spore**: Evaluates `TIMELINE_ALPHA_AST`, `TIMELINE_BETA_RULE30`, and `TIMELINE_GAMMA_BUTTERFLY` (zero-allocation bitwise butterfly gates), archives superseded nuclei for instant `.bak` rollback, and packs/verifies the entire evolved brain inside a single `Ed25519`-signed emoji (`🧠` / `FBRN` v1).
+5. **Constructed feeling (`emotionCore.js`)**: Interoception `b = [energy, integrity, bond, uncertainty]` against set-points. Valence is `−‖b − b*‖` plus the dopamine surprise. Arousal is prediction-error urgency. Named feelings (fear, anger, sadness, joy, pride, curiosity, affection, gratitude, guilt) are OCC/Scherer appraisals, may conflict, and decay unless refreshed. They move real dials: fear can block Timeline Beta and force a re-check, curiosity lowers the Babel ignition threshold, sadness lengthens replay, joy and pride raise trust gain. Babel trials store a Damasio marker on the trust key and read it before the next guess. A partner appraisal runs the same model for Vaughn, including a ToMi and FANToM check. Ground OPEG runs the Transmission Bridge WASM (`ep3_condition` = √x, `puiseux_leading` = 40-step cube root) and only then allows the S3→S4 memory update.
+6. **Structural consciousness audit (`consciousnessProof.js`)**: Pearl effective information, directed Phi_MIP over every nontrivial cut, mirror ablation, and counterfactual survival gain. Theater, feedforward, and split-brain substrates are denied. The strange-loop core passes only when the self-model is learned: blinding it leaves surprise at 1 bit, and the rollout picks the phase flip solely when that model says the flip lowers P(0000)+P(1111). An uncalibrated model is not allowed to move the act. Phenomenal feeling is outside what this audit can show.
+7. **Sovereign Bicameral Cortex (`runLocalNeedleReflex` + Local Ollama + Infinite DNA Continuity)**: Pairs the $<1\text{ ms}$ self-contained Needle/Babel reflex engine (somatic gut-checks, emoji-precedence analogical transfer, OPEG WASM math, and 2-bit DNA plasmid packing `00=A, 01=C, 10=G, 11=T`) with local Ollama models on `127.0.0.1:11434` (`fraynix-dna:3b`, `hermes3:latest`, `gemma4:latest`, `qwen2.5:0.5b`, or the 3-stage `council:3-tier` speculative pipeline). Constructed emotion dials physically set `temperature`, `top_p`, and FEAR double-check passes; `🌙 PB Dream Replay` consolidates inner orbital memories into core axioms at $r = 0.85$; and Cycle 3 unlocks `TIMELINE_DELTA_CORTEX` (zero-trig unrolled register kernel).
+
+
+

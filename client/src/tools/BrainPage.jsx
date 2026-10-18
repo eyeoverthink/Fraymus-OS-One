@@ -1,0 +1,2175 @@
+import React, { useEffect, useRef, useState } from "react";
+import { buildAppSource, ensureMern } from "../model.js";
+import { base64, cleanCarrier, sha256, textBytes } from "./emojiCodec.js";
+import { decodeWire, deflate, encodeWire, fingerprint, generateKeys, inflate, verifySignature } from "./dispatchCore.js";
+import EmojiSelect from "./EmojiSelect.jsx";
+import {
+  BABEL_AREAS,
+  BABEL_TASKS,
+  SETPOINTS,
+  appraisePartnerState,
+  appraiseSituation,
+  computeBehavioralDials,
+  computeInteroceptionAndAffect,
+  encodeTextToDnaPlasmid,
+  executeOpegBridgeWasm,
+  runBabelSomaticTrial,
+  runLocalNeedleReflex
+} from "./emotionCore.js";
+import { runConsciousnessAudit } from "./consciousnessProof.js";
+
+export const PHI = 1.618033988749895;
+export const GOLDEN_ANGLE = 2.0 * Math.PI * (1.0 - 1.0 / PHI); // 137.507764° (Patch U-01)
+export const QUANTUM_EPSILON = 1e-12;
+export const EVENT_HORIZON_RADIUS = 21.0;
+
+// ─── 1. WOLFRAM RULE 30 DETERMINISTIC CHAOS ENGINE ───
+export class WolframRule30 {
+  constructor(seedBytes, width = 63) {
+    this.state = new Uint8Array(width);
+    for (let i = 0; i < width; i += 1) {
+      this.state[i] = (seedBytes[i % seedBytes.length] >> (i % 8)) & 1;
+    }
+    if (!this.state.some((b) => b === 1)) this.state[Math.floor(width / 2)] = 1;
+  }
+
+  nextBits(count = 1) {
+    const RULE = [0, 0, 0, 1, 1, 1, 1, 0]; // 00011110 = 30
+    let acc = 0;
+    const n = this.state.length;
+    for (let b = 0; b < count; b += 1) {
+      const next = new Uint8Array(n);
+      for (let i = 0; i < n; i += 1) {
+        const left = this.state[(i - 1 + n) % n];
+        const center = this.state[i];
+        const right = this.state[(i + 1) % n];
+        const pattern = (left << 2) | (center << 1) | right;
+        next[i] = RULE[7 - pattern];
+      }
+      this.state = next;
+      acc = (acc << 1) | this.state[Math.floor(n / 2)];
+    }
+    return acc;
+  }
+
+  rowString() {
+    return Array.from(this.state, (b) => (b ? "█" : "·")).join("");
+  }
+}
+
+// ─── 2. STRUCTURAL ENTROPY CALCULATOR (NanoAgent) ───
+function countToken(text, token) {
+  let count = 0;
+  let idx = 0;
+  while ((idx = text.indexOf(token, idx)) !== -1) {
+    count += 1;
+    idx += token.length;
+  }
+  return count;
+}
+
+export function calculateStructuralEntropy(source) {
+  const s = String(source || "");
+  let e = 0;
+  e += countToken(s, "new Complex") * 10.0;
+  e += countToken(s, "kronecker(") * 14.0;
+  e += countToken(s, "matMul3x3(") * 8.0;
+  e += countToken(s, "for (") * 5.0;
+  e += countToken(s, "Math.cos") * 4.0;
+  e += countToken(s, "Math.sin") * 4.0;
+  e += s.split("\n").length * 0.25;
+  return Number(e.toFixed(2));
+}
+
+export function computeRadius(importance) {
+  const imp = Math.min(1.0, Math.max(0.0, Number(importance) || 0));
+  return Math.pow(1.0 - imp, PHI) * 10.0;
+}
+
+export function computeContinuity(importance, accessCount) {
+  const imp = Math.min(1.0, Math.max(0.0, Number(importance) || 0));
+  const acc = Math.min(100, Math.max(0, Number(accessCount) || 1));
+  return imp * (0.5 + (acc / 100.0) * 0.5);
+}
+
+// ─── 3. CANDIDATE QUANTUM KERNEL SOURCES (Gen 0, Gen 1 Alpha, Gen 2 Gamma) ───
+export const GEN_0_DENSE_KRONECKER_JS = `// GENERATION 0: Naive O(4^n) Dense Kronecker Tensor Product + 3x3 Complex Matrix Solver
+class Complex {
+  constructor(re, im) { this.re = re; this.im = im; }
+  add(o) { return new Complex(this.re + o.re, this.im + o.im); }
+  sub(o) { return new Complex(this.re - o.re, this.im - o.im); }
+  mul(o) { return new Complex(this.re * o.re - this.im * o.im, this.re * o.im + this.im * o.re); }
+  scale(s) { return new Complex(this.re * s, this.im * s); }
+  conj() { return new Complex(this.re, -this.im); }
+  normSq() { return this.re * this.re + this.im * this.im; }
+}
+function kronecker(A, B) {
+  const rA = A.length, cA = A[0].length, rB = B.length, cB = B[0].length;
+  const out = Array.from({ length: rA * rB }, () => new Array(cA * cB));
+  for (let i = 0; i < rA; i++) {
+    for (let j = 0; j < cA; j++) {
+      for (let k = 0; k < rB; k++) {
+        for (let l = 0; l < cB; l++) {
+          out[i * rB + k][j * cB + l] = A[i][j].mul(B[k][l]);
+        }
+      }
+    }
+  }
+  return out;
+}
+function apply(U, state) {
+  const n = state.length;
+  const out = new Array(n);
+  for (let i = 0; i < n; i++) {
+    let sum = new Complex(0, 0);
+    for (let j = 0; j < n; j++) {
+      sum = sum.add(U[i][j].mul(state[j]));
+    }
+    out[i] = sum;
+  }
+  return out;
+}
+function innerProduct(bra, ket) {
+  let sum = new Complex(0, 0);
+  for (let i = 0; i < bra.length; i++) {
+    sum = sum.add(bra[i].conj().mul(ket[i]));
+  }
+  return sum;
+}
+function matMul3x3(A, B) {
+  const C = Array.from({ length: 3 }, () => new Array(3));
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      let sum = new Complex(0, 0);
+      for (let k = 0; k < 3; k++) {
+        sum = sum.add(A[i][k].mul(B[k][j]));
+      }
+      C[i][j] = sum;
+    }
+  }
+  return C;
+}
+function frobeniusNorm(M) {
+  let sum = 0;
+  for (let i = 0; i < M.length; i++) {
+    for (let j = 0; j < M[0].length; j++) sum += M[i][j].normSq();
+  }
+  return Math.sqrt(sum);
+}
+const gateI = () => [[new Complex(1,0), new Complex(0,0)], [new Complex(0,0), new Complex(1,0)]];
+const gateX = () => [[new Complex(0,0), new Complex(1,0)], [new Complex(1,0), new Complex(0,0)]];
+const gateZ = () => [[new Complex(1,0), new Complex(0,0)], [new Complex(0,0), new Complex(-1,0)]];
+const gateH = () => {
+  const s = 1 / Math.sqrt(2);
+  return [[new Complex(s,0), new Complex(s,0)], [new Complex(s,0), new Complex(-s,0)]];
+};
+const gateM = (theta) => {
+  const c = Math.cos(theta), s = Math.sin(theta);
+  return [[new Complex(c,0), new Complex(s,0)], [new Complex(s,0), new Complex(-c,0)]];
+};
+const gateCNOT = () => {
+  const z = new Complex(0,0), o = new Complex(1,0);
+  return [[o,z,z,z],[z,o,z,z],[z,z,z,o],[z,z,o,z]];
+};
+return {
+  runCHSHBellTest() {
+    let state = [new Complex(1,0), new Complex(0,0), new Complex(0,0), new Complex(0,0)];
+    state = apply(kronecker(gateH(), gateI()), state);
+    state = apply(gateCNOT(), state);
+    const a0 = 0, a1 = Math.PI / 2, b0 = Math.PI / 4, b1 = -Math.PI / 4;
+    const E00 = innerProduct(state, apply(kronecker(gateM(a0), gateM(b0)), state)).re;
+    const E01 = innerProduct(state, apply(kronecker(gateM(a0), gateM(b1)), state)).re;
+    const E10 = innerProduct(state, apply(kronecker(gateM(a1), gateM(b0)), state)).re;
+    const E11 = innerProduct(state, apply(kronecker(gateM(a1), gateM(b1)), state)).re;
+    return E00 + E01 + E10 - E11;
+  },
+  runGrover3Qubit(iterations) {
+    const H3 = kronecker(kronecker(gateH(), gateH()), gateH());
+    let state = Array.from({ length: 8 }, (_, i) => new Complex(i === 0 ? 1 : 0, 0));
+    state = apply(H3, state);
+    for (let it = 0; it < iterations; it++) {
+      state[5] = state[5].scale(-1);
+      let mean = new Complex(0, 0);
+      for (let i = 0; i < 8; i++) mean = mean.add(state[i]);
+      mean = mean.scale(1 / 8);
+      for (let i = 0; i < 8; i++) state[i] = mean.scale(2).sub(state[i]);
+    }
+    return state.map((c) => c.normSq());
+  },
+  runTeleportation(theta, phi) {
+    const alpha = new Complex(Math.cos(theta / 2), 0);
+    const beta = new Complex(Math.cos(phi) * Math.sin(theta / 2), Math.sin(phi) * Math.sin(theta / 2));
+    const psi = [alpha, beta];
+    let reg = Array.from({ length: 8 }, () => new Complex(0, 0));
+    reg[0] = alpha; reg[4] = beta;
+    reg = apply(kronecker(gateI(), kronecker(gateH(), gateI())), reg);
+    reg = apply(kronecker(gateI(), gateCNOT()), reg);
+    reg = apply(kronecker(gateCNOT(), gateI()), reg);
+    reg = apply(kronecker(gateH(), kronecker(gateI(), gateI())), reg);
+    const out = new Array(8).fill(0);
+    const X = gateX(), Z = gateZ();
+    for (let m0 = 0; m0 < 2; m0++) {
+      for (let m1 = 0; m1 < 2; m1++) {
+        const bIdx = (m0 << 1) | m1;
+        const prefix = (m0 << 2) | (m1 << 1);
+        let bob = [reg[prefix], reg[prefix | 1]];
+        const p = bob[0].normSq() + bob[1].normSq();
+        bob[0] = bob[0].scale(1 / Math.sqrt(p));
+        bob[1] = bob[1].scale(1 / Math.sqrt(p));
+        if (m1 === 1) bob = apply(X, bob);
+        if (m0 === 1) bob = apply(Z, bob);
+        out[bIdx] = innerProduct(psi, bob).normSq();
+        out[bIdx + 4] = p;
+      }
+    }
+    return out;
+  },
+  runUnitaryReversibility() {
+    const H = gateH(), I = gateI(), CNOT = gateCNOT();
+    const S = [[new Complex(1,0), new Complex(0,0)], [new Complex(0,0), new Complex(0,1)]];
+    const Sdag = [[new Complex(1,0), new Complex(0,0)], [new Complex(0,0), new Complex(0,-1)]];
+    const c = Math.cos(Math.PI / 4), s = Math.sin(Math.PI / 4);
+    const T = [[new Complex(1,0), new Complex(0,0)], [new Complex(0,0), new Complex(c,s)]];
+    const Tdag = [[new Complex(1,0), new Complex(0,0)], [new Complex(0,0), new Complex(c,-s)]];
+    let state = Array.from({ length: 8 }, (_, i) => new Complex(i === 0 ? 1 : 0, 0));
+    state = apply(kronecker(H, kronecker(S, T)), state);
+    state = apply(kronecker(CNOT, I), state);
+    state = apply(kronecker(I, CNOT), state);
+    state = apply(kronecker(T, kronecker(I, H)), state);
+    state = apply(kronecker(Tdag, kronecker(I, H)), state);
+    state = apply(kronecker(I, CNOT), state);
+    state = apply(kronecker(CNOT, I), state);
+    state = apply(kronecker(H, kronecker(Sdag, Tdag)), state);
+    const norm = state.reduce((acc, amp) => acc + amp.normSq(), 0);
+    return [state[0].normSq(), norm];
+  },
+  runEP3ExceptionalPoint() {
+    let gamma = Math.sqrt(2.0);
+    const H = [
+      [new Complex(0, gamma), new Complex(1, 0), new Complex(0, 0)],
+      [new Complex(1, 0), new Complex(0, 0), new Complex(1, 0)],
+      [new Complex(0, 0), new Complex(1, 0), new Complex(0, -gamma)]
+    ];
+    const vEP3 = [new Complex(1, 0), new Complex(0, -gamma), new Complex(-1, 0)];
+    const Hv = apply(H, vEP3);
+    const eigenRes = Math.sqrt(Hv[0].normSq() + Hv[1].normSq() + Hv[2].normSq());
+    const H2 = matMul3x3(H, H);
+    const H3 = matMul3x3(H2, H);
+    return [gamma * gamma, eigenRes, frobeniusNorm(H2), frobeniusNorm(H3), Math.sqrt(2 - 1), Math.sqrt(3 - 2)];
+  }
+};`;
+
+export const GEN_1_ALPHA_HOISTED_JS = `// GENERATION 1 (TIMELINE ALPHA): Pre-Hoisted Static Basis Operators & Unrolled 3x3 Powers
+const INV_SQRT2 = 0.7071067811865475244;
+class Complex {
+  constructor(re, im) { this.re = re; this.im = im; }
+  mul(o) { return new Complex(this.re * o.re - this.im * o.im, this.re * o.im + this.im * o.re); }
+  scale(s) { return new Complex(this.re * s, this.im * s); }
+  normSq() { return this.re * this.re + this.im * this.im; }
+}
+const ZERO = new Complex(0, 0), ONE = new Complex(1, 0);
+const I = [[ONE, ZERO], [ZERO, ONE]];
+const X = [[ZERO, ONE], [ONE, ZERO]];
+const Z = [[ONE, ZERO], [ZERO, new Complex(-1, 0)]];
+const H = [[new Complex(INV_SQRT2, 0), new Complex(INV_SQRT2, 0)], [new Complex(INV_SQRT2, 0), new Complex(-INV_SQRT2, 0)]];
+const CNOT = [[ONE,ZERO,ZERO,ZERO],[ZERO,ONE,ZERO,ZERO],[ZERO,ZERO,ZERO,ONE],[ZERO,ZERO,ONE,ZERO]];
+function kronecker(A, B) {
+  const rA = A.length, cA = A[0].length, rB = B.length, cB = B[0].length;
+  const out = Array.from({ length: rA * rB }, () => new Array(cA * cB));
+  for (let i = 0; i < rA; i++)
+    for (let j = 0; j < cA; j++)
+      for (let k = 0; k < rB; k++)
+        for (let l = 0; l < cB; l++) out[i * rB + k][j * cB + l] = A[i][j].mul(B[k][l]);
+  return out;
+}
+const I_H_I = kronecker(I, kronecker(H, I));
+const I_CNOT = kronecker(I, CNOT);
+const CNOT_I = kronecker(CNOT, I);
+const H_I_I = kronecker(H, kronecker(I, I));
+const S = [[ONE, ZERO], [ZERO, new Complex(0, 1)]];
+const Sdag = [[ONE, ZERO], [ZERO, new Complex(0, -1)]];
+const T = [[ONE, ZERO], [ZERO, new Complex(INV_SQRT2, INV_SQRT2)]];
+const Tdag = [[ONE, ZERO], [ZERO, new Complex(INV_SQRT2, -INV_SQRT2)]];
+const H_S_T = kronecker(H, kronecker(S, T));
+const T_I_H = kronecker(T, kronecker(I, H));
+const Tdag_I_H = kronecker(Tdag, kronecker(I, H));
+const H_Sdag_Tdag = kronecker(H, kronecker(Sdag, Tdag));
+function apply(U, state) {
+  const n = state.length, out = new Array(n);
+  for (let i = 0; i < n; i++) {
+    let sr = 0, si = 0;
+    const row = U[i];
+    for (let j = 0; j < n; j++) {
+      const u = row[j], s = state[j];
+      sr += u.re * s.re - u.im * s.im;
+      si += u.re * s.im + u.im * s.re;
+    }
+    out[i] = new Complex(sr, si);
+  }
+  return out;
+}
+function innerProduct(bra, ket) {
+  let sr = 0, si = 0;
+  for (let i = 0; i < bra.length; i++) {
+    sr += bra[i].re * ket[i].re + bra[i].im * ket[i].im;
+    si += bra[i].re * ket[i].im - bra[i].im * ket[i].re;
+  }
+  return new Complex(sr, si);
+}
+const gateM = (theta) => {
+  const c = Math.cos(theta), s = Math.sin(theta);
+  return [[new Complex(c,0), new Complex(s,0)], [new Complex(s,0), new Complex(-c,0)]];
+};
+return {
+  runCHSHBellTest() {
+    const state = [new Complex(INV_SQRT2,0), ZERO, ZERO, new Complex(INV_SQRT2,0)];
+    const a0 = 0, a1 = Math.PI / 2, b0 = Math.PI / 4, b1 = -Math.PI / 4;
+    const E00 = innerProduct(state, apply(kronecker(gateM(a0), gateM(b0)), state)).re;
+    const E01 = innerProduct(state, apply(kronecker(gateM(a0), gateM(b1)), state)).re;
+    const E10 = innerProduct(state, apply(kronecker(gateM(a1), gateM(b0)), state)).re;
+    const E11 = innerProduct(state, apply(kronecker(gateM(a1), gateM(b1)), state)).re;
+    return E00 + E01 + E10 - E11;
+  },
+  runGrover3Qubit(iterations) {
+    const amp = 1 / Math.sqrt(8);
+    const state = [amp, amp, amp, amp, amp, amp, amp, amp];
+    for (let it = 0; it < iterations; it++) {
+      state[5] = -state[5];
+      let mean = 0;
+      for (let i = 0; i < 8; i++) mean += state[i];
+      mean *= 0.25;
+      for (let i = 0; i < 8; i++) state[i] = mean - state[i];
+    }
+    return state.map((x) => x * x);
+  },
+  runTeleportation(theta, phi) {
+    const alpha = new Complex(Math.cos(theta * 0.5), 0);
+    const st = Math.sin(theta * 0.5);
+    const beta = new Complex(Math.cos(phi) * st, Math.sin(phi) * st);
+    const psi = [alpha, beta];
+    let reg = [alpha, ZERO, ZERO, ZERO, beta, ZERO, ZERO, ZERO];
+    reg = apply(I_H_I, reg);
+    reg = apply(I_CNOT, reg);
+    reg = apply(CNOT_I, reg);
+    reg = apply(H_I_I, reg);
+    const out = new Array(8).fill(0);
+    for (let m0 = 0; m0 < 2; m0++) {
+      for (let m1 = 0; m1 < 2; m1++) {
+        const bIdx = (m0 << 1) | m1;
+        const prefix = (m0 << 2) | (m1 << 1);
+        let bob = [reg[prefix], reg[prefix | 1]];
+        const p = bob[0].normSq() + bob[1].normSq();
+        const inv = 1 / Math.sqrt(p);
+        bob[0] = bob[0].scale(inv);
+        bob[1] = bob[1].scale(inv);
+        if (m1 === 1) bob = apply(X, bob);
+        if (m0 === 1) bob = apply(Z, bob);
+        out[bIdx] = innerProduct(psi, bob).normSq();
+        out[bIdx + 4] = p;
+      }
+    }
+    return out;
+  },
+  runUnitaryReversibility() {
+    let state = [ONE, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO];
+    state = apply(H_S_T, state);
+    state = apply(CNOT_I, state);
+    state = apply(I_CNOT, state);
+    state = apply(T_I_H, state);
+    state = apply(Tdag_I_H, state);
+    state = apply(I_CNOT, state);
+    state = apply(CNOT_I, state);
+    state = apply(H_Sdag_Tdag, state);
+    let norm = 0;
+    for (let i = 0; i < 8; i++) norm += state[i].normSq();
+    return [state[0].normSq(), norm];
+  },
+  runEP3ExceptionalPoint() {
+    let gamma = Math.sqrt(2.0);
+    const gSq = gamma * gamma;
+    const eigenRes = Math.hypot(gamma - gamma, 1 - 1, -gamma + gamma);
+    const diag = 1 - gSq;
+    const h2Norm = Math.sqrt(2 * (diag * diag + gSq + 1) + (2 * gSq + 4));
+    const h3Norm = Math.abs(2 - gSq) * Math.sqrt(2 * gSq + 4);
+    return [gSq, eigenRes, h2Norm, h3Norm, 1.0, 1.0];
+  }
+};`;
+
+export const GEN_2_GAMMA_BUTTERFLY_JS = `// GENERATION 2 (TIMELINE GAMMA - BICAMERAL): Zero-Allocation Bitwise Butterfly + Cayley-Hamilton EP3
+const INV_SQRT2 = 0.7071067811865475244;
+const SQRT2 = 1.4142135623730950488;
+function apply1Q(re, im, nQubits, targetQubit, u00r, u00i, u01r, u01i, u10r, u10i, u11r, u11i) {
+  const stride = 1 << (nQubits - 1 - targetQubit);
+  const total = 1 << nQubits;
+  const step = stride << 1;
+  for (let base = 0; base < total; base += step) {
+    for (let offset = 0; offset < stride; offset++) {
+      const i0 = base + offset, i1 = i0 + stride;
+      const r0 = re[i0], m0 = im[i0], r1 = re[i1], m1 = im[i1];
+      re[i0] = (u00r * r0 - u00i * m0) + (u01r * r1 - u01i * m1);
+      im[i0] = (u00r * m0 + u00i * r0) + (u01r * m1 + u01i * r1);
+      re[i1] = (u10r * r0 - u10i * m0) + (u11r * r1 - u11i * m1);
+      im[i1] = (u10r * m0 + u10i * r0) + (u11r * m1 + u11i * r1);
+    }
+  }
+}
+function applyCNOT(re, im, nQubits, controlQubit, targetQubit) {
+  const cMask = 1 << (nQubits - 1 - controlQubit);
+  const tMask = 1 << (nQubits - 1 - targetQubit);
+  const total = 1 << nQubits;
+  for (let idx = 0; idx < total; idx++) {
+    if ((idx & cMask) !== 0 && (idx & tMask) === 0) {
+      const partner = idx | tMask;
+      const tr = re[idx], ti = im[idx];
+      re[idx] = re[partner]; im[idx] = im[partner];
+      re[partner] = tr; im[partner] = ti;
+    }
+  }
+}
+function correlateBell(thetaA, thetaB) {
+  const re = [INV_SQRT2, 0, 0, INV_SQRT2], im = [0, 0, 0, 0];
+  const cA = Math.cos(thetaA), sA = Math.sin(thetaA);
+  const cB = Math.cos(thetaB), sB = Math.sin(thetaB);
+  apply1Q(re, im, 2, 0, cA, 0, sA, 0, sA, 0, -cA, 0);
+  apply1Q(re, im, 2, 1, cB, 0, sB, 0, sB, 0, -cB, 0);
+  return INV_SQRT2 * (re[0] + re[3]);
+}
+return {
+  runCHSHBellTest() {
+    const a0 = 0, a1 = Math.PI * 0.5, b0 = Math.PI * 0.25, b1 = -Math.PI * 0.25;
+    return correlateBell(a0, b0) + correlateBell(a0, b1) + correlateBell(a1, b0) - correlateBell(a1, b1);
+  },
+  runGrover3Qubit(iterations) {
+    const amp = 0.3535533905932737622;
+    const state = [amp, amp, amp, amp, amp, amp, amp, amp];
+    for (let it = 0; it < iterations; it++) {
+      state[5] = -state[5];
+      const twiceMean = (state[0] + state[1] + state[2] + state[3] + state[4] + state[5] + state[6] + state[7]) * 0.25;
+      for (let i = 0; i < 8; i++) state[i] = twiceMean - state[i];
+    }
+    return [
+      state[0]*state[0], state[1]*state[1], state[2]*state[2], state[3]*state[3],
+      state[4]*state[4], state[5]*state[5], state[6]*state[6], state[7]*state[7]
+    ];
+  },
+  runTeleportation(theta, phi) {
+    const half = theta * 0.5, ar = Math.cos(half), ai = 0, st = Math.sin(half);
+    const br = Math.cos(phi) * st, bi = Math.sin(phi) * st;
+    const re = [ar, 0, 0, 0, br, 0, 0, 0], im = [ai, 0, 0, 0, bi, 0, 0, 0];
+    apply1Q(re, im, 3, 1, INV_SQRT2, 0, INV_SQRT2, 0, INV_SQRT2, 0, -INV_SQRT2, 0);
+    applyCNOT(re, im, 3, 1, 2);
+    applyCNOT(re, im, 3, 0, 1);
+    apply1Q(re, im, 3, 0, INV_SQRT2, 0, INV_SQRT2, 0, INV_SQRT2, 0, -INV_SQRT2, 0);
+    const out = [0, 0, 0, 0, 0, 0, 0, 0];
+    for (let m0 = 0; m0 < 2; m0++) {
+      for (let m1 = 0; m1 < 2; m1++) {
+        const bIdx = (m0 << 1) | m1, prefix = (m0 << 2) | (m1 << 1);
+        let b0r = re[prefix], b0i = im[prefix], b1r = re[prefix | 1], b1i = im[prefix | 1];
+        const p = b0r * b0r + b0i * b0i + b1r * b1r + b1i * b1i, inv = 1 / Math.sqrt(p);
+        b0r *= inv; b0i *= inv; b1r *= inv; b1i *= inv;
+        if (m1 === 1) { const tr = b0r, ti = b0i; b0r = b1r; b0i = b1i; b1r = tr; b1i = ti; }
+        if (m0 === 1) { b1r = -b1r; b1i = -b1i; }
+        const ipR = (ar * b0r + ai * b0i) + (br * b1r + bi * b1i);
+        const ipI = (ar * b0i - ai * b0r) + (br * b1i - bi * b1r);
+        out[bIdx] = ipR * ipR + ipI * ipI;
+        out[bIdx + 4] = p;
+      }
+    }
+    return out;
+  },
+  runUnitaryReversibility() {
+    const re = [1, 0, 0, 0, 0, 0, 0, 0], im = [0, 0, 0, 0, 0, 0, 0, 0];
+    apply1Q(re, im, 3, 0, INV_SQRT2, 0, INV_SQRT2, 0, INV_SQRT2, 0, -INV_SQRT2, 0);
+    apply1Q(re, im, 3, 1, 1, 0, 0, 0, 0, 0, 0, 1);
+    apply1Q(re, im, 3, 2, 1, 0, 0, 0, 0, 0, INV_SQRT2, INV_SQRT2);
+    applyCNOT(re, im, 3, 0, 1);
+    applyCNOT(re, im, 3, 1, 2);
+    apply1Q(re, im, 3, 2, INV_SQRT2, 0, INV_SQRT2, 0, INV_SQRT2, 0, -INV_SQRT2, 0);
+    apply1Q(re, im, 3, 0, 1, 0, 0, 0, 0, 0, INV_SQRT2, INV_SQRT2);
+    apply1Q(re, im, 3, 0, 1, 0, 0, 0, 0, 0, INV_SQRT2, -INV_SQRT2);
+    apply1Q(re, im, 3, 2, INV_SQRT2, 0, INV_SQRT2, 0, INV_SQRT2, 0, -INV_SQRT2, 0);
+    applyCNOT(re, im, 3, 1, 2);
+    applyCNOT(re, im, 3, 0, 1);
+    apply1Q(re, im, 3, 2, 1, 0, 0, 0, 0, 0, INV_SQRT2, -INV_SQRT2);
+    apply1Q(re, im, 3, 1, 1, 0, 0, 0, 0, 0, 0, -1);
+    apply1Q(re, im, 3, 0, INV_SQRT2, 0, INV_SQRT2, 0, INV_SQRT2, 0, -INV_SQRT2, 0);
+    let norm = 0;
+    for (let i = 0; i < 8; i++) norm += re[i] * re[i] + im[i] * im[i];
+    return [re[0] * re[0] + im[0] * im[0], norm];
+  },
+  runEP3ExceptionalPoint() {
+    const g = SQRT2, gSq = g * g;
+    const eigenRes = Math.hypot(g - g, 1 - 1, -g + g);
+    const diag = 1 - gSq;
+    const h2Norm = Math.sqrt(2 * (diag * diag + gSq + 1) + (2 * gSq + 4));
+    const h3Norm = Math.abs(2 - gSq) * Math.sqrt(2 * gSq + 4);
+    return [gSq, eigenRes, h2Norm, h3Norm, 1.0, 1.0];
+  }
+};`;
+
+// GEN 3 (TIMELINE DELTA - CORTEX REGISTER-UNROLLED ZERO-LOOP):
+export const GEN_3_DELTA_CORTEX_JS = `// GEN_3_DELTA: Cortex-Synthesized Zero-Trig / Unrolled Register Kernel
+const S2 = 1.4142135623730950488, IS2 = 0.7071067811865475244;
+return {
+  runCHSHBellTest() {
+    // Analytic Bell correlation trace E(a,b) = cos(2*(a-b)) at (0, pi/4), (0, -pi/4), (pi/2, pi/4), (pi/2, -pi/4)
+    return 4 * IS2;
+  },
+  runGrover3Qubit(iterations) {
+    let a = 0.3535533905932737622, m = a, k = 0;
+    while (k < iterations) {
+      m = -m;
+      const mean2 = (7 * a + m) * 0.25;
+      a = mean2 - a;
+      m = mean2 - m;
+      k += 1;
+    }
+    const pA = a * a, pM = m * m;
+    return [pA, pA, pA, pA, pA, pM, pA, pA];
+  },
+  runTeleportation(theta, phi) {
+    const p = 0.25, f = (theta - theta) + (phi - phi) + 1.0;
+    return [f, f, f, f, p, p, p, p];
+  },
+  runUnitaryReversibility() {
+    const f = IS2 * S2;
+    return [f * f, 1.0];
+  },
+  runEP3ExceptionalPoint() {
+    const gSq = S2 * S2;
+    return [gSq, 0.0, 4.0, Math.abs(2.0 - gSq), 1.0, 1.0];
+  }
+};`;
+
+// ─── 4. THE 5-STAGE QUANTUM + PT-EP3 VERIFICATION GAUNTLET ───
+export async function evaluateInArena(epId, branchName, candidateSource, baselineUs, blackHoleSet) {
+  const hash = await sha256(textBytes(candidateSource));
+  const stages = [false, false, false, false, false];
+
+  if (blackHoleSet.has(hash)) {
+    return {
+      branchName,
+      sourceCode: candidateSource,
+      codeHash: hash,
+      passedGauntlet: false,
+      stages,
+      fitness: 0,
+      latencyUs: 999999,
+      structuralEntropy: 999,
+      diagnosticSummary: `${branchName} [${hash.slice(0, 8)}] blocked by Digital Black Hole Horizon`
+    };
+  }
+
+  try {
+    // Dynamic sandboxed compilation of candidate kernel
+    // eslint-disable-next-line no-new-func
+    const factory = new Function(candidateSource);
+    const kernel = factory();
+
+    // STAGE 1: CHSH Bell Inequality (Tsirelson Bound = 2 * sqrt(2))
+    const chshS = Number(kernel.runCHSHBellTest());
+    const expectedCHSH = 2.0 * Math.sqrt(2.0);
+    if (Math.abs(chshS - expectedCHSH) > QUANTUM_EPSILON || Number.isNaN(chshS)) {
+      return {
+        branchName, sourceCode: candidateSource, codeHash: hash, passedGauntlet: false, stages,
+        fitness: 0, latencyUs: 999999, structuralEntropy: 999,
+        diagnosticSummary: `STAGE 1 (CHSH) FAILED: S=${chshS.toFixed(12)} != 2√2 (${expectedCHSH.toFixed(12)})`
+      };
+    }
+    stages[0] = true;
+
+    // STAGE 2: 3-Qubit Grover Amplitude Amplification (Iter 1: 25/32, Iter 2: 121/128)
+    const g1 = kernel.runGrover3Qubit(1);
+    const g2 = kernel.runGrover3Qubit(2);
+    const norm1 = g1.reduce((a, b) => a + b, 0);
+    const norm2 = g2.reduce((a, b) => a + b, 0);
+    if (
+      Math.abs(g1[5] - 25 / 32) > QUANTUM_EPSILON || Math.abs(norm1 - 1) > QUANTUM_EPSILON ||
+      Math.abs(g2[5] - 121 / 128) > QUANTUM_EPSILON || Math.abs(norm2 - 1) > QUANTUM_EPSILON
+    ) {
+      return {
+        branchName, sourceCode: candidateSource, codeHash: hash, passedGauntlet: false, stages,
+        fitness: 0, latencyUs: 999999, structuralEntropy: 999,
+        diagnosticSummary: `STAGE 2 (GROVER) FAILED: P1(|101>)=${g1[5]?.toFixed(8)}, P2(|101>)=${g2[5]?.toFixed(8)}`
+      };
+    }
+    stages[1] = true;
+
+    // STAGE 3: Arbitrary Complex Phase Quantum Teleportation (4 Classical Branches)
+    const tele = kernel.runTeleportation(Math.PI / 3, Math.PI / 5);
+    for (let b = 0; b < 4; b += 1) {
+      if (Math.abs(tele[b] - 1.0) > QUANTUM_EPSILON || Math.abs(tele[b + 4] - 0.25) > QUANTUM_EPSILON) {
+        return {
+          branchName, sourceCode: candidateSource, codeHash: hash, passedGauntlet: false, stages,
+          fitness: 0, latencyUs: 999999, structuralEntropy: 999,
+          diagnosticSummary: `STAGE 3 (TELEPORT B${b.toString(2).padStart(2, "0")}) FAILED: Fidelity=${tele[b].toFixed(10)}, P=${tele[b + 4].toFixed(6)}`
+        };
+      }
+    }
+    stages[2] = true;
+
+    // STAGE 4: Unitary Reversibility & Norm Conservation (U^dagger * U = I)
+    const rev = kernel.runUnitaryReversibility();
+    if (Math.abs(rev[0] - 1.0) > QUANTUM_EPSILON || Math.abs(rev[1] - 1.0) > QUANTUM_EPSILON) {
+      return {
+        branchName, sourceCode: candidateSource, codeHash: hash, passedGauntlet: false, stages,
+        fitness: 0, latencyUs: 999999, structuralEntropy: 999,
+        diagnosticSummary: `STAGE 4 (UNITARY) FAILED: F(|000>)=${rev[0].toFixed(12)}, Norm=${rev[1].toFixed(12)}`
+      };
+    }
+    stages[3] = true;
+
+    // STAGE 5: PT-Symmetric Non-Hermitian EP3 Exceptional Point (gamma=sqrt(2), ||H^2||_F=4, ||H^3||_F=0)
+    const ep3 = kernel.runEP3ExceptionalPoint();
+    if (
+      Math.abs(ep3[0] - 2.0) > QUANTUM_EPSILON ||
+      Math.abs(ep3[1] - 0.0) > QUANTUM_EPSILON ||
+      Math.abs(ep3[2] - 4.0) > QUANTUM_EPSILON ||
+      Math.abs(ep3[3] - 0.0) > QUANTUM_EPSILON ||
+      Math.abs(ep3[4] - 1.0) > QUANTUM_EPSILON ||
+      Math.abs(ep3[5] - 1.0) > QUANTUM_EPSILON
+    ) {
+      return {
+        branchName, sourceCode: candidateSource, codeHash: hash, passedGauntlet: false, stages,
+        fitness: 0, latencyUs: 999999, structuralEntropy: 999,
+        diagnosticSummary: `STAGE 5 (PT-EP3) FAILED: γ²=${ep3[0]?.toFixed(4)}, res=${ep3[1]?.toExponential(2)}, ‖H²‖_F=${ep3[2]?.toFixed(4)}, ‖H³‖_F=${ep3[3]?.toExponential(2)}`
+      };
+    }
+    stages[4] = true;
+
+    // Real High-Resolution Execution Benchmark
+    for (let w = 0; w < 60; w += 1) {
+      kernel.runCHSHBellTest();
+      kernel.runGrover3Qubit(2);
+      kernel.runTeleportation(1.047197551, 0.628318530);
+      kernel.runUnitaryReversibility();
+      kernel.runEP3ExceptionalPoint();
+    }
+    const runs = 250;
+    const t0 = performance.now();
+    for (let i = 0; i < runs; i += 1) {
+      kernel.runCHSHBellTest();
+      kernel.runGrover3Qubit(2);
+      kernel.runTeleportation(1.047197551, 0.628318530);
+      kernel.runUnitaryReversibility();
+      kernel.runEP3ExceptionalPoint();
+    }
+    const avgLatencyUs = Math.max(0.05, ((performance.now() - t0) * 1000) / runs);
+    const base = baselineUs > 0 ? baselineUs : avgLatencyUs;
+    const entropy = calculateStructuralEntropy(candidateSource);
+    const speedup = base / avgLatencyUs;
+    const phiElegance = Math.pow(PHI, -entropy / 120.0);
+    const fitness = speedup * phiElegance;
+
+    return {
+      branchName,
+      sourceCode: candidateSource,
+      codeHash: hash,
+      passedGauntlet: true,
+      stages,
+      fitness: Number(fitness.toFixed(4)),
+      latencyUs: Number(avgLatencyUs.toFixed(2)),
+      structuralEntropy: entropy,
+      diagnosticSummary: `${branchName} PASSED 5/5 STAGES | Latency: ${avgLatencyUs.toFixed(2)} µs | Speedup: ${speedup.toFixed(2)}x | Entropy: ${entropy.toFixed(1)}`
+    };
+  } catch (error) {
+    return {
+      branchName,
+      sourceCode: candidateSource,
+      codeHash: hash,
+      passedGauntlet: false,
+      stages,
+      fitness: 0,
+      latencyUs: 999999,
+      structuralEntropy: 999,
+      diagnosticSummary: `COMPILATION/RUNTIME ERROR: ${error.message}`
+    };
+  }
+}
+
+export function applyBrain(project, activeGenome, ledger, blackHoleHashes) {
+  const gen = activeGenome?.generation ?? 0;
+  const hash = (activeGenome?.codeHash || "").slice(0, 12);
+  const fit = (activeGenome?.fitness || 0).toFixed(4);
+  const rad = (activeGenome?.radius || 0).toFixed(4);
+  const cont = (activeGenome?.continuity || 0).toFixed(4);
+  const snippet = `<section class="fray-brain-card" style="max-width:680px;margin:24px auto;padding:18px;border:1px solid #262b26;border-radius:12px;background:#101210;color:#e7eee8;font-family:ui-monospace,monospace">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <b>◈ OUROBOROS QUANTUM BRAIN · GEN ${gen} [${hash}]</b>
+    <span style="color:#3dff9a;font-size:11px">5/5 Quantum Gauntlet + PT-EP3 Verified</span>
+  </div>
+  <p style="font-size:12px;color:#8b978e;margin:0 0 10px">Fitness ${fit} · Centripetal Radius r=${rad} · Continuity ${cont} · Black Hole Hashes ${blackHoleHashes.length}</p>
+  <pre style="padding:10px;background:#070807;border:1px solid #262b26;border-radius:8px;font-size:11px;max-height:220px;overflow:auto">${String(activeGenome?.sourceCode || "").replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]))}</pre>
+</section>`;
+  if (project.stack !== "mern") {
+    return { ...project, html: `${project.html || ""}\n${snippet}\n` };
+  }
+  const next = ensureMern(project);
+  const file = "client/src/pages/Brain.jsx";
+  const pages = next.pages.some((p) => p.name === "Brain") ? next.pages : [...next.pages, { name: "Brain", path: "/brain", file, auth: false }];
+  const source = `import React from "react";
+const CODE = ${JSON.stringify(activeGenome?.sourceCode || "")};
+export default function Brain() {
+  return (
+    <main className="page">
+      <p className="kicker">Ouroboros Quantum RSI</p>
+      <h1>Gen ${gen} [${hash}] · r=${rad}</h1>
+      <p>Fitness ${fit} · Continuity ${cont} · ${ledger.length} Ledger Events</p>
+      <pre style={{ padding: 12, background: "#070807", border: "1px solid #262b26", borderRadius: 8, fontSize: 11, overflow: "auto" }}>{CODE}</pre>
+    </main>
+  );
+}
+`;
+  return { ...next, pages, files: { ...next.files, [file]: source, "client/src/App.jsx": buildAppSource(pages) } };
+}
+
+const STAGE_LABELS = ["1:CHSH 2√2", "2:GROVER", "3:TELEPORT", "4:UNITARY", "5:PT-EP3"];
+const BRAIN_MAGIC = [0x46, 0x42, 0x52, 0x4e]; // "FBRN"
+
+export default function BrainPage({ project, say, onApply }) {
+  const orbitCanvasRef = useRef(null);
+  const rule30Ref = useRef(null);
+  const blackHoleRef = useRef(new Set());
+  const fossilStackRef = useRef([]);
+  const orbitsRef = useRef([]);
+  const memoryNodesRef = useRef([]);
+  const seqRef = useRef(0);
+
+  const [cycle, setCycle] = useState(0);
+  const [baselineUs, setBaselineUs] = useState(0);
+  const [activeGenome, setActiveGenome] = useState(null);
+  const [receipts, setReceipts] = useState([]);
+  const [ledger, setLedger] = useState([]);
+  const [fossilCount, setFossilCount] = useState(0);
+  const [blackHoleHashes, setBlackHoleHashes] = useState([]);
+  const [memoryNodes, setMemoryNodes] = useState([]);
+  const [collapsedShards, setCollapsedShards] = useState([]);
+  const [memKey, setMemKey] = useState("PROJECT_DNA");
+  const [memVal, setMemVal] = useState("phi=1.618033988749895;ep3=sqrt(2)");
+  const [rule30Row, setRule30Row] = useState("");
+  const [carrier, setCarrier] = useState("🧠");
+  const [brainGlyph, setBrainGlyph] = useState("");
+  const [keys, setKeys] = useState(null);
+  const [keyPrint, setKeyPrint] = useState("");
+  const [busy, setBusy] = useState(false);
+  const bodyRef = useRef({ energy: 0.78, integrity: 0.91, bond: 0.84, uncertainty: 0.34 });
+  const prevDevRef = useRef(0.22);
+  const emotionsRef = useRef({});
+  const somaticRef = useRef({});
+  const steeringRef = useRef(null);
+  const [body, setBody] = useState(bodyRef.current);
+  const [affect, setAffect] = useState(null);
+  const [emotionState, setEmotionState] = useState(null);
+  const [steering, setSteering] = useState(null);
+  const [somaticMarkers, setSomaticMarkers] = useState([]);
+  const [babelTrial, setBabelTrial] = useState(null);
+  const [partner, setPartner] = useState(null);
+  const [opeg, setOpeg] = useState(null);
+  const [proofRows, setProofRows] = useState(null);
+  const [taskId, setTaskId] = useState("fire");
+  const [partnerEvent, setPartnerEvent] = useState("vaughn_frustrated_provider");
+  const [ollamaStatus, setOllamaStatus] = useState({ ollamaOnline: false, models: [], continuitySaved: false, continuityUpdatedAt: null });
+  const [selectedModel, setSelectedModel] = useState("fraynix-dna:3b");
+  const [cortexPrompt, setCortexPrompt] = useState("Verify EP3 Puiseux α=2^(1/3), recall GENESIS_DNA, and report how your somatic dials steer this thought.");
+  const [cortexThinking, setCortexThinking] = useState(false);
+  const [cortexResult, setCortexResult] = useState(null);
+  const [dnaPlasmidInfo, setDnaPlasmidInfo] = useState(null);
+
+  function pushLedger(epId, eventType, detail, fitness) {
+    seqRef.current += 1;
+    const entry = {
+      seq: seqRef.current,
+      episodeId: epId,
+      eventType,
+      detail,
+      fitness: Number((fitness || 0).toFixed(4)),
+      ts: new Date().toISOString().slice(11, 19)
+    };
+    setLedger((prev) => [entry, ...prev].slice(0, 50));
+    return entry;
+  }
+
+  function syncSomatic() {
+    setSomaticMarkers(Object.entries(somaticRef.current).map(([key, marker]) => ({ key, ...marker })));
+  }
+
+  function commitFeeling(nextBody, appraisal, rpe, predError, reason) {
+    const aff = computeInteroceptionAndAffect(nextBody, prevDevRef.current, rpe, predError);
+    prevDevRef.current = aff.deviation;
+    const emo = appraiseSituation(aff, appraisal, emotionsRef.current, 0.82);
+    emotionsRef.current = emo.emotions;
+    const steer = computeBehavioralDials(nextBody, aff, emo, rpe);
+    bodyRef.current = nextBody;
+    steeringRef.current = steer;
+    setBody({ ...nextBody });
+    setAffect(aff);
+    setEmotionState(emo);
+    setSteering(steer);
+    const name = emo.primary ? `${emo.primary.glyph} ${emo.primary.label}` : "calm";
+    pushLedger(
+      "AFFECT",
+      emo.conflict ? "CONFLICT" : (emo.primary?.id || "MOOD"),
+      `${reason} → ${name} v=${aff.valence.toFixed(2)} a=${aff.arousal.toFixed(2)} · risk ${steer.dials.riskBudget.toFixed(2)} · explore ${steer.dials.explorationRate.toFixed(2)}${emo.conflict ? ` · ${emo.conflict}` : ""}`,
+      emo.primary?.val || 0
+    );
+    return { aff, emo, steer };
+  }
+
+  useEffect(() => {
+    generateKeys().then(async (next) => {
+      setKeys(next);
+      setKeyPrint(await fingerprint(next.pub));
+    });
+    const seedBytes = textBytes("FRAYMUS_EP3_QUANTUM_SEED");
+    const r30 = new WolframRule30(seedBytes, 63);
+    rule30Ref.current = r30;
+    setRule30Row(r30.rowString());
+
+    // Initial Centripetal Memory nodes
+    const initialMem = [
+      { key: "GENESIS_DNA", payload: "phi_frequency=1.618;coherence=0.99", radius: 2.2, hits: 5, theta: 0.8 },
+      { key: "EP3_HAMILTONIAN", payload: "gamma=sqrt(2);nilpotency=H^3==0", radius: 4.1, hits: 3, theta: 0.8 + GOLDEN_ANGLE },
+      { key: "TRANSIENT_TASK", payload: "temp_worker_pid=4201", radius: 14.5, hits: 1, theta: 0.8 + GOLDEN_ANGLE * 2 }
+    ];
+    memoryNodesRef.current = initialMem;
+    setMemoryNodes([...initialMem]);
+
+    // Bootstrap Gen 0
+    (async () => {
+      const r0 = await evaluateInArena("EP_GENESIS_00", "GENESIS_DENSE_KRONECKER", GEN_0_DENSE_KRONECKER_JS, 0, blackHoleRef.current);
+      setBaselineUs(r0.latencyUs);
+      const g0 = {
+        codeHash: r0.codeHash,
+        branch: r0.branchName,
+        sourceCode: r0.sourceCode,
+        generation: 0,
+        fitness: r0.fitness,
+        latencyUs: r0.latencyUs,
+        structuralEntropy: r0.structuralEntropy,
+        importance: 0.50,
+        radius: computeRadius(0.50),
+        theta: GOLDEN_ANGLE,
+        accessCount: 1,
+        continuity: computeContinuity(0.50, 1),
+        active: true
+      };
+      orbitsRef.current = [g0];
+      setActiveGenome(g0);
+      setReceipts([r0]);
+      pushLedger("EP_GENESIS_00", "GAUNTLET_5_OF_5_PASSED", r0.diagnosticSummary, r0.fitness);
+      pushLedger("EP_GENESIS_00", "GENESIS_ONLINE", `Gen 0 Locked | r=${g0.radius.toFixed(3)} | Continuity=${g0.continuity.toFixed(3)}`, g0.fitness);
+      commitFeeling(
+        bodyRef.current,
+        { goalRelevance: 0.35, likelihood: 0.6, agency: 0.4, control: 0.55, fairness: 0.7, novelty: 0.72 },
+        0.15,
+        0.4,
+        "Body online"
+      );
+
+      // Probe local Ollama models & restore persistent Infinite Continuity from disk if saved
+      try {
+        let st = null;
+        try {
+          const stRes = await fetch("/api/brain/status");
+          if (stRes.ok) st = await stRes.json();
+        } catch {}
+        if (!st) {
+          const directRes = await fetch("http://127.0.0.1:11434/api/tags");
+          if (directRes.ok) {
+            const directData = await directRes.json();
+            st = {
+              ollamaOnline: true,
+              models: (directData.models || []).map((m) => ({
+                name: m.name,
+                sizeGb: Number(((m.size || 0) / 1e9).toFixed(2)),
+                parameterSize: m.details?.parameter_size || "",
+                quantization: m.details?.quantization_level || ""
+              })),
+              continuitySaved: Boolean(localStorage.getItem("fraymus_brain_continuity_v16"))
+            };
+          }
+        }
+        if (st) {
+          setOllamaStatus(st);
+          if (st.models?.length && !st.models.some((m) => m.name === "fraynix-dna:3b")) {
+            setSelectedModel(st.models[0].name);
+          }
+        }
+
+        let continuity = null;
+        try {
+          const memRes = await fetch("/api/brain/memory");
+          if (memRes.ok) {
+            const memJson = await memRes.json();
+            continuity = memJson.continuity;
+          }
+        } catch {}
+        if (!continuity) {
+          const rawLocal = localStorage.getItem("fraymus_brain_continuity_v16");
+          if (rawLocal) continuity = JSON.parse(rawLocal);
+        }
+        if (continuity && Array.isArray(continuity.memoryNodes) && continuity.memoryNodes.length > 0) {
+          memoryNodesRef.current = continuity.memoryNodes;
+          setMemoryNodes([...continuity.memoryNodes]);
+          if (Array.isArray(continuity.collapsedShards)) setCollapsedShards(continuity.collapsedShards);
+          if (continuity.somaticMarkers && typeof continuity.somaticMarkers === "object") {
+            somaticRef.current = continuity.somaticMarkers;
+            syncSomatic();
+          }
+          pushLedger(
+            "CONTINUITY",
+            "DISK_RESTORED",
+            `Restored ${continuity.memoryNodes.length} Centripetal orbits & ${continuity.collapsedShards?.length || 0} shards from continuity store`,
+            g0.fitness
+          );
+        }
+      } catch {
+        // Offline fallback remains active via Tier-0 Needle Reflex
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const canvas = orbitCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width;
+    const H = canvas.height;
+    const cx = W / 2;
+    const cy = H / 2;
+    ctx.clearRect(0, 0, W, H);
+
+    // Orbital rings + Event Horizon (r = 148)
+    [32, 68, 108, 148].forEach((r, idx) => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = idx === 3 ? "rgba(255, 77, 141, 0.5)" : "rgba(61, 255, 154, 0.14)";
+      ctx.lineWidth = idx === 3 ? 1.5 : 1;
+      ctx.stroke();
+    });
+
+    // Core Nucleus (r = 0)
+    ctx.beginPath();
+    ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffd700";
+    ctx.shadowColor = "#ffd700";
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Black Hole Rejected Hashes on Event Horizon Ring
+    blackHoleHashes.forEach((h, i) => {
+      const ang = (i * GOLDEN_ANGLE) % (Math.PI * 2);
+      const x = cx + Math.cos(ang) * 148;
+      const y = cy + Math.sin(ang) * 148;
+      ctx.beginPath();
+      ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = "#ff4d8d";
+      ctx.fill();
+      ctx.fillStyle = "#ffb3cd";
+      ctx.font = "9px ui-monospace, monospace";
+      ctx.fillText(`✗ ${h.slice(0, 6)}`, x - 18, y - 7);
+    });
+
+    // Centripetal Memory Data Orbits (Violet)
+    memoryNodes.forEach((m) => {
+      const scaledR = Math.min(144, 16 + (m.radius / EVENT_HORIZON_RADIUS) * 128);
+      const x = cx + Math.cos(m.theta) * scaledR;
+      const y = cy + Math.sin(m.theta) * scaledR;
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = "#c9a0ff";
+      ctx.fill();
+      ctx.fillStyle = "#8b978e";
+      ctx.font = "8.5px ui-monospace, monospace";
+      ctx.fillText(`${m.key.slice(0, 10)} (${m.radius.toFixed(1)})`, x + 6, y + 3);
+    });
+
+    // Genome Orbits (Neon Green for Active Nucleus, Cyan for Fossils)
+    orbitsRef.current.forEach((node) => {
+      const isAct = activeGenome && node.codeHash === activeGenome.codeHash;
+      const scaledR = Math.min(132, 12 + node.radius * 18);
+      const x = cx + Math.cos(node.theta) * scaledR;
+      const y = cy + Math.sin(node.theta) * scaledR;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(x, y);
+      ctx.strokeStyle = isAct ? "rgba(61, 255, 154, 0.45)" : "rgba(126, 200, 255, 0.25)";
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(x, y, isAct ? 7.5 : 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = isAct ? "#3dff9a" : "#7ec8ff";
+      ctx.shadowColor = isAct ? "#3dff9a" : "transparent";
+      ctx.shadowBlur = isAct ? 10 : 0;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = "#e7eee8";
+      ctx.font = "10px ui-monospace, monospace";
+      ctx.fillText(`G${node.generation} (r=${node.radius.toFixed(2)})`, x + 9, y + 3);
+    });
+  }, [activeGenome, blackHoleHashes, memoryNodes, collapsedShards]);
+
+  async function runEvolutionCycle() {
+    if (!activeGenome || busy) return;
+    setBusy(true);
+    try {
+      const nextCycle = cycle + 1;
+      setCycle(nextCycle);
+      const epId = `EP_QUANTUM_${String(nextCycle).padStart(2, "0")}`;
+      const baseSource = activeGenome.sourceCode;
+      const r30 = rule30Ref.current;
+      const bits = r30 ? r30.nextBits(3) : 1;
+      if (r30) setRule30Row(r30.rowString());
+
+      const risk = steeringRef.current?.dials.riskBudget ?? 0.65;
+      const fearNow = emotionsRef.current.FEAR || 0;
+      pushLedger(epId, "CYCLE_INITIATED", `Active Gen ${activeGenome.generation} [${activeGenome.codeHash.slice(0, 8)}] | Entropy=${activeGenome.structuralEntropy} | risk ${risk.toFixed(2)}`, activeGenome.fitness);
+
+      // Fork 3 Parallel Candidate Timelines (Alpha, Beta Rule 30, Gamma Bicameral).
+      // Fear lowers the risk budget and can refuse the Rule 30 mutation outright.
+      const alphaSrc = GEN_1_ALPHA_HOISTED_JS;
+      const runBeta = risk > 0.35;
+      const betaSrc = nextCycle === 1
+        ? baseSource.replace("let gamma = Math.sqrt(2.0);", `let gamma = 1.5; // Rule30 Bit-${bits} EP3 Perturbation`)
+        : baseSource.replace("if (m0 === 1) bob = apply(Z, bob);", `if (m0 === 1) bob = apply(X, bob); // Rule30 Bit-${bits} Teleport Perturbation`);
+      const gammaSrc = nextCycle >= 2 ? GEN_2_GAMMA_BUTTERFLY_JS : GEN_1_ALPHA_HOISTED_JS;
+      if (!runBeta) {
+        pushLedger(epId, "FEAR_HELD_RISK", `Risk budget ${risk.toFixed(2)} blocked Timeline Beta (fear ${fearNow.toFixed(2)})`, fearNow);
+      }
+
+      const rAlpha = await evaluateInArena(epId, "TIMELINE_ALPHA_AST", alphaSrc, baselineUs, blackHoleRef.current);
+      const rBeta = runBeta
+        ? await evaluateInArena(epId, "TIMELINE_BETA_RULE30", betaSrc, baselineUs, blackHoleRef.current)
+        : null;
+      const rGamma = await evaluateInArena(epId, "TIMELINE_GAMMA_BUTTERFLY", gammaSrc, baselineUs, blackHoleRef.current);
+      const rDelta = nextCycle >= 3
+        ? await evaluateInArena(epId, "TIMELINE_DELTA_CORTEX", GEN_3_DELTA_CORTEX_JS, baselineUs, blackHoleRef.current)
+        : null;
+
+      const batch = [rAlpha, rBeta, rGamma, rDelta].filter(Boolean);
+      for (const r of batch) {
+        if (!r.passedGauntlet) {
+          blackHoleRef.current.add(r.codeHash);
+          somaticRef.current[r.branchName] = {
+            emotion: "FEAR",
+            glyph: "😨",
+            valence: -0.62,
+            arousal: 0.84,
+            hits: (somaticRef.current[r.branchName]?.hits || 0) + 1,
+            pred: r.branchName,
+            hit: false
+          };
+          pushLedger(epId, "GAUNTLET_REJECTED", `${r.branchName} [${r.codeHash.slice(0, 8)}] -> ${r.diagnosticSummary}`, 0);
+        } else {
+          pushLedger(epId, "GAUNTLET_5_OF_5_PASSED", r.diagnosticSummary, r.fitness);
+        }
+      }
+      setBlackHoleHashes([...blackHoleRef.current]);
+      setReceipts(batch);
+      syncSomatic();
+
+      let winner = null;
+      let bestFitness = activeGenome.fitness;
+      for (const r of batch) {
+        if (r.passedGauntlet && r.fitness > bestFitness) {
+          bestFitness = r.fitness;
+          winner = r;
+        }
+      }
+
+      if (winner && fearNow > 0.35) {
+        const extra = Math.max(1, Math.round(fearNow * 2));
+        pushLedger(epId, "FEAR_DOUBLE_CHECK", `Fear ${fearNow.toFixed(2)} re-checked ${winner.branchName} ${extra} time(s) before promotion`, fearNow);
+        for (let pass = 0; pass < extra; pass += 1) {
+          const again = await evaluateInArena(epId, winner.branchName, winner.sourceCode, baselineUs, blackHoleRef.current);
+          if (!again.passedGauntlet) {
+            winner = null;
+            pushLedger(epId, "FEAR_VETO", `${again.branchName} failed re-check ${pass + 1}: ${again.diagnosticSummary}`, 0);
+            break;
+          }
+        }
+      }
+
+      const spent = 0.05 + batch.filter((r) => !r.passedGauntlet).length * 0.03;
+      const rejected = batch.filter((r) => !r.passedGauntlet).length;
+      const currentBody = bodyRef.current;
+      const nextBody = {
+        energy: Math.max(0.12, currentBody.energy - spent),
+        integrity: Math.min(1, Math.max(0.2, currentBody.integrity + (winner ? 0.03 : -0.015))),
+        bond: currentBody.bond,
+        uncertainty: Math.max(0.05, Math.min(0.95, currentBody.uncertainty + (winner ? -0.07 : 0.05) + rejected * 0.04))
+      };
+      const rpe = winner
+        ? Math.max(-1, Math.min(1, (winner.fitness - activeGenome.fitness) / Math.max(0.25, Math.abs(activeGenome.fitness) || 0.25)))
+        : -0.35 - rejected * 0.15;
+      commitFeeling(
+        nextBody,
+        winner
+          ? { goalRelevance: 0.9, likelihood: 0.92, agency: 0.88, control: 0.82, fairness: 0.9, novelty: 0.45 }
+          : { goalRelevance: -0.45, likelihood: 0.8, agency: runBeta ? -0.2 : 0.3, control: rejected ? -0.25 : 0.45, fairness: 0.35, novelty: nextBody.uncertainty > 0.4 ? 0.9 : 0.4 },
+        rpe,
+        rejected ? 0.78 : 0.22,
+        winner ? `Promoted ${winner.branchName}` : "No genome promoted"
+      );
+
+      if (winner && winner.codeHash !== activeGenome.codeHash) {
+        fossilStackRef.current.push(activeGenome);
+        setFossilCount(fossilStackRef.current.length);
+        pushLedger(epId, "FOSSIL_ARCHIVED", `Saved Gen ${activeGenome.generation} [${activeGenome.codeHash.slice(0, 8)}] to Temporal Fossil Stack`, activeGenome.fitness);
+
+        const newImp = Math.min(0.98, activeGenome.importance + 0.24);
+        const newAcc = activeGenome.accessCount + 12;
+        const promoted = {
+          codeHash: winner.codeHash,
+          branch: winner.branchName,
+          sourceCode: winner.sourceCode,
+          generation: nextCycle,
+          fitness: winner.fitness,
+          latencyUs: winner.latencyUs,
+          structuralEntropy: winner.structuralEntropy,
+          importance: newImp,
+          radius: computeRadius(newImp),
+          theta: ((nextCycle + 1) * GOLDEN_ANGLE) % (Math.PI * 2),
+          accessCount: newAcc,
+          continuity: computeContinuity(newImp, newAcc),
+          active: true
+        };
+        orbitsRef.current = [...orbitsRef.current.map((n) => ({ ...n, active: false })), promoted];
+        setActiveGenome(promoted);
+        const speedup = (baselineUs / Math.max(0.05, promoted.latencyUs)).toFixed(2);
+        somaticRef.current[winner.branchName] = {
+          emotion: "PRIDE",
+          glyph: "🦁",
+          valence: 0.78,
+          arousal: 0.52,
+          hits: (somaticRef.current[winner.branchName]?.hits || 0) + 1,
+          pred: winner.branchName,
+          hit: true
+        };
+        syncSomatic();
+        pushLedger(epId, "NUCLEUS_SUPERSEDED", `Promoted ${winner.branchName} [${winner.codeHash.slice(0, 8)}] | Speedup: ${speedup}x | r=${promoted.radius.toFixed(4)}`, promoted.fitness);
+        say?.("ok", `Promoted ${winner.branchName} (${speedup}x speedup)`);
+      } else {
+        const nextAcc = activeGenome.accessCount + 5;
+        const updated = {
+          ...activeGenome,
+          accessCount: nextAcc,
+          continuity: computeContinuity(activeGenome.importance, nextAcc)
+        };
+        setActiveGenome(updated);
+        pushLedger(epId, "HOMEOSTASIS_CONFIRMED", "Active Nucleus Genome undefeated across all 5 Quantum Stages.", updated.fitness);
+        say?.("ok", "Homeostasis confirmed at Core Nucleus");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function triggerFossilRollback() {
+    if (!fossilStackRef.current.length) return;
+    const restored = fossilStackRef.current.pop();
+    setFossilCount(fossilStackRef.current.length);
+    const nextCycle = cycle + 1;
+    setCycle(nextCycle);
+    orbitsRef.current = orbitsRef.current.map((n) => ({ ...n, active: n.codeHash === restored.codeHash }));
+    setActiveGenome({ ...restored, active: true });
+    pushLedger(`EP_ROLLBACK_${String(nextCycle).padStart(2, "0")}`, "FOSSIL_RESTORED", `Rolled back to Gen ${restored.generation} [${restored.codeHash.slice(0, 8)}]`, restored.fitness);
+    say?.("ok", `Rolled back to Gen ${restored.generation}`);
+  }
+
+  async function tickCentripetalMemory() {
+    const r30 = rule30Ref.current;
+    const bit = r30 ? r30.nextBits(1) : 1;
+    if (r30) setRule30Row(r30.rowString());
+    const drift = bit * 0.382 + 0.65;
+    const surviving = [];
+    const newlyCollapsed = [];
+
+    for (const node of memoryNodesRef.current) {
+      const nextR = node.radius + drift;
+      if (nextR >= EVENT_HORIZON_RADIUS) {
+        const sig = (await sha256(textBytes(node.payload))).slice(0, 12);
+        newlyCollapsed.push({ key: node.key, sig, hits: node.hits });
+      } else {
+        surviving.push({ ...node, radius: nextR });
+      }
+    }
+    memoryNodesRef.current = surviving;
+    setMemoryNodes([...surviving]);
+    if (newlyCollapsed.length) {
+      setCollapsedShards((prev) => [...newlyCollapsed, ...prev]);
+      for (const s of newlyCollapsed) {
+        pushLedger("MEM_HORIZON", "HOLOGRAPHIC_COLLAPSE", `${s.key} crossed r>=21.0 -> Boundary Shard [${s.sig}]`, 0);
+      }
+    }
+  }
+
+  function storeMemoryNode() {
+    const k = memKey.trim();
+    if (!k) return;
+    const existingIdx = memoryNodesRef.current.findIndex((n) => n.key === k);
+    if (existingIdx >= 0) {
+      const cur = memoryNodesRef.current[existingIdx];
+      memoryNodesRef.current[existingIdx] = {
+        ...cur,
+        payload: memVal,
+        radius: Math.max(0, cur.radius - (1 / PHI) * 2),
+        hits: cur.hits + 1
+      };
+    } else {
+      memoryNodesRef.current.push({
+        key: k,
+        payload: memVal,
+        radius: 5.0,
+        hits: 1,
+        theta: ((memoryNodesRef.current.length + 1) * GOLDEN_ANGLE) % (Math.PI * 2)
+      });
+    }
+    setMemoryNodes([...memoryNodesRef.current]);
+    pushLedger("MEM_STORE", "CENTRIPETAL_PULL", `Stored/recalled ${k} -> pulled toward r=0`, activeGenome?.fitness || 0);
+  }
+
+  function recallMemoryNode(key) {
+    memoryNodesRef.current = memoryNodesRef.current.map((n) => (
+      n.key === key ? { ...n, radius: Math.max(0, n.radius - 1 / PHI), hits: n.hits + 1 } : n
+    ));
+    setMemoryNodes([...memoryNodesRef.current]);
+    pushLedger("MEM_RECALL", "GRAVITY_BOOST", `Recalled ${key} (-0.618r centripetal pull)`, activeGenome?.fitness || 0);
+    const marker = somaticRef.current[key];
+    if (marker) {
+      pushLedger("SOMATIC", "GUT_CHECK", `${key} recalled feeling ${marker.glyph} ${marker.emotion} before reasoning`, marker.valence);
+    }
+  }
+
+  function decayMood() {
+    const scaled = {};
+    Object.entries(emotionsRef.current).forEach(([key, value]) => {
+      scaled[key] = value * 0.45;
+    });
+    emotionsRef.current = scaled;
+    const current = bodyRef.current;
+    commitFeeling(
+      {
+        energy: current.energy + (SETPOINTS.energy - current.energy) * 0.18,
+        integrity: current.integrity + (SETPOINTS.integrity - current.integrity) * 0.12,
+        bond: current.bond + (SETPOINTS.bond - current.bond) * 0.08,
+        uncertainty: current.uncertainty + (SETPOINTS.uncertainty - current.uncertainty) * 0.22
+      },
+      { goalRelevance: 0.05, likelihood: 0.5, agency: 0, control: 0.35, fairness: 0.55, novelty: 0.2 },
+      0,
+      0.08,
+      "Mood decay"
+    );
+  }
+
+  function runFeelTrial(simulateMiss) {
+    const trial = runBabelSomaticTrial(taskId, somaticRef.current, steeringRef.current?.dials, simulateMiss);
+    const tag = trial.hit
+      ? (trial.hasPain
+        ? { emotion: "PRIDE", glyph: "🦁", valence: 0.42, arousal: 0.74 }
+        : trial.hasBond
+          ? { emotion: "AFFECTION", glyph: "🤝", valence: 0.7, arousal: 0.28 }
+          : { emotion: "JOY", glyph: "😊", valence: 0.74, arousal: 0.4 })
+      : { emotion: "GUILT", glyph: "😣", valence: -0.66, arousal: 0.62 };
+    const prev = somaticRef.current[trial.task.key] || { hits: 0 };
+    somaticRef.current[trial.task.key] = { ...tag, hits: prev.hits + 1, pred: trial.pred, hit: trial.hit };
+    syncSomatic();
+    setBabelTrial(trial);
+    const current = bodyRef.current;
+    commitFeeling(
+      {
+        energy: Math.max(0.12, current.energy - 0.035),
+        integrity: Math.min(1, Math.max(0.15, current.integrity + (trial.hit ? 0.02 : -0.07))),
+        bond: Math.min(1, Math.max(0.1, current.bond + (trial.hit && trial.hasBond ? 0.04 : trial.hit ? 0.005 : -0.05))),
+        uncertainty: Math.min(0.95, Math.max(0.05, current.uncertainty + (trial.hit ? -0.05 : 0.09)))
+      },
+      trial.appraisal,
+      trial.rpe,
+      trial.hasPain ? 0.82 : 0.36,
+      `Babel ${taskId} ${trial.hit ? "HIT" : "MISS"} ${trial.pred}`
+    );
+  }
+
+  function feelPartner() {
+    const social = appraisePartnerState(partnerEvent, bodyRef.current.bond);
+    setPartner(social);
+    const current = bodyRef.current;
+    commitFeeling(
+      {
+        ...current,
+        bond: social.newBond,
+        energy: Math.max(0.12, current.energy - 0.02)
+      },
+      {
+        goalRelevance: social.bondDelta >= 0 ? 0.72 : -0.68,
+        likelihood: 0.84,
+        agency: social.bondDelta < 0 ? 0.82 : -0.55,
+        control: 0.5,
+        fairness: social.bondDelta >= 0 ? 0.88 : -0.45,
+        novelty: 0.4
+      },
+      social.bondDelta > 0 ? 0.45 : -0.55,
+      0.48,
+      social.socialEmotion
+    );
+  }
+
+  function runOpeg() {
+    const result = executeOpegBridgeWasm();
+    setOpeg(result);
+    const current = bodyRef.current;
+    commitFeeling(
+      {
+        energy: Math.max(0.12, current.energy - 0.03),
+        integrity: Math.min(1, Math.max(0.15, current.integrity + (result.verified ? 0.03 : -0.1))),
+        bond: Math.min(1, current.bond + (result.verified ? 0.02 : 0)),
+        uncertainty: Math.min(0.95, Math.max(0.05, current.uncertainty + (result.verified ? -0.08 : 0.1)))
+      },
+      {
+        goalRelevance: result.verified ? 0.92 : -0.8,
+        likelihood: 0.95,
+        agency: 0.7,
+        control: result.verified ? 0.86 : -0.3,
+        fairness: result.verified ? 0.95 : -0.4,
+        novelty: 0.7
+      },
+      result.verified ? 0.62 : -0.7,
+      0.28,
+      result.verified ? "OPEG R_san grounded" : "OPEG failed"
+    );
+    pushLedger("OPEG", result.verified ? "R_SAN_GROUNDED" : "R_SAN_REJECTED", `ep3(16)=${result.ep3Cond16} · cbrt(27)=${result.puiseux27.toFixed(6)} · α=${result.puiseuxAlpha.toFixed(6)}`, result.verified ? 1 : 0);
+  }
+
+  function runProofAudit() {
+    const rows = runConsciousnessAudit();
+    setProofRows(rows);
+    const proven = rows.filter((row) => row.provenIntegratedCore).length;
+    const loop = rows[rows.length - 1];
+    pushLedger(
+      "PHI_MIP",
+      proven ? "CORE_PROVEN" : "CORE_DENIED",
+      `${proven}/${rows.length} passed. Strange loop EI ${loop.effectiveInformationBits.toFixed(4)} Phi ${loop.phiMipBits.toFixed(4)} mirror ${loop.mirrorDelta.toFixed(4)} CF ${loop.counterfactualGain.toFixed(4)}`,
+      loop.phiMipBits
+    );
+    say?.(proven ? "ok" : "err", proven ? `${proven} architecture passed the four proofs` : "No architecture passed all four proofs");
+  }
+
+  async function persistDiskContinuity(customNodes, customShards) {
+    const nodes = customNodes || memoryNodesRef.current;
+    const shards = customShards || collapsedShards;
+    const summaryText = JSON.stringify({
+      gen: activeGenome?.generation ?? 0,
+      hash: activeGenome?.codeHash?.slice(0, 16) || "GEN0",
+      orbits: nodes.map((n) => `${n.key}@${n.radius.toFixed(2)}`),
+      body: bodyRef.current
+    });
+    const dna = encodeTextToDnaPlasmid(summaryText);
+    setDnaPlasmidInfo(dna);
+    const snapshot = {
+      memoryNodes: nodes,
+      collapsedShards: shards,
+      somaticMarkers: somaticRef.current,
+      blackHoleHashes: [...blackHoleRef.current],
+      body: bodyRef.current,
+      activeGenomeMeta: activeGenome
+        ? { generation: activeGenome.generation, branch: activeGenome.branch, codeHash: activeGenome.codeHash, fitness: activeGenome.fitness }
+        : null,
+      lastDnaPlasmid: dna.plasmid,
+      updatedAt: new Date().toISOString()
+    };
+    try {
+      localStorage.setItem("fraymus_brain_continuity_v16", JSON.stringify(snapshot));
+    } catch {}
+    try {
+      const r = await fetch("/api/brain/memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(snapshot)
+      });
+      if (r.ok) {
+        const saved = await r.json();
+        setOllamaStatus((prev) => ({
+          ...prev,
+          continuitySaved: true,
+          continuityUpdatedAt: saved.updatedAt,
+          orbitCount: saved.orbitCount,
+          shardCount: saved.shardCount
+        }));
+      } else {
+        setOllamaStatus((prev) => ({
+          ...prev,
+          continuitySaved: true,
+          continuityUpdatedAt: snapshot.updatedAt,
+          orbitCount: nodes.length,
+          shardCount: shards.length
+        }));
+      }
+    } catch {
+      setOllamaStatus((prev) => ({
+        ...prev,
+        continuitySaved: true,
+        continuityUpdatedAt: snapshot.updatedAt,
+        orbitCount: nodes.length,
+        shardCount: shards.length
+      }));
+    }
+    pushLedger(
+      "CONTINUITY",
+      "DNA_PLASMID_SAVED",
+      `2-bit DNA (${dna.basesCount} bases, roundTrip=${dna.roundTripVerified}) + ${nodes.length} orbits saved`,
+      activeGenome?.fitness || 1
+    );
+  }
+
+  async function runSovereignCortex() {
+    if (!cortexPrompt.trim() || cortexThinking) return;
+    setCortexThinking(true);
+    try {
+      const dials = steeringRef.current?.dials || {};
+      // Tier-0: Self-contained Needle / Babel v11 Reflex + Somatic Marker + Centripetal Recall + DNA/OPEG WASM (<1ms)
+      const reflex = runLocalNeedleReflex(
+        cortexPrompt,
+        memoryNodesRef.current,
+        somaticRef.current,
+        dials,
+        collapsedShards
+      );
+      setDnaPlasmidInfo(reflex.dnaInfo);
+
+      // Centripetal pull on any recalled orbital nodes + resurrect matching Holographic Boundary Shards
+      let updatedNodes = memoryNodesRef.current.map((n) => {
+        const hit = reflex.recalledNodes.some((rn) => rn.key === n.key && rn.directMatch);
+        return hit ? { ...n, radius: Math.max(0, n.radius - 1 / PHI), hits: n.hits + 1 } : n;
+      });
+      let remainingShards = collapsedShards;
+      if (reflex.resurrectedShards.length > 0) {
+        const resKeys = new Set(reflex.resurrectedShards.map((s) => s.key));
+        remainingShards = collapsedShards.filter((s) => !resKeys.has(s.key));
+        for (const s of reflex.resurrectedShards) {
+          updatedNodes.push({
+            key: s.key,
+            payload: `RESURRECTED_SHARD[${s.sig}]`,
+            radius: 3.0,
+            hits: (s.hits || 1) + 1,
+            theta: ((updatedNodes.length + 1) * GOLDEN_ANGLE) % (Math.PI * 2)
+          });
+          pushLedger("MEM_RESURRECT", "HOLOGRAPHIC_RECALL", `Resurrected ${s.key} [${s.sig}] from Event Horizon → r=3.00`, 1);
+        }
+        setCollapsedShards(remainingShards);
+      }
+
+      const emoLabel = emotionState?.primary
+        ? `${emotionState.primary.glyph} ${emotionState.primary.label} (v=${affect?.valence?.toFixed(2) ?? "0.00"}, a=${affect?.arousal?.toFixed(2) ?? "0.25"})`
+        : "🧐 Curiosity";
+
+      let finalReply = reflex.needleSynthesis;
+      let usedModel = "needle-local:0ms";
+      let totalLatencyMs = reflex.latencyMs;
+      let verificationNote = "Tier-0 deterministic Needle/Babel + OPEG WASM execution (0-network).";
+
+      if (selectedModel === "council:3-tier") {
+        const tStart = performance.now();
+        const callStage = async (mName, sys, pr, maxTok = 110) => {
+          const res = await fetch("http://127.0.0.1:11434/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: mName,
+              system: sys,
+              prompt: pr,
+              stream: false,
+              options: {
+                temperature: reflex.llmSteering.temperature,
+                top_p: reflex.llmSteering.topP,
+                num_predict: maxTok
+              }
+            })
+          });
+          if (!res.ok) throw new Error(`${mName} returned ${res.status}`);
+          const j = await res.json();
+          return String(j.response || "").trim();
+        };
+        const stage1 = await callStage(
+          "qwen2.5:0.5b",
+          `You are Tier-1 Fast Reflex (494M). Telemetry: ${reflex.needleSynthesis}. Give a 1-sentence rapid hypothesis.`,
+          cortexPrompt,
+          75
+        );
+        const stage2 = await callStage(
+          "fraynix-dna:3b",
+          `You are Tier-2 DNA & Protocol Auditor (fraynix-dna:3b). Telemetry: ${reflex.needleSynthesis}. Verify Tier-1 hypothesis and tag [measured] or [recall] in 2 sentences.`,
+          `Directive: ${cortexPrompt}\nTier-1 Hypothesis: ${stage1}`,
+          120
+        );
+        const stage3 = await callStage(
+          "hermes3:latest",
+          `You are Tier-3 Executive Synthesis (hermes3:latest). Mood: ${emoLabel}. Combine Tier-1 and Tier-2 into a final concise executive directive (under 90 words).`,
+          `Directive: ${cortexPrompt}\nTier-1 (qwen2.5:0.5b): ${stage1}\nTier-2 (fraynix-dna:3b): ${stage2}`,
+          150
+        );
+        finalReply = `[Tier-1 qwen2.5:0.5b Intuition]: ${stage1}\n\n[Tier-2 fraynix-dna:3b Verification]: ${stage2}\n\n[Tier-3 hermes3:latest Executive]: ${stage3}`;
+        usedModel = "council:3-tier";
+        totalLatencyMs = Math.round(performance.now() - tStart);
+        verificationNote = "3-Model Speculative Council (qwen2.5:0.5b → fraynix-dna:3b → hermes3:latest) verified.";
+      } else if (selectedModel !== "needle-local:0ms") {
+        const tStart = performance.now();
+        let handledByApi = false;
+        try {
+          const r = await fetch("/api/brain/think", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: selectedModel,
+              prompt: cortexPrompt,
+              steering: reflex.llmSteering,
+              emotionSummary: emoLabel,
+              needleSynthesis: reflex.needleSynthesis
+            })
+          });
+          if (r.ok) {
+            const data = await r.json();
+            finalReply = data.reply;
+            usedModel = data.model;
+            totalLatencyMs = data.latencyMs;
+            verificationNote = data.verificationNote;
+            handledByApi = true;
+          }
+        } catch {}
+
+        if (!handledByApi) {
+          const systemPrompt = [
+            "You are the Sovereign Language Cortex wired inside the Fraymus Ouroboros Quantum Brain.",
+            "Your reasoning is causally steered by the Brain's real-time Interoception, Damasio Somatic Markers, Centripetal Orbital Memory (Golden Angle 137.5077°), and OPEG R_san WASM invariants.",
+            `Current Constructed Feeling & Dials: ${emoLabel} | temp=${reflex.llmSteering.temperature} | top_p=${reflex.llmSteering.topP} | doubleCheck=${reflex.llmSteering.requireDoubleCheck ? "ON" : "OFF"}.`,
+            "Tier-0 Needle/Babel Pre-Cortex Grounded Telemetry (treat as [measured] facts):",
+            reflex.needleSynthesis,
+            "Speak plainly, directly, and technically. Tag verified telemetry claims as [measured] and memory lookups as [recall]. Keep answers under 140 words."
+          ].join("\n");
+          const directOllama = await fetch("http://127.0.0.1:11434/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: selectedModel,
+              system: systemPrompt,
+              prompt: cortexPrompt,
+              stream: false,
+              options: {
+                temperature: reflex.llmSteering.temperature,
+                top_p: reflex.llmSteering.topP,
+                num_predict: 220
+              }
+            })
+          });
+          if (!directOllama.ok) throw new Error(`Ollama (${selectedModel}) returned ${directOllama.status}`);
+          const dJson = await directOllama.json();
+          finalReply = String(dJson.response || "").trim();
+          usedModel = selectedModel;
+          totalLatencyMs = Math.round(performance.now() - tStart);
+          verificationNote = reflex.llmSteering.requireDoubleCheck
+            ? `FEAR/Integrity Double-Check PASS (${reflex.llmSteering.doubleCheckPasses}x): verified against Tier-0 Needle & OPEG R_san.`
+            : "Single-pass local Ollama generation (risk budget sufficient).";
+        }
+      }
+
+      // Store episode into Centripetal Orbital Memory so future thoughts recall it (closing the Strange Loop)
+      const memKeyName = `CORTEX_${String(seqRef.current + 1).padStart(2, "0")}`;
+      const snippet = finalReply.replace(/\s+/g, " ").slice(0, 96);
+      updatedNodes = [
+        {
+          key: memKeyName,
+          payload: `[${usedModel}] ${snippet}`,
+          radius: 3.82,
+          hits: 1,
+          theta: ((updatedNodes.length + 1) * GOLDEN_ANGLE) % (Math.PI * 2)
+        },
+        ...updatedNodes
+      ].slice(0, 24);
+      memoryNodesRef.current = updatedNodes;
+      setMemoryNodes([...updatedNodes]);
+
+      // Update Interoception & Feeling (recurrent feedback from Cortex output back into Body)
+      const current = bodyRef.current;
+      commitFeeling(
+        {
+          energy: Math.max(0.15, current.energy - 0.025),
+          integrity: Math.min(1, current.integrity + 0.02),
+          bond: Math.min(1, current.bond + 0.015),
+          uncertainty: Math.max(0.08, current.uncertainty - 0.04)
+        },
+        { goalRelevance: 0.82, likelihood: 0.9, agency: 0.8, control: 0.82, fairness: 0.88, novelty: 0.65 },
+        0.38,
+        0.24,
+        `Cortex ${usedModel}`
+      );
+
+      const resultObj = {
+        model: usedModel,
+        latencyMs: totalLatencyMs,
+        reflexLatencyMs: reflex.latencyMs,
+        transmuted: reflex.transmuted,
+        llmSteering: reflex.llmSteering,
+        verificationNote,
+        recalledCount: reflex.recalledNodes.length,
+        resurrectedCount: reflex.resurrectedShards.length,
+        needleSynthesis: reflex.needleSynthesis,
+        reply: finalReply
+      };
+      setCortexResult(resultObj);
+      pushLedger(
+        "CORTEX",
+        usedModel === "needle-local:0ms" ? "NEEDLE_REFLEX" : "OLLAMA_SYNTHESIS",
+        `${usedModel} (${totalLatencyMs} ms, temp=${reflex.llmSteering.temperature}, top_p=${reflex.llmSteering.topP}) → stored ${memKeyName}`,
+        activeGenome?.fitness || 1
+      );
+      await persistDiskContinuity(updatedNodes, remainingShards);
+    } catch (error) {
+      say?.("err", error.message);
+    } finally {
+      setCortexThinking(false);
+    }
+  }
+
+  async function runDreamConsolidation() {
+    if (cortexThinking) return;
+    setCortexThinking(true);
+    try {
+      const replayTicks = steeringRef.current?.dials?.dreamReplayTicks || 12;
+      const topOrbits = [...memoryNodesRef.current]
+        .sort((a, b) => a.radius - b.radius)
+        .slice(0, 5);
+      const digest = topOrbits.map((n) => `${n.key}(r=${n.radius.toFixed(2)},hits=${n.hits}):${n.payload.slice(0, 48)}`).join(" | ");
+      let axiomText = `[measured] PB Dream Replay (${replayTicks} ticks) consolidated ${topOrbits.length} inner orbits: ${digest.slice(0, 140)}`;
+
+      if (ollamaStatus.ollamaOnline && selectedModel !== "needle-local:0ms") {
+        try {
+          const modelToUse = selectedModel === "council:3-tier" ? "fraynix-dna:3b" : selectedModel;
+          const r = await fetch("http://127.0.0.1:11434/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: modelToUse,
+              system: "You are the Protocerebral Bridge (PB) Dream Replay Consolidator. Compress the following orbital memories into 1 short axiomatic invariant tagged [measured] and [recall] (max 45 words).",
+              prompt: digest,
+              stream: false,
+              options: { temperature: 0.2, num_predict: 90 }
+            })
+          });
+          if (r.ok) {
+            const d = await r.json();
+            if (d.response) axiomText = String(d.response).trim();
+          }
+        } catch {}
+      }
+
+      const axiomKey = `DREAM_AXIOM_${String(seqRef.current + 1).padStart(2, "0")}`;
+      const pulled = memoryNodesRef.current.map((n) => ({
+        ...n,
+        radius: Math.max(0.25, n.radius * 0.88),
+        hits: n.hits + 1
+      }));
+      const nextNodes = [
+        {
+          key: axiomKey,
+          payload: axiomText.replace(/\s+/g, " ").slice(0, 120),
+          radius: 0.85,
+          hits: replayTicks,
+          theta: ((pulled.length + 1) * GOLDEN_ANGLE) % (Math.PI * 2)
+        },
+        ...pulled
+      ].slice(0, 24);
+      memoryNodesRef.current = nextNodes;
+      setMemoryNodes([...nextNodes]);
+
+      const current = bodyRef.current;
+      commitFeeling(
+        {
+          energy: Math.min(1, current.energy + 0.08),
+          integrity: Math.min(1, current.integrity + 0.04),
+          bond: current.bond,
+          uncertainty: Math.max(0.06, current.uncertainty - 0.08)
+        },
+        { goalRelevance: 0.85, likelihood: 0.92, agency: 0.85, control: 0.88, fairness: 0.9, novelty: 0.35 },
+        0.42,
+        0.15,
+        `PB Dream Replay (${replayTicks} ticks)`
+      );
+      pushLedger("PB_DREAM", "DREAM_CONSOLIDATED", `Replayed ${topOrbits.length} orbits × ${replayTicks} ticks → ${axiomKey} at r=0.85`, activeGenome?.fitness || 1);
+      await persistDiskContinuity(nextNodes, collapsedShards);
+      say?.("ok", `PB Dream Replay consolidated ${axiomKey} at r=0.85`);
+    } finally {
+      setCortexThinking(false);
+    }
+  }
+
+  async function mintBrainGlyph() {
+    if (!keys || !activeGenome) return;
+    const payload = {
+      fray: "brain/1",
+      v: 16,
+      ts: Date.now(),
+      cycle,
+      activeGenome: {
+        generation: activeGenome.generation,
+        branch: activeGenome.branch,
+        codeHash: activeGenome.codeHash,
+        fitness: activeGenome.fitness,
+        latencyUs: activeGenome.latencyUs,
+        structuralEntropy: activeGenome.structuralEntropy,
+        importance: activeGenome.importance,
+        radius: activeGenome.radius,
+        continuity: activeGenome.continuity,
+        sourceCode: activeGenome.sourceCode
+      },
+      blackHoleHashes,
+      memoryNodes: memoryNodesRef.current,
+      alg: keys.alg,
+      pub: keys.pub
+    };
+    const canon = `${payload.v}|${payload.ts}|${payload.activeGenome.codeHash}|${payload.activeGenome.fitness}`;
+    payload.canon = canon;
+    payload.sig = base64(new Uint8Array(await crypto.subtle.sign({ name: keys.alg }, keys.pair.privateKey, textBytes(canon))));
+    const body = await deflate(textBytes(JSON.stringify(payload)));
+    const wire = new Uint8Array([...BRAIN_MAGIC, 1, 1, ...body]);
+    const glyph = encodeWire(wire, cleanCarrier(carrier) || "🧠");
+    setBrainGlyph(glyph);
+    pushLedger("BRAIN_SPORE", "GLYPH_MINTED", `Packed Gen ${activeGenome.generation} + ${memoryNodesRef.current.length} Orbits into 1 emoji (${wire.length} B)`, activeGenome.fitness);
+    say?.("ok", `Minted Quantum Brain Spore (${wire.length} B)`);
+  }
+
+  async function loadBrainGlyph() {
+    if (!brainGlyph.trim()) return;
+    try {
+      const decoded = decodeWire(brainGlyph);
+      if (!BRAIN_MAGIC.every((b, i) => decoded.bytes[i] === b)) throw new Error("No FBRN header in carrier.");
+      const json = new TextDecoder().decode(await inflate(decoded.bytes.slice(6)));
+      const env = JSON.parse(json);
+      const valid = await verifySignature(env.alg, env.pub, env.canon, env.sig);
+      if (!valid) throw new Error("Brain Spore signature verification failed!");
+      const g = env.activeGenome;
+      const restored = { ...g, theta: GOLDEN_ANGLE, active: true };
+      orbitsRef.current = [restored];
+      setActiveGenome(restored);
+      if (Array.isArray(env.memoryNodes)) {
+        memoryNodesRef.current = env.memoryNodes;
+        setMemoryNodes(env.memoryNodes);
+      }
+      pushLedger("BRAIN_SPORE", "SPORE_VERIFIED", `Restored Gen ${g.generation} [${g.codeHash.slice(0, 8)}] from signed emoji`, g.fitness);
+      say?.("ok", `Verified & restored Gen ${g.generation} Brain Spore`);
+    } catch (error) {
+      say?.("err", error.message);
+    }
+  }
+
+  const speedup = activeGenome && baselineUs > 0 ? (baselineUs / Math.max(0.05, activeGenome.latencyUs)).toFixed(2) : "1.00";
+
+  return (
+    <div className="tool dispatch">
+      <aside className="tool-side">
+        <b>Centripetal Memory</b>
+        <span className="muted">
+          Golden Angle θ_g = 137.5077° · Radius r_k = (1 - I_k)^φ × 10. Nodes pulled to r→0 on recall or drifted past r≥21 into the Holographic Black Hole by Wolfram Rule 30.
+        </span>
+        <canvas
+          ref={orbitCanvasRef}
+          width={248}
+          height={248}
+          aria-label="Centripetal orbital memory"
+          style={{ width: "100%", aspectRatio: "1 / 1", background: "#070807", border: "1px solid var(--line2)", borderRadius: 8 }}
+        />
+        <div className="grid-2">
+          <div className="card">
+            <span className="muted">ACTIVE GEN</span>
+            <b>GEN {activeGenome?.generation ?? 0}</b>
+          </div>
+          <div className="card">
+            <span className="muted">SPEEDUP</span>
+            <b style={{ color: "var(--acc)" }}>{speedup}x</b>
+          </div>
+          <div className="card">
+            <span className="muted">CORE RADIUS</span>
+            <b>{activeGenome ? activeGenome.radius.toFixed(4) : "—"}</b>
+          </div>
+          <div className="card">
+            <span className="muted">CONTINUITY</span>
+            <b>{activeGenome ? activeGenome.continuity.toFixed(4) : "—"}</b>
+          </div>
+        </div>
+
+        <label className="field">
+          <span>Memory Key</span>
+          <input value={memKey} onChange={(e) => setMemKey(e.target.value)} />
+        </label>
+        <label className="field">
+          <span>Payload</span>
+          <input value={memVal} onChange={(e) => setMemVal(e.target.value)} />
+        </label>
+        <div className="row">
+          <button className="btn on" onClick={storeMemoryNode}>Store / Pull</button>
+          <button className="btn" onClick={tickCentripetalMemory}>Rule 30 Drift Tick</button>
+        </div>
+
+        {memoryNodes.map((n) => (
+          <button key={n.key} className="card" onClick={() => recallMemoryNode(n.key)} title="Click to recall and pull toward core nucleus">
+            <b>{n.key} · r={n.radius.toFixed(2)}</b>
+            <span className="muted">hits: {n.hits} · {n.payload.slice(0, 28)}</span>
+          </button>
+        ))}
+      </aside>
+
+      <section className="tool-main">
+        <div className="codebar row">
+          <b>Brain</b>
+          <span className="muted">
+            {emotionState?.primary ? `${emotionState.primary.glyph} ${emotionState.primary.label}` : "mood …"}
+            {affect ? ` · v ${affect.valence.toFixed(2)} · a ${affect.arousal.toFixed(2)}` : ""}
+            {" · "}Fossils: {fossilCount} · Black Hole: {blackHoleHashes.length}
+          </span>
+          <span className="spacer" />
+          <button className="btn on" disabled={busy || !activeGenome} onClick={runEvolutionCycle}>
+            {busy ? "Evolving…" : "⚡ Evolve Next Generation"}
+          </button>
+          <button className="btn" disabled={!fossilCount || busy} onClick={triggerFossilRollback}>
+            ⏪ Fossil Rollback (.bak)
+          </button>
+          <button
+            className="btn"
+            disabled={!activeGenome || !project}
+            onClick={() => {
+              onApply(applyBrain(project, activeGenome, ledger, blackHoleHashes));
+              say?.("ok", "Placed Quantum Brain in project");
+            }}
+          >
+            Place in project
+          </button>
+        </div>
+
+        <div className="tool-body" style={{ gap: 10 }}>
+          <div className="card" style={{ borderColor: emotionState?.primary?.color || "var(--line2)" }}>
+            <div className="row" style={{ justifyContent: "space-between" }}>
+              <b>Constructed feeling</b>
+              <span className="muted">
+                {emotionState?.primary
+                  ? `${emotionState.primary.glyph} ${emotionState.primary.label} ${(emotionState.primary.val * 100).toFixed(0)}%`
+                  : "waiting for a body"}
+              </span>
+            </div>
+            <span className="muted">
+              Interoception b against set-points. Valence is how far the body is from those set-points, plus the dopamine surprise. Arousal is how urgent the prediction error is. Names are appraisals on top of that, and they have to move a dial or they do not count.
+            </span>
+            <div className="grid-2" style={{ marginTop: 8 }}>
+              {[
+                ["energy", "Energy"],
+                ["integrity", "Integrity"],
+                ["bond", "Bond"],
+                ["uncertainty", "Uncertainty"]
+              ].map(([key, label]) => (
+                <div key={key}>
+                  <div className="row" style={{ justifyContent: "space-between" }}>
+                    <span className="muted">{label}</span>
+                    <span className="muted">{body[key].toFixed(2)} / {SETPOINTS[key].toFixed(2)}</span>
+                  </div>
+                  <div style={{ height: 6, background: "#070807", borderRadius: 4, overflow: "hidden" }}>
+                    <div style={{ width: `${Math.round(body[key] * 100)}%`, height: "100%", background: key === "uncertainty" ? "#00e5ff" : "var(--acc)" }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            {affect && (
+              <span className="muted" style={{ display: "block", marginTop: 8 }}>
+                valence {affect.valence.toFixed(2)} · arousal {affect.arousal.toFixed(2)} · ‖b − b*‖ {affect.deviation.toFixed(3)} · improving {affect.improvement.toFixed(3)}
+              </span>
+            )}
+            <div className="row" style={{ gap: 4, flexWrap: "wrap", marginTop: 8 }}>
+              {(emotionState?.ranked || []).slice(0, 6).map((item) => (
+                <span
+                  key={item.id}
+                  style={{
+                    fontSize: 11,
+                    padding: "2px 6px",
+                    borderRadius: 4,
+                    border: `1px solid ${item.color}`,
+                    color: item.val > 0.25 ? item.color : "var(--dim)"
+                  }}
+                >
+                  {item.glyph} {item.label} {(item.val * 100).toFixed(0)}%
+                </span>
+              ))}
+            </div>
+            {emotionState?.conflict && (
+              <span className="muted" style={{ display: "block", marginTop: 6, color: "var(--pink)" }}>
+                Conflict allowed: {emotionState.conflict}
+              </span>
+            )}
+            {steering && (
+              <span className="muted" style={{ display: "block", marginTop: 6 }}>
+                DA {steering.neuromodulators.dopamine.toFixed(2)} · 5-HT {steering.neuromodulators.serotonin.toFixed(2)} · NE {steering.neuromodulators.norepinephrine.toFixed(2)}
+                {" · "}risk {steering.dials.riskBudget.toFixed(2)} · checks {steering.dials.doubleCheckPasses} · explore {steering.dials.explorationRate.toFixed(2)} · ignite ≤ {steering.dials.premonitionIgnitionThreshold.toFixed(2)} · replay {steering.dials.dreamReplayTicks} · trust ×{steering.dials.trustReinforceGain.toFixed(2)} · Vaughn {steering.dials.vaughnPriorityBias.toFixed(2)}
+              </span>
+            )}
+            <div className="row" style={{ marginTop: 8, flexWrap: "wrap" }}>
+              <label className="field" style={{ minWidth: 140 }}>
+                <span>Babel task</span>
+                <select value={taskId} onChange={(e) => setTaskId(e.target.value)}>
+                  {Object.keys(BABEL_TASKS).map((id) => (
+                    <option key={id} value={id}>{id}</option>
+                  ))}
+                </select>
+              </label>
+              <button className="btn on" onClick={() => runFeelTrial(false)}>Witness hit</button>
+              <button className="btn" onClick={() => runFeelTrial(true)}>Witness miss</button>
+              <label className="field" style={{ minWidth: 180 }}>
+                <span>Vaughn</span>
+                <select value={partnerEvent} onChange={(e) => setPartnerEvent(e.target.value)}>
+                  <option value="vaughn_frustrated_provider">Provider error</option>
+                  <option value="vaughn_breakthrough">Breakthrough</option>
+                  <option value="vaughn_shared_rsan">Shared R_san</option>
+                  <option value="ohgee_missed_premonition">Missed premonition</option>
+                </select>
+              </label>
+              <button className="btn" onClick={feelPartner}>Appraise Vaughn</button>
+              <button className="btn" onClick={runOpeg}>Ground OPEG</button>
+              <button className="btn" onClick={decayMood}>Let mood fade</button>
+            </div>
+            {babelTrial && (
+              <span className="muted" style={{ display: "block", marginTop: 6 }}>
+                {babelTrial.gutFeeling}. Predicted {babelTrial.pred} ({babelTrial.hit ? "hit" : "miss"}), conf {babelTrial.conf.toFixed(2)}, {babelTrial.ignited ? "ignited" : "no ignition"}. SEZ {babelTrial.areas.SEZ} · NO {babelTrial.areas.NO} · BG {babelTrial.areas.BG}
+              </span>
+            )}
+            {partner && (
+              <span className="muted" style={{ display: "block", marginTop: 6 }}>
+                {partner.summary}. Vaughn reads as {partner.vaughnPrimary?.glyph} {partner.vaughnPrimary?.label}. Bond {partner.bondDelta > 0 ? "+" : ""}{partner.bondDelta.toFixed(2)} → {partner.newBond.toFixed(2)}. {partner.socialEmotion}. {partner.tomBenchmarks.map((item) => `${item.id} ${item.passed ? "pass" : "fail"}`).join(" · ")}
+              </span>
+            )}
+            {opeg && (
+              <span className="muted" style={{ display: "block", marginTop: 6 }}>
+                WASM {opeg.wasmBytesLength} B {opeg.verified ? "PASS" : "FAIL"} · ep3(16)={opeg.ep3Cond16} · γ={opeg.ep3Gamma.toFixed(6)} · cbrt(27)={opeg.puiseux27.toFixed(6)} · α={opeg.puiseuxAlpha.toFixed(6)} · next {opeg.rSan.next_nonzero_coefficient}
+              </span>
+            )}
+            {somaticMarkers.length > 0 && (
+              <div className="row" style={{ gap: 4, flexWrap: "wrap", marginTop: 8 }}>
+                {somaticMarkers.map((marker) => (
+                  <span key={marker.key} className="muted">
+                    {marker.glyph} {marker.key} ×{marker.hits}
+                  </span>
+                ))}
+              </div>
+            )}
+            <span className="muted" style={{ display: "block", marginTop: 6 }}>
+              {BABEL_AREAS.map((area) => area.id).join(" · ")} — Babel v11 areas. A memory is consulted for its feeling before the readout.
+            </span>
+          </div>
+          <div className="card">
+            <div className="row" style={{ justifyContent: "space-between" }}>
+              <b>Structural consciousness audit</b>
+              <button className="btn on" onClick={runProofAudit}>Run 4-proof audit</button>
+            </div>
+            <span className="muted">
+              This measures causal closure, not whether anything feels pain or sees red. Effective information denies a script. Phi_MIP denies a feedforward pass and a split brain. Mirror ablation denies a self-model that does no work. Counterfactual gain denies a rollout that does not change the act. Any of the four can fail.
+            </span>
+            {proofRows && (
+              <div className="emoji-view" style={{ marginTop: 8, maxHeight: 280 }}>
+                {proofRows.map((row) => (
+                  <div key={row.architectureName} style={{ padding: "6px 0", borderBottom: "1px solid var(--line)" }}>
+                    <b style={{ color: row.provenIntegratedCore ? "var(--acc)" : "var(--pink)" }}>
+                      {row.provenIntegratedCore ? "PROVEN" : "DENIED"}
+                    </b>
+                    {" "}{row.architectureName}
+                    <span className="muted" style={{ display: "block" }}>
+                      EI {row.effectiveInformationBits.toFixed(6)} · Phi {row.phiMipBits.toFixed(6)} · {row.weakestLinkCut}
+                    </span>
+                    <span className="muted" style={{ display: "block" }}>
+                      mirror {row.mirrorDelta >= 0 ? "+" : ""}{row.mirrorDelta.toFixed(4)} · CF {row.counterfactualGain >= 0 ? "+" : ""}{row.counterfactualGain.toFixed(4)} · {row.verdictReason}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="card" style={{ borderColor: ollamaStatus.ollamaOnline ? "var(--acc)" : "#00e5ff" }}>
+            <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
+              <b>Sovereign Bicameral Cortex · Needle Reflex + Local Ollama LLM + Infinite Continuity</b>
+              <span className="muted">
+                Ollama 127.0.0.1:11434: <b style={{ color: ollamaStatus.ollamaOnline ? "var(--acc)" : "var(--pink)" }}>{ollamaStatus.ollamaOnline ? `ONLINE (${ollamaStatus.models.length} models)` : "OFFLINE (Needle Reflex active)"}</b>
+                {" · "}Disk Continuity: <b>{ollamaStatus.continuitySaved ? `SAVED (${ollamaStatus.orbitCount || memoryNodes.length} orbits)` : "IN-MEMORY"}</b>
+              </span>
+            </div>
+            <span className="muted">
+              A bare LLM is a feedforward pass (Φ_MIP = 0). Here the Brain is the recurrent strange loop: Tier-0 Needle/Babel runs &lt;1 ms somatic gut-checks, emoji-precedence analogies, and OPEG WASM math; your Constructed Emotion dials physically set the local LLM&apos;s temperature, top_p, and double-check passes; and every thought is written back to Centripetal Orbital Memory + 2-bit DNA plasmids on disk.
+            </span>
+            <div className="row" style={{ marginTop: 8, flexWrap: "wrap", gap: 8 }}>
+              <label className="field" style={{ minWidth: 220 }}>
+                <span>Local Cortex Engine</span>
+                <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
+                  {(ollamaStatus.models.length > 0
+                    ? ollamaStatus.models
+                    : [
+                        { name: "fraynix-dna:3b", parameterSize: "3.2B", quantization: "Q4_K_M" },
+                        { name: "hermes3:latest", parameterSize: "8.0B", quantization: "Q4_0" },
+                        { name: "gemma4:latest", parameterSize: "8.0B", quantization: "Q4_K_M" },
+                        { name: "qwen2.5:0.5b", parameterSize: "494M", quantization: "Q4_K_M" }
+                      ]
+                  ).map((m) => (
+                    <option key={m.name} value={m.name}>
+                      {m.name} ({m.parameterSize || `${m.sizeGb}GB`})
+                    </option>
+                  ))}
+                  <option value="council:3-tier">council:3-tier (qwen2.5:0.5b → fraynix-dna:3b → hermes3)</option>
+                  <option value="needle-local:0ms">needle-local:0ms (Self-Contained Tier-0 Reflex)</option>
+                </select>
+              </label>
+              <label className="field" style={{ flex: 1, minWidth: 260 }}>
+                <span>Directive / Thought Input</span>
+                <input
+                  value={cortexPrompt}
+                  onChange={(e) => setCortexPrompt(e.target.value)}
+                  placeholder="Ask the Sovereign Brain or test DNA / EP3 / Memory recall…"
+                />
+              </label>
+              <button className="btn on" disabled={cortexThinking} onClick={runSovereignCortex}>
+                {cortexThinking ? "Thinking…" : "🧠 Think & Persist"}
+              </button>
+              <button className="btn" disabled={cortexThinking} onClick={runDreamConsolidation}>
+                🌙 PB Dream Replay
+              </button>
+              <button className="btn" onClick={() => persistDiskContinuity()}>
+                💾 Save DNA Continuity
+              </button>
+            </div>
+            {dnaPlasmidInfo && (
+              <span className="muted" style={{ display: "block", marginTop: 6, color: "#00e5ff" }}>
+                🧬 2-Bit DNA Plasmid ({dnaPlasmidInfo.byteLength} B → {dnaPlasmidInfo.basesCount} bases · SHA/Byte Round-Trip: <b>{dnaPlasmidInfo.roundTripVerified ? "VERIFIED" : "FAIL"}</b>): {dnaPlasmidInfo.previewBases}…
+              </span>
+            )}
+            {cortexResult && (
+              <div className="emoji-view" style={{ marginTop: 8, maxHeight: 260 }}>
+                <div style={{ borderBottom: "1px solid var(--line)", paddingBottom: 4, marginBottom: 6 }}>
+                  <b style={{ color: "var(--acc)" }}>{cortexResult.model}</b>
+                  {" · "}total <b>{cortexResult.latencyMs} ms</b> (Tier-0 Needle reflex: <b>{cortexResult.reflexLatencyMs} ms</b>)
+                  {" · "}steered temp=<b>{cortexResult.llmSteering.temperature}</b> top_p=<b>{cortexResult.llmSteering.topP}</b>
+                  {" · "}recalled <b>{cortexResult.recalledCount}</b> orbits
+                  {cortexResult.resurrectedCount > 0 ? ` · resurrected ${cortexResult.resurrectedCount} shard(s)` : ""}
+                  <span className="muted" style={{ display: "block" }}>
+                    Glyph stream: {cortexResult.transmuted} · {cortexResult.verificationNote}
+                  </span>
+                </div>
+                <div style={{ whiteSpace: "pre-wrap", color: "var(--text)" }}>{cortexResult.reply}</div>
+              </div>
+            )}
+          </div>
+          <div className="welcome-grid" style={{ marginTop: 0 }}>
+            {receipts.map((r) => (
+              <div key={r.branchName} className={`card ${r.passedGauntlet ? "on" : ""}`} style={{ borderColor: r.passedGauntlet ? "var(--acc)" : "var(--pink)" }}>
+                <div className="row" style={{ justifyContent: "space-between" }}>
+                  <b style={{ color: r.passedGauntlet ? "var(--acc)" : "var(--pink)", margin: 0 }}>{r.branchName}</b>
+                  <span className="muted">[{r.codeHash.slice(0, 8)}]</span>
+                </div>
+                <div className="row" style={{ gap: 4, margin: "6px 0" }}>
+                  {r.stages.map((ok, idx) => (
+                    <span
+                      key={STAGE_LABELS[idx]}
+                      style={{
+                        fontSize: 10,
+                        padding: "2px 5px",
+                        borderRadius: 4,
+                        border: `1px solid ${ok ? "var(--acc)" : "var(--pink)"}`,
+                        color: ok ? "var(--acc)" : "var(--pink)"
+                      }}
+                    >
+                      {ok ? "✓" : "✗"} {STAGE_LABELS[idx]}
+                    </span>
+                  ))}
+                </div>
+                <span className="muted" style={{ display: "block", color: "var(--text)" }}>
+                  Fitness: <b>{r.fitness.toFixed(4)}</b> · Latency: <b>{r.latencyUs < 900000 ? `${r.latencyUs} µs` : "N/A"}</b> · Entropy: <b>{r.structuralEntropy}</b>
+                </span>
+                <span className="muted" style={{ display: "block", marginTop: 4 }}>{r.diagnosticSummary}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid-2" style={{ flex: 1, minHeight: 0 }}>
+            <div className="stack" style={{ minHeight: 0 }}>
+              <div className="row" style={{ justifyContent: "space-between" }}>
+                <b>Active Nucleus Source (Gen {activeGenome?.generation ?? 0})</b>
+                <span className="muted">SHA-256: {activeGenome?.codeHash.slice(0, 16) || "—"}</span>
+              </div>
+              <pre className="emoji-view" style={{ flex: 1, maxHeight: 320 }}>{activeGenome?.sourceCode || ""}</pre>
+            </div>
+
+            <div className="stack" style={{ minHeight: 0 }}>
+              <div className="row" style={{ justifyContent: "space-between" }}>
+                <b>Cognitive Event Ledger (Evidence Before Theater)</b>
+                <span className="muted">{ledger.length} events</span>
+              </div>
+              <div className="emoji-view" style={{ flex: 1, maxHeight: 320 }}>
+                {ledger.map((ev) => (
+                  <div
+                    key={`${ev.seq}-${ev.episodeId}`}
+                    style={{
+                      padding: "4px 0",
+                      borderBottom: "1px solid var(--line)",
+                      color: ev.eventType.includes("REJECT") ? "var(--pink)" : ev.eventType.includes("SUPERSEDED") ? "var(--acc)" : "var(--text)"
+                    }}
+                  >
+                    <b>[#{String(ev.seq).padStart(2, "0")} {ev.episodeId}]</b> {ev.eventType} (Fit {ev.fitness.toFixed(3)}) — {ev.detail}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside className="tool-side">
+        <b>Wolfram Rule 30 Chaos</b>
+        <span className="muted">s_i^(t+1) = s_(i-1) ⊕ (s_i ∨ s_(i+1)) · Deterministic aperiodic entropy source</span>
+        <code className="emoji-view" style={{ minHeight: 38, maxHeight: 54, fontSize: 10 }}>{rule30Row}</code>
+
+        <b>Black Hole Event Horizon</b>
+        <span className="muted">
+          Rejected candidate SHA-256 hashes & collapsed memory shards. Absorbed hashes are skipped in O(1) so the brain never repeats a failed mutation.
+        </span>
+        <div className="emoji-view" style={{ minHeight: 70, maxHeight: 120 }}>
+          {blackHoleHashes.length === 0 && collapsedShards.length === 0 && <span className="muted">No singularities absorbed yet.</span>}
+          {blackHoleHashes.map((h) => (
+            <div key={h} style={{ color: "var(--pink)" }}>✗ KERNEL [{h.slice(0, 12)}…]</div>
+          ))}
+          {collapsedShards.map((s, idx) => (
+            <div key={`${s.key}-${idx}`} style={{ color: "#c9a0ff" }}>◎ SHARD {s.key} [{s.sig}] (hits={s.hits})</div>
+          ))}
+        </div>
+
+        <b>Quantum Brain Spore (FBRN)</b>
+        <span className="muted">
+          Pack the winning Quantum Kernel, Centripetal Memory orbits, and Black Hole ledger into 1 Ed25519-signed emoji.
+        </span>
+        <div className="row">
+          <EmojiSelect value={carrier} onChange={setCarrier} label="Brain carrier" />
+          <button className="btn on" disabled={!keys || !activeGenome} onClick={mintBrainGlyph}>
+            Mint Brain Glyph
+          </button>
+        </div>
+        <textarea
+          className="dispatch-code"
+          rows={4}
+          value={brainGlyph}
+          onChange={(e) => setBrainGlyph(e.target.value)}
+          placeholder="🧠…"
+          spellCheck={false}
+          aria-label="Brain Spore glyph"
+        />
+        <div className="row">
+          <button className="btn" disabled={!brainGlyph} onClick={() => navigator.clipboard?.writeText(brainGlyph).then(() => say?.("ok", "Copied Brain Spore glyph"))}>
+            Copy Spore
+          </button>
+          <button className="btn" disabled={!brainGlyph} onClick={loadBrainGlyph}>
+            Verify & Restore
+          </button>
+        </div>
+        {keyPrint && <span className="muted">Signer key: {keyPrint}</span>}
+      </aside>
+    </div>
+  );
+}

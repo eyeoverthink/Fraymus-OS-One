@@ -4,6 +4,7 @@ data/runtime
 data/published
 data/projects
 data/mailbox
+data/brain
 .env
 hf-token.txt
 .env.*
