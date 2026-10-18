@@ -1071,11 +1071,21 @@ export function renderPixel(image, options) {
     empty: cropped.empty,
     grid: flat.width,
     palette: flat.palette,
+    cells: { data: outlined, width: flat.width, height: flat.height },
     result: new ImageData(result, portrait.width, portrait.height),
     trace: new ImageData(inversionTrace(source, mask), source.width, source.height),
     matte: new ImageData(matte, source.width, source.height),
     abstract: new ImageData(abstract.data, abstract.width, abstract.height)
   };
+}
+
+export function presentBlocks(blocks, maxSize = 720, cyan = 8) {
+  const edge = Math.max(blocks.width, blocks.height);
+  const scale = Math.max(2, Math.floor(maxSize / edge));
+  const portrait = nearestScale(blocks, blocks.width * scale);
+  const data = paintCyan(portrait, cyan);
+  if (typeof ImageData !== "undefined") return new ImageData(data, portrait.width, portrait.height);
+  return { data, width: portrait.width, height: portrait.height };
 }
 
 export function drawCrisp(canvas, image, maxSize = 512) {

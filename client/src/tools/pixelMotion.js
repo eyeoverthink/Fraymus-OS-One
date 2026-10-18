@@ -42,11 +42,11 @@ export function styleImage(source, options, maxSize) {
   const mask = buildSubjectMask(image, options.tolerance);
   const made = renderPixel(image, { ...options, mask });
   const shown = options.view === "trace" ? made.trace : options.view === "matte" ? made.abstract : made.result;
-  return { shown, palette: made.palette, empty: made.empty };
+  return { shown, cells: made.cells, palette: made.palette, empty: made.empty };
 }
 
-export const MOSAIC_CHUNK = 8;
-const MOSAIC_HOLD = 18;
+export const MOSAIC_CHUNK = 4;
+const MOSAIC_HOLD = 0;
 
 function mosaicSize(width, height) {
   const limit = Math.min(MOSAIC_CHUNK, width, height);

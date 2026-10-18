@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { buildAppSource, ensureMern } from "../model.js";
-import { brushMask, buildSubjectMask, drawCrisp, fitSource, liftMask, offsetMask, renderPixel, traceCut, trimCeiling, trimSides } from "./pixelEngine.js";
-import { CARTOON_FPS, CLIP_EDGE, CLIP_FPS, EXPORT_EDGE, LIVE_EDGE, buildMosaic, isVideoFile, measureDuration, motionView, packFrame, paintMosaic, portraitJpeg, seekVideo, stampWebmDuration, styleImage, webmMime } from "./pixelMotion.js";
+import { brushMask, buildSubjectMask, drawCrisp, fitSource, liftMask, offsetMask, presentBlocks, renderPixel, traceCut, trimCeiling, trimSides } from "./pixelEngine.js";
+import { CARTOON_FPS, CLIP_EDGE, CLIP_FPS, EXPORT_EDGE, LIVE_EDGE, PACK_EDGE, buildMosaic, isVideoFile, measureDuration, motionView, paintMosaic, portraitJpeg, seekVideo, stampWebmDuration, styleImage, webmMime } from "./pixelMotion.js";
 import { composeTalkCells } from "./pixelMouth.js";
 import { LINE_GAP, MOUTH_CELLS, TALK_FPS, frameAt, lineSchedule, talkMime, voiceEnvelope } from "./pixelTalk.js";
 
@@ -625,9 +625,9 @@ export default function PixelPage({ project, onApply, say }) {
     }
   }
 
-  function keepLoop(made) {
+  function keepLoop(made, present = (frame) => frame) {
     const mosaic = buildMosaic(made);
-    const frames = mosaic.maps.map((_, index) => paintMosaic(mosaic, index));
+    const frames = mosaic.maps.map((_, index) => present(paintMosaic(mosaic, index)));
     framesRef.current = frames;
     playIndexRef.current = 0;
     setFrameCount(frames.length);
@@ -656,18 +656,20 @@ export default function PixelPage({ project, onApply, say }) {
         const time = Math.min(Math.max(0, duration - 0.05), i / CLIP_FPS);
         await seekVideo(video, time);
         const styled = styleImage(video, options, CLIP_EDGE);
-        const packed = packFrame(styled.shown);
-        made.push(packed);
-        if (resultRef.current) drawCrisp(resultRef.current, packed, 520);
+        const cells = options.view === "result" ? styled.cells : styled.shown;
+        made.push(cells);
+        const preview = options.view === "result" ? presentBlocks(cells, 520, options.cyan) : cells;
+        if (resultRef.current) drawCrisp(resultRef.current, preview, 520);
         setPaletteCount(styled.palette);
         setVideoProgress({ done: i + 1, total });
         setNote(`Styling frame ${i + 1} of ${total}.`);
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
-      const mosaic = keepLoop(made);
+      const present = options.view === "result" ? (frame) => presentBlocks(frame, PACK_EDGE, options.cyan) : (frame) => frame;
+      const mosaic = keepLoop(made, present);
       stylingRef.current = false;
       setPlaying(true);
-      setNote(`Styled loop · ${mosaic.maps.length} frames · ${mosaic.chunks} mosaic chunks cover ${mosaic.tiles} tiles. Playback reads the chunks.`);
+      setNote(`Styled loop · ${mosaic.maps.length} frames · ${mosaic.chunks} mosaic chunks cover ${mosaic.tiles} cells. A cell is kept only when it is the same.`);
       say?.("ok", `${mosaic.maps.length} frames styled`);
     } catch (error) {
       stylingRef.current = false;
