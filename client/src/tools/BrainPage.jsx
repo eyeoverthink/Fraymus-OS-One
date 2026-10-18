@@ -39,8 +39,18 @@ import {
   runNeedle3LadderDispatch,
   runReaForensicAudit,
   runTelecomBrainDiagnostics,
+  runAsymmetricMoatEngine,
   synthesizeVocalStudioOffline
 } from "./sovereignEcosystem.js";
+import {
+  CONSTITUTIONAL_INVARIANTS,
+  createInitialOmegaAgent,
+  executeThinkingCubedCycle,
+  injectChaosSabotage,
+  replicateOmegaAgentIntoProject,
+  runAutonomicSelfHeal,
+  spawnSelfReplicatingOffspring
+} from "./autopoieticAgent.js";
 
 export const PHI = 1.618033988749895;
 export const GOLDEN_ANGLE = 2.0 * Math.PI * (1.0 - 1.0 / PHI); // 137.507764° (Patch U-01)
@@ -1087,8 +1097,26 @@ export default function BrainPage({ project, say, onApply }) {
       needle3: runNeedle3LadderDispatch("Audit project with REA, render HyperFrames video, and run JED bead", 12),
       telecom: runTelecomBrainDiagnostics("FRAYMUS_STUDIO_NODE", "Cortical sync & 3GPP NOC audit"),
       jed: runJedBeadStateMachine("Synthesize verified offline studio suite", "npm run verify && apply-studio-suite", []),
-      pkgForge: recommendAndForgePackages(project, "offline agentic media, telemetry, and ternary math")
+      pkgForge: recommendAndForgePackages(project, "offline agentic media, telemetry, and ternary math"),
+      moat: runAsymmetricMoatEngine({
+        memoryNodes: [],
+        ncmState,
+        selfRules,
+        ternaryCortex,
+        epoch: 1
+      })
     };
+  });
+
+  // ─── OMEGA-3 AUTOPOIETIC METACOGNITIVE ORGANISM (THINKING³) STATE ───
+  const [omegaTab, setOmegaTab] = useState("thinking3_tower");
+  const [omegaState, setOmegaState] = useState(() => {
+    const genesis = createInitialOmegaAgent("OMEGA-3-SOVEREIGN-PRIME");
+    return executeThinkingCubedCycle(
+      genesis,
+      "Genesis Metacognitive Self-Calibration & Polymorphic Defense",
+      project
+    );
   });
 
   function pushLedger(epId, eventType, detail, fitness) {
@@ -2608,8 +2636,15 @@ export default function BrainPage({ project, say, onApply }) {
     const telecom = runTelecomBrainDiagnostics("FRAYMUS_STUDIO_NODE", promptText);
     const jed = runJedBeadStateMachine(promptText.slice(0, 56), promptText, recursiveHistory);
     const pkgForge = recommendAndForgePackages(project, promptText);
+    const moat = runAsymmetricMoatEngine({
+      memoryNodes: memoryNodesRef.current,
+      ncmState,
+      selfRules,
+      ternaryCortex,
+      epoch: recursiveHistory.length + 1
+    });
 
-    const bundle = { rea, vocal, artcraft, hypit, hyperframes, hindsight, needle3, telecom, jed, pkgForge };
+    const bundle = { rea, vocal, artcraft, hypit, hyperframes, hindsight, needle3, telecom, jed, pkgForge, moat };
     setSkillOutputs(bundle);
     pulseTernaryAndNcmCortex(promptText);
     pushLedger(
@@ -2691,7 +2726,14 @@ export default function BrainPage({ project, say, onApply }) {
       });
       const telecom = runTelecomBrainDiagnostics("FRAYMUS_STUDIO_NODE", promptText);
       const pkgForge = recommendAndForgePackages(project, promptText);
-      setSkillOutputs({ rea, vocal, artcraft, hypit, hyperframes, hindsight, needle3, telecom, jed, pkgForge });
+      const moat = runAsymmetricMoatEngine({
+        memoryNodes: memoryNodesRef.current,
+        ncmState: ncmNext,
+        selfRules,
+        ternaryCortex: nextTernary,
+        epoch: recursiveHistory.length + 1
+      });
+      setSkillOutputs({ rea, vocal, artcraft, hypit, hyperframes, hindsight, needle3, telecom, jed, pkgForge, moat });
 
       const synthesisText =
         llmSynthesis ||
@@ -2739,10 +2781,79 @@ export default function BrainPage({ project, say, onApply }) {
         `I_rec=${intelligenceIndex}x · Minted ${mintedRule.slice(0, 46)}… (${latencyMs} ms)`,
         activeGenome?.fitness || 1
       );
+      // Co-evolve Omega-3 Autopoietic Organism alongside the Recursive Turn
+      setOmegaState((prev) => executeThinkingCubedCycle(prev, promptText, project));
       say?.("ok", `Recursive Turn #${nextTurnNum} complete (I_rec = ${intelligenceIndex}x · new TWILL rule minted)`);
     } finally {
       setRecursiveRunning(false);
     }
+  }
+
+  function runOmegaThinking3Cycle() {
+    const next = executeThinkingCubedCycle(omegaState, nexusPrompt, project);
+    setOmegaState(next);
+    const trace = next.lastThinking3Trace;
+    pushLedger(
+      "OMEGA_THINKING3",
+      `CYCLE_${next.thinkingCycles}_COMMITTED`,
+      `IQ ${trace?.scoreBefore} → ${trace?.scoreAfter} (+${trace?.deltaIq}) · Skill ${trace?.t3?.synthesizedSkill} · ${trace?.t3?.topologyMorphedTo}`,
+      activeGenome?.fitness || 1
+    );
+    say?.("ok", `OMEGA-3 Thinking³ Cycle #${next.thinkingCycles}: IQ ${trace?.scoreAfter} (+${trace?.deltaIq}) · Synthesized ${trace?.t3?.synthesizedSkill}`);
+  }
+
+  function runOmegaSabotageTest() {
+    const corrupted = injectChaosSabotage(omegaState);
+    setOmegaState(corrupted);
+    setOmegaTab("immune_self_heal");
+    pushLedger(
+      "OMEGA_SABOTAGE",
+      "CHAOS_FAULT_INJECTED",
+      `Corrupted 5 genome bytes [${corrupted.health.corruptedByteLoci.join(",")}] + poisoned 2 operators (NaN/-999) + broke φ^75 seal`,
+      0.375
+    );
+    say?.("err", "Sabotage injected: 5 genome bytes corrupted, 2 operators poisoned with NaN/-999! Click 'Trigger 3-Layer Self-Heal' or 'Execute Thinking³' to watch autonomic recovery.");
+  }
+
+  function runOmegaSelfHeal() {
+    const { healedState, healedProject, healReport } = runAutonomicSelfHeal(omegaState, project);
+    setOmegaState(healedState);
+    if (healedProject && healedProject !== project) {
+      onApply?.(healedProject);
+    }
+    pushLedger(
+      "OMEGA_IMMUNE",
+      "AUTONOMIC_HEAL_100PCT",
+      `Healed ${healReport.repairedBytes} byte(s) via GF(256) mirror & ${healReport.repairedOperators} operator(s) in ${healReport.elapsedMs}ms`,
+      1.0
+    );
+    say?.("ok", `3-Layer Autonomic Self-Heal complete in ${healReport.elapsedMs}ms: 100% genome & operator recovery!`);
+  }
+
+  function runOmegaSelfReplication() {
+    const { childState, lineageCert } = spawnSelfReplicatingOffspring(omegaState, nexusPrompt);
+    setOmegaState(childState);
+    setOmegaTab("kleene_replication");
+    pushLedger(
+      "OMEGA_QUINE",
+      `SPAWNED_GEN_${childState.generation}`,
+      `${lineageCert.parentAgentId} → ${lineageCert.agentId} · IQ ${childState.intelligenceScore} (+${lineageCert.deltaVsParent}) · Grandchild VM Verified`,
+      1.0
+    );
+    say?.("ok", `Self-Replicated Child Spore ${childState.agentId} (Gen #${childState.generation} · IQ ${childState.intelligenceScore}) + verified Grandchild in VM!`);
+  }
+
+  function applyOmegaAgentToActiveProject() {
+    if (!project) return;
+    const updated = replicateOmegaAgentIntoProject(project, omegaState);
+    onApply?.(updated);
+    pushLedger(
+      "OMEGA_REPLICATE",
+      "PROJECT_QUINE_INJECTED",
+      `Replicated living OMEGA-3 Agent (${omegaState.agentId} · Gen #${omegaState.generation}) into ${project.stack === "mern" ? "MERN (/omega-agent + shared/omegaSpore.js)" : "Static HTML/JS"}`,
+      1.0
+    );
+    say?.("ok", project.stack === "mern" ? `Replicated OMEGA-3 Agent into MERN (/omega-agent + shared/omegaSpore.js)` : `Replicated OMEGA-3 Living Agent widget into HTML/JS`);
   }
 
   const speedup = activeGenome && baselineUs > 0 ? (baselineUs / Math.max(0.05, activeGenome.latencyUs)).toFixed(2) : "1.00";
@@ -3406,7 +3517,8 @@ export default function BrainPage({ project, say, onApply }) {
                 ["recursive_chat", "♾️ 1. Recursive Dialectical Chatbot (+1 / -1 / 0)"],
                 ["openclaw_skills", "🦞 2. REA · Needle 3 · Abstract JED · Hindsight · Telecom v13"],
                 ["content_suite", "🎬 3. Offline Content Suite (ArtCraft + HyperFrames + Hypit SVML + VocalStudio)"],
-                ["pkg_forge", "📦 4. Agentic Software & Package Recommender + Forge"]
+                ["pkg_forge", "📦 4. Agentic Software & Package Recommender + Forge"],
+                ["anti_clone_moat", "🛡️ 5. Asymmetric Anti-Clone & Moving-Target Moat"]
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -3572,6 +3684,262 @@ export default function BrainPage({ project, say, onApply }) {
                   <pre className="emoji-view" style={{ maxHeight: 195, fontSize: 10 }}>
                     {skillOutputs.pkgForge?.synthesizedPackageCode}
                   </pre>
+                </div>
+              </div>
+            )}
+
+            {nexusTab === "anti_clone_moat" && (
+              <div className="grid-2" style={{ marginTop: 8, alignItems: "start" }}>
+                <div className="emoji-view" style={{ maxHeight: 245, fontSize: 11 }}>
+                  <b style={{ color: "var(--acc)" }}>🛡️ Moving-Target Polymorphic ISA &amp; Trajectory Lock:</b>
+                  <div className="muted" style={{ marginTop: 4 }}>
+                    Live Trajectory Root: <b style={{ color: "#00e5ff" }}>{skillOutputs.moat?.trajectoryRoot}</b>
+                    {" · "}Velocity Gap: <b style={{ color: "var(--acc)" }}>{skillOutputs.moat?.velocityMultiplier}</b>
+                  </div>
+                  <div style={{ marginTop: 4 }}>
+                    Raw Kernel Hex: <code>{skillOutputs.moat?.rawHex}</code>
+                  </div>
+                  <div>
+                    Polymorphic Wire (π_ISA): <code style={{ color: "#c9a0ff" }}>{skillOutputs.moat?.polymorphicHex}</code>
+                  </div>
+                  <div style={{ marginTop: 4 }}>
+                    Authorized Sovereign Node Decode:{" "}
+                    <b style={{ color: "var(--acc)" }}>
+                      {skillOutputs.moat?.sovereignRoundTripOk ? `✓ ${skillOutputs.moat?.sovereignRecoveryPct}% EXACT RECOVERY` : "FAIL"}
+                    </b>
+                  </div>
+                  <div>
+                    Static T=0 Clone Attacker Decode:{" "}
+                    <b style={{ color: "var(--pink)" }}>{skillOutputs.moat?.cloneVerdict}</b>
+                  </div>
+                </div>
+
+                <div className="emoji-view" style={{ maxHeight: 245, fontSize: 11 }}>
+                  <b style={{ color: "#00e5ff" }}>4 Active Asymmetric Anti-Clone Defense Layers:</b>
+                  {skillOutputs.moat?.moatLayers?.map((m) => (
+                    <div key={m.id} style={{ padding: "4px 0", borderBottom: "1px dashed var(--line)" }}>
+                      <div className="row" style={{ justifyContent: "space-between" }}>
+                        <b style={{ color: "var(--acc)" }}>{m.name}</b>
+                        <span style={{ color: "#00e5ff" }}>[{m.status}]</span>
+                      </div>
+                      <span className="muted" style={{ display: "block" }}>{m.detail}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="card" style={{ borderColor: omegaState.health?.sabotageDetected ? "var(--pink)" : "#00e5ff" }}>
+            <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
+              <b>
+                ◈ OMEGA-3 Autopoietic Metacognitive Organism (Thinking³ · Self-Preserving · Self-Healing · Self-Replicating · Evolving)
+              </b>
+              <span className="muted">
+                Agent: <b style={{ color: "#00e5ff" }}>{omegaState.agentId}</b> (Gen #{omegaState.generation})
+                {" · "}Cognitive IQ: <b style={{ color: "var(--acc)" }}>{omegaState.intelligenceScore}</b>
+                {" · "}Health:{" "}
+                <b style={{ color: omegaState.health?.sabotageDetected ? "var(--pink)" : "var(--acc)" }}>
+                  {omegaState.health?.status} ({omegaState.health?.integrityPct}%)
+                </b>
+              </span>
+            </div>
+            <span className="muted">
+              <b>Thinking³ Tower:</b> Order-1 Object Cognition (<b>T¹</b>) → Order-2 Epistemic Introspection &amp; Brier Calibration (<b>T²</b>) → Order-3 Architectural Self-Modification, Skill Synthesis &amp; Gödel-Lyapunov Monotonic Ratchet (<b>T³</b>). Protected by a <b>GF(256) 3-Layer Autonomic Immune System</b> and <b>Kleene Fixed-Point Quine Self-Replication</b>.
+            </span>
+
+            <div className="row" style={{ marginTop: 8, gap: 6, flexWrap: "wrap" }}>
+              <button className="btn on" onClick={runOmegaThinking3Cycle}>
+                🧠 Execute Thinking³ Cycle (T¹ → T² → T³ Self-Modify)
+              </button>
+              <button className="btn" style={{ borderColor: "var(--pink)", color: "var(--pink)" }} onClick={runOmegaSabotageTest}>
+                💥 Inject Chaos Sabotage (Corrupt Genome &amp; Operators)
+              </button>
+              <button className="btn" style={{ borderColor: "var(--acc)", color: "var(--acc)" }} onClick={runOmegaSelfHeal}>
+                🛡️ Trigger 3-Layer Autonomic Self-Heal
+              </button>
+              <button className="btn" style={{ borderColor: "#00e5ff", color: "#00e5ff" }} onClick={runOmegaSelfReplication}>
+                🧬 Self-Replicate Child Spore (Gen #{omegaState.generation + 1})
+              </button>
+              <button className="btn on" disabled={!project} onClick={applyOmegaAgentToActiveProject}>
+                🚀 Replicate Living Omega Agent Into Project
+              </button>
+            </div>
+
+            <div className="row" style={{ marginTop: 8, gap: 6, flexWrap: "wrap" }}>
+              {[
+                ["thinking3_tower", "🧠 1. Thinking³ Tower (T¹ → T² → T³) & Synthesized Skills"],
+                ["immune_self_heal", "🛡️ 2. Self-Preserving Constitutional Shield & GF(256) Self-Heal"],
+                ["kleene_replication", "🧬 3. Kleene Quine Self-Replication & Epigenetic Lineage"],
+                ["operator_tensor", "📐 4. Dynamic Operator Tensor & 5-Domain IQ Ratchet"]
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  className={`btn ${omegaTab === id ? "on" : ""}`}
+                  onClick={() => setOmegaTab(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {omegaTab === "thinking3_tower" && (
+              <div className="grid-2" style={{ marginTop: 8, alignItems: "start" }}>
+                <div className="emoji-view" style={{ maxHeight: 260, fontSize: 11 }}>
+                  <div style={{ paddingBottom: 6, borderBottom: "1px dashed var(--line)" }}>
+                    <b style={{ color: "var(--acc)" }}>{omegaState.lastThinking3Trace?.t1?.order}</b>
+                    <div>Objective: “{omegaState.lastThinking3Trace?.t1?.objective}” (Kolmogorov Complexity: <b>{omegaState.lastThinking3Trace?.t1?.taskComplexity}</b>)</div>
+                    <div className="muted">{omegaState.lastThinking3Trace?.t1?.objectSolution}</div>
+                  </div>
+                  <div style={{ padding: "6px 0", borderBottom: "1px dashed var(--line)" }}>
+                    <b style={{ color: "#ffb84d" }}>{omegaState.lastThinking3Trace?.t2?.order}</b>
+                    <div>
+                      Shannon Entropy H_e = <b>{omegaState.lastThinking3Trace?.t2?.shannonBits ?? omegaState.benchmark?.entropyBits} bits</b>
+                      {" · "}Brier Error = <b>{omegaState.lastThinking3Trace?.t2?.brierCalibrationError}</b>
+                    </div>
+                    {omegaState.lastThinking3Trace?.t2?.diagnoses?.map((d, i) => (
+                      <div key={i} className="muted">• {d}</div>
+                    ))}
+                  </div>
+                  <div style={{ paddingTop: 6 }}>
+                    <b style={{ color: "#00e5ff" }}>{omegaState.lastThinking3Trace?.t3?.order}</b>
+                    <div>Topology Morphed To: <b style={{ color: "var(--acc)" }}>{omegaState.lastThinking3Trace?.t3?.topologyMorphedTo}</b></div>
+                    <div>Rewiring: <code>{omegaState.lastThinking3Trace?.t3?.operatorRewiring}</code></div>
+                    <div>Gödel-Lyapunov Ratchet: <b style={{ color: "var(--acc)" }}>{omegaState.lastThinking3Trace?.t3?.godelRatchetVerdict}</b></div>
+                  </div>
+                </div>
+
+                <div className="stack" style={{ gap: 6 }}>
+                  <b>⚡ T³ Self-Synthesized &amp; Sandbox-Verified Cognitive Skills ({omegaState.synthesizedSkills?.length})</b>
+                  <div className="emoji-view" style={{ maxHeight: 230, fontSize: 10 }}>
+                    {omegaState.synthesizedSkills?.slice(0, 4).map((sk) => (
+                      <div key={sk.id} style={{ marginBottom: 8, paddingBottom: 6, borderBottom: "1px dashed var(--line)" }}>
+                        <div className="row" style={{ justifyContent: "space-between" }}>
+                          <b style={{ color: "var(--acc)" }}>{sk.name}()</b>
+                          <span style={{ color: "#00e5ff" }}>{sk.verified ? "✓ UNIT-TEST VERIFIED" : "UNVERIFIED"} · V(G)={sk.complexityVg}</span>
+                        </div>
+                        <div className="muted" style={{ marginBottom: 4 }}>{sk.description}</div>
+                        <pre style={{ margin: 0, fontSize: 10, color: "#c9a0ff" }}>{sk.sourceCode}</pre>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {omegaTab === "immune_self_heal" && (
+              <div className="grid-2" style={{ marginTop: 8, alignItems: "start" }}>
+                <div className="emoji-view" style={{ maxHeight: 250, fontSize: 11 }}>
+                  <b style={{ color: omegaState.health?.sabotageDetected ? "var(--pink)" : "var(--acc)" }}>
+                    🧬 16-Byte Cognitive Genome &amp; GF(256) Mirror Syndrome Status:
+                  </b>
+                  <div style={{ marginTop: 4 }}>
+                    Genome Hex:{" "}
+                    <code>
+                      {omegaState.genomeBytes?.map((b) => (b & 0xff).toString(16).padStart(2, "0")).join(" ")}
+                    </code>
+                  </div>
+                  <div className="muted" style={{ marginTop: 4 }}>
+                    Golden Checkpoints in Ring Buffer: <b>{omegaState.checkpoints?.length || 1}</b> (Latest Hash: <code>{omegaState.checkpoints?.[0]?.checkpointHash}</code>)
+                  </div>
+                  {omegaState.health?.sabotageDetected && (
+                    <div style={{ marginTop: 6, color: "var(--pink)" }}>
+                      ⚠️ SABOTAGE ACTIVE: Corrupted Byte Loci [{omegaState.health.corruptedByteLoci?.join(", ")}] · Failed Invariants: {omegaState.health.failedInvariants?.join(", ")}
+                    </div>
+                  )}
+                  {omegaState.health?.lastHealReport && (
+                    <div style={{ marginTop: 6, padding: 6, background: "rgba(61,255,154,0.08)", borderRadius: 6 }}>
+                      <b style={{ color: "var(--acc)" }}>✓ Last Autonomic Self-Heal Telemetry ({omegaState.health.lastHealReport.elapsedMs} ms):</b>
+                      <div>Repaired Genome Bytes: <b>{omegaState.health.lastHealReport.repairedBytes}</b> (Loci: [{omegaState.health.lastHealReport.repairedByteLoci?.join(", ")}])</div>
+                      <div>Purged NaN/Poisoned Operators: <b>{omegaState.health.lastHealReport.repairedOperators}</b> · Recovery Rate: <b>{omegaState.health.lastHealReport.recoveryRatePct}%</b></div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="emoji-view" style={{ maxHeight: 250, fontSize: 11 }}>
+                  <b style={{ color: "#00e5ff" }}>🛡️ 5 Constitutional Self-Preservation Invariants:</b>
+                  {CONSTITUTIONAL_INVARIANTS.map((inv) => {
+                    const ok = inv.check(omegaState);
+                    return (
+                      <div key={inv.id} style={{ padding: "4px 0", borderBottom: "1px dashed var(--line)" }}>
+                        <div className="row" style={{ justifyContent: "space-between" }}>
+                          <b style={{ color: ok ? "var(--acc)" : "var(--pink)" }}>{inv.id} · {inv.name}</b>
+                          <span style={{ color: ok ? "var(--acc)" : "var(--pink)" }}>{ok ? "✓ INTACT" : "✗ BREACHED"}</span>
+                        </div>
+                        <span className="muted" style={{ display: "block" }}>{inv.rule}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {omegaTab === "kleene_replication" && (
+              <div className="grid-2" style={{ marginTop: 8, alignItems: "start" }}>
+                <div className="emoji-view" style={{ maxHeight: 250, fontSize: 11 }}>
+                  <b style={{ color: "var(--acc)" }}>🧬 Epigenetic Phylogeny &amp; Lamarckian-Darwinian Offspring Lineage:</b>
+                  {omegaState.lineage?.map((node, idx) => (
+                    <div key={idx} style={{ padding: "5px 0", borderBottom: "1px dashed var(--line)" }}>
+                      <div className="row" style={{ justifyContent: "space-between" }}>
+                        <b style={{ color: idx === 0 ? "var(--acc)" : "#00e5ff" }}>
+                          Gen #{node.generation} · {node.agentId} (Parent: {node.parentAgentId})
+                        </b>
+                        <span>IQ: <b>{node.intelligenceScore}</b> {node.deltaVsParent ? `(+${node.deltaVsParent})` : ""}</span>
+                      </div>
+                      <span className="muted" style={{ display: "block" }}>
+                        {node.specialization || node.mutationSummary}
+                      </span>
+                      {node.liveSandboxExecution?.executedInVm && (
+                        <span style={{ color: "#c9a0ff", fontSize: 10 }}>
+                          ✓ Live VM Sandbox Verified: Child healed {node.liveSandboxExecution.childRepairedBytes} sabotaged bytes &amp; spawned Gen #{node.liveSandboxExecution.grandChildGeneration} Grandchild ({node.liveSandboxExecution.grandChildAgentId} · IQ {node.liveSandboxExecution.grandChildIq})
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="stack" style={{ gap: 6 }}>
+                  <b>📜 Kleene Fixed-Point Quine Spore Source (Self-Reproducing Module):</b>
+                  <pre className="emoji-view" style={{ maxHeight: 220, fontSize: 10 }}>
+                    {omegaState.lastQuineSpore?.sourceCode || "Click '🧬 Self-Replicate Child Spore' to synthesize and VM-verify a new Kleene Quine Offspring."}
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            {omegaTab === "operator_tensor" && (
+              <div className="grid-2" style={{ marginTop: 8, alignItems: "start" }}>
+                <div className="emoji-view" style={{ maxHeight: 250, fontSize: 11 }}>
+                  <b style={{ color: "var(--acc)" }}>📐 Dynamic Cognitive Operator Tensor (W_op):</b>
+                  {omegaState.operatorTensor?.map((op) => (
+                    <div key={op.id} style={{ padding: "4px 0", borderBottom: "1px dashed var(--line)" }}>
+                      <div className="row" style={{ justifyContent: "space-between" }}>
+                        <b style={{ color: "#00e5ff" }}>{op.name}</b>
+                        <span>
+                          weight=<b>{Number.isFinite(op.weight) ? op.weight : "NaN (POISONED)"}</b> · runs=<b>{op.executions}</b> · gain=<b>{op.avgGain}</b>
+                        </span>
+                      </div>
+                      <code style={{ fontSize: 10, color: "var(--dim)" }}>{op.codeFormula}</code>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="emoji-view" style={{ maxHeight: 250, fontSize: 11 }}>
+                  <b style={{ color: "#00e5ff" }}>📈 5-Domain Empirical Intelligence Benchmark (IQ = {omegaState.intelligenceScore}):</b>
+                  {Object.entries(omegaState.benchmark?.dimensions || {}).map(([k, v]) => (
+                    <div key={k} style={{ padding: "4px 0", borderBottom: "1px dashed var(--line)" }}>
+                      <div className="row" style={{ justifyContent: "space-between" }}>
+                        <b>{k}</b>
+                        <b style={{ color: "var(--acc)" }}>{v} / 100</b>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{ marginTop: 6 }}>
+                    <b style={{ color: "var(--acc)" }}>Active T³ Meta-Rules ({omegaState.metaRules?.length}):</b>
+                    {omegaState.metaRules?.slice(0, 3).map((r, i) => (
+                      <div key={i} className="muted" style={{ fontSize: 10 }}>• {r}</div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

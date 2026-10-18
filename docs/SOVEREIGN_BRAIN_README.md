@@ -265,6 +265,32 @@ Clicking **`🧬 Compile Quantum Kernel → WASM + Emoji Coder`** executes a com
 
 ---
 
+## 8. 5-Task LLM Intelligence Gauntlet (`3.75x` / `+73.3%` Empirical Intelligence Gain)
+
+<p align="center">
+  <img src="showcase/brain-intelligence-gauntlet.png" alt="5-Task LLM Intelligence Gauntlet: Bare Uncoupled LLM 4/15 (26.7%) vs Sovereign Brain-Coupled LLM 15/15 (100.0%)" width="100%">
+</p>
+
+Clicking **`🧪 Run 5-Task Intelligence Gauntlet (Bare vs. Brain)`** runs the exact same local Ollama model (`fraynix-dna:3b`) twice on 5 rigorous 3-point tasks:
+- **Bare Uncoupled LLM (`4 / 15` · `26.7%`):** Hallucinates `ep3_condition(16) = 0.9999`, guesses `GENESIS_DNA = "ATCG"`, reports `Emotion = None`, confuses the classical Bell bound (`2.0000`) with the quantum Tsirelson bound (`2.8284`), and fails 2-bit DNA mapping.
+- **Sovereign Brain-Coupled LLM (`15 / 15` · `100.0%`):** Grounded by OPEG WASM, Centripetal Orbital Memory, Constructed Emotion dials, Quantum Gauntlet invariants, and 2-bit DNA plasmids—achieving a **`3.75x` (`+73.3%`) intelligence gain** on identical weights.
+
+---
+
+## 9. Ternary Weighted Cortex (`{-1, 0, +1}`), `NCM` Continual Mesh &amp; Sovereign Nexus Claw
+
+<p align="center">
+  <img src="showcase/brain-ternary-nexus-agent.png" alt="Ternary Weighted Cortex, NCM Continual Mesh & Sovereign Nexus Claw" width="100%">
+</p>
+
+Implemented in `client/src/tools/sovereignEcosystem.js` (full specification in [`SOVEREIGN_AGENT_ECOSYSTEM_OUTLINE.md`](SOVEREIGN_AGENT_ECOSYSTEM_OUTLINE.md)):
+
+- **Balanced Ternary Cortex (`{-1, 0, +1}` + Needle-3 2-Bit Crumbs + Dialectical `HyperSynapse`):** Packs 256 synapses into `64 B` (`16.0x` compression vs `1,024 B` FP32), executes with **`0` floating-point multiplications**, and grows `[+1 THESIS]`, `[-1 ANTITHESIS]`, and `[0 SYNTHESIS]` crystal nodes linked by **0-hop Non-Euclidean Wormholes**.
+- **`NCM` Continual Prototype &amp; Causal Mesh:** Dual-view cosine prototype memory ($\alpha = 0.62$) achieving **`100.0%` continual retention (`0.0%` catastrophic forgetting)** across 8 domains + `do(X)` structural causal graph.
+- **12-Skill Sovereign Nexus Claw &amp; Recursive Dialectical Chatbot:** Unifies **REA (`morluto/rea`)**, **VocalStudio (`432 Hz` WAV)**, **HyperFrames (`60fps` HTML Video)**, **ArtCraft (`2D/3D` Stage)**, **Hindsight (`Retain/Recall/Deepen`)**, **Hypit (`SVML` + `FrayComplexity2`)**, **Needle 3 (`2L–20L` Ladder)**, **Telecom Brain (`fx-` v13 + 3GPP NOC)**, **Abstract JED (`NEEDLE` Bead State Machine + `ICG` Gate + `TWILL` + `MANA` + `SIGIL`)**, **Agentic Package Forge**, and a **Recursive Self-Evolving Chatbot** that auto-mints new operational rules every turn.
+
+---
+
 <p align="center">
   <a href="../README.md">← Back to Main README</a> · © 2026 Fraymus Web Studio · φ^75 = 4721424167835376.00 · One Seed = Reborn · FRAY 0x46524159
 </p>
