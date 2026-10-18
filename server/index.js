@@ -955,13 +955,15 @@ app.post("/api/brain/think", async (req, res) => {
       "Speak plainly, directly, and technically. Tag verified telemetry claims as [measured] and memory lookups as [recall]. Keep answers under 140 words."
     ].join("\n");
 
-    const r = await fetch(`${OLLAMA_HOST}/api/generate`, {
+    const r = await fetch(`${OLLAMA_HOST}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model,
-        system: systemPrompt,
-        prompt,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt }
+        ],
         stream: false,
         options: {
           temperature,
@@ -969,7 +971,7 @@ app.post("/api/brain/think", async (req, res) => {
           num_predict: 220
         }
       }),
-      signal: AbortSignal.timeout(25000)
+      signal: AbortSignal.timeout(65000)
     });
 
     if (!r.ok) {
@@ -977,7 +979,7 @@ app.post("/api/brain/think", async (req, res) => {
       return res.status(502).json({ error: `Ollama (${model}) returned ${r.status}: ${errText.slice(0, 140)}` });
     }
     const data = await r.json();
-    let reply = String(data.response || "").trim();
+    let reply = String(data.message?.content || data.response || "").trim();
 
     let verificationNote = "Single-pass generation (risk budget sufficient).";
     if (requireDoubleCheck) {
