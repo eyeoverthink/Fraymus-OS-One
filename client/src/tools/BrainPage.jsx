@@ -49,6 +49,7 @@ import {
   injectChaosSabotage,
   replicateOmegaAgentIntoProject,
   runAutonomicSelfHeal,
+  runOmegaHardGauntletBenchmark,
   spawnSelfReplicatingOffspring
 } from "./autopoieticAgent.js";
 
@@ -1118,6 +1119,9 @@ export default function BrainPage({ project, say, onApply }) {
       project
     );
   });
+  const [omegaGauntletReport, setOmegaGauntletReport] = useState(() =>
+    runOmegaHardGauntletBenchmark(createInitialOmegaAgent("OMEGA-3-SOVEREIGN-PRIME"))
+  );
 
   function pushLedger(epId, eventType, detail, fitness) {
     seqRef.current += 1;
@@ -2856,6 +2860,22 @@ export default function BrainPage({ project, say, onApply }) {
     say?.("ok", project.stack === "mern" ? `Replicated OMEGA-3 Agent into MERN (/omega-agent + shared/omegaSpore.js)` : `Replicated OMEGA-3 Living Agent widget into HTML/JS`);
   }
 
+  function runOmegaAdversarialGauntlet() {
+    const report = runOmegaHardGauntletBenchmark(omegaState);
+    setOmegaGauntletReport(report);
+    if (report.evolvedStateAfterGauntlet) {
+      setOmegaState(report.evolvedStateAfterGauntlet);
+    }
+    setOmegaTab("hard_gauntlet");
+    pushLedger(
+      "OMEGA_GAUNTLET",
+      "6_TASK_HARD_BENCHMARK_PASS",
+      `Static ${report.staticTotal}/${report.maxTotal} (${report.staticPct}%) vs OMEGA-3 ${report.omegaTotal}/${report.maxTotal} (${report.omegaPct}% · ${report.multiplier}) in ${report.elapsedMs}ms`,
+      1.0
+    );
+    say?.("ok", `OMEGA-3 Hard Gauntlet: ${report.omegaTotal}/${report.maxTotal} (${report.omegaPct}% · ${report.multiplier} vs Static Baseline) in ${report.elapsedMs}ms`);
+  }
+
   const speedup = activeGenome && baselineUs > 0 ? (baselineUs / Math.max(0.05, activeGenome.latencyUs)).toFixed(2) : "1.00";
 
   return (
@@ -3761,6 +3781,9 @@ export default function BrainPage({ project, say, onApply }) {
               <button className="btn" style={{ borderColor: "#00e5ff", color: "#00e5ff" }} onClick={runOmegaSelfReplication}>
                 🧬 Self-Replicate Child Spore (Gen #{omegaState.generation + 1})
               </button>
+              <button className="btn on" onClick={runOmegaAdversarialGauntlet}>
+                🔥 Run 6-Task Hard Gauntlet ({omegaGauntletReport.omegaTotal}/{omegaGauntletReport.maxTotal} · {omegaGauntletReport.multiplier})
+              </button>
               <button className="btn on" disabled={!project} onClick={applyOmegaAgentToActiveProject}>
                 🚀 Replicate Living Omega Agent Into Project
               </button>
@@ -3771,7 +3794,8 @@ export default function BrainPage({ project, say, onApply }) {
                 ["thinking3_tower", "🧠 1. Thinking³ Tower (T¹ → T² → T³) & Synthesized Skills"],
                 ["immune_self_heal", "🛡️ 2. Self-Preserving Constitutional Shield & GF(256) Self-Heal"],
                 ["kleene_replication", "🧬 3. Kleene Quine Self-Replication & Epigenetic Lineage"],
-                ["operator_tensor", "📐 4. Dynamic Operator Tensor & 5-Domain IQ Ratchet"]
+                ["operator_tensor", "📐 4. Dynamic Operator Tensor & 5-Domain IQ Ratchet"],
+                ["hard_gauntlet", `🔥 5. Hard Adversarial Benchmark (${omegaGauntletReport.staticTotal}/18 vs ${omegaGauntletReport.omegaTotal}/18 · ${omegaGauntletReport.multiplier})`]
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -3940,6 +3964,37 @@ export default function BrainPage({ project, say, onApply }) {
                       <div key={i} className="muted" style={{ fontSize: 10 }}>• {r}</div>
                     ))}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {omegaTab === "hard_gauntlet" && (
+              <div className="stack" style={{ marginTop: 8, gap: 6 }}>
+                <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
+                  <b style={{ color: "var(--acc)" }}>
+                    🔥 {omegaGauntletReport.benchmarkName} ({omegaGauntletReport.elapsedMs} ms)
+                  </b>
+                  <span>
+                    Static T¹ Baseline: <b style={{ color: "var(--pink)" }}>{omegaGauntletReport.staticTotal}/{omegaGauntletReport.maxTotal} ({omegaGauntletReport.staticPct}%)</b>
+                    {" vs "}
+                    OMEGA-3 Thinking³: <b style={{ color: "var(--acc)" }}>{omegaGauntletReport.omegaTotal}/{omegaGauntletReport.maxTotal} ({omegaGauntletReport.omegaPct}% · {omegaGauntletReport.multiplier} Gain)</b>
+                  </span>
+                </div>
+                <div className="emoji-view" style={{ maxHeight: 260, fontSize: 11 }}>
+                  {omegaGauntletReport.tasks?.map((t) => (
+                    <div key={t.id} style={{ padding: "5px 0", borderBottom: "1px dashed var(--line)" }}>
+                      <div className="row" style={{ justifyContent: "space-between" }}>
+                        <b style={{ color: "#00e5ff" }}>{t.id} · {t.name}</b>
+                        <span>
+                          Static: <b style={{ color: "var(--pink)" }}>{t.staticScore}/{t.maxScore}</b>
+                          {" · "}
+                          OMEGA-3: <b style={{ color: "var(--acc)" }}>{t.omegaScore}/{t.maxScore}</b>
+                        </span>
+                      </div>
+                      <div className="muted">Static T¹: {t.staticDetail}</div>
+                      <div style={{ color: "var(--acc)" }}>OMEGA-3 T³: {t.omegaDetail}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
