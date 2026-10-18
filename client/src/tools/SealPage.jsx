@@ -288,6 +288,128 @@ function paintCaption(canvas, caption) {
   ctx.fillText(caption.slice(0, 56), canvas.width / 2, canvas.height - bar / 2);
 }
 
+export async function forgeAutonomousBrainSeal({
+  text,
+  speakerName = "Sovereign Brain",
+  project = null,
+  keys,
+  carrier = "🗣️",
+  subject = "BRAIN-CORTEX-SEAL"
+}) {
+  const activeKeys = keys || (await generateKeys());
+  const spokenText = String(text || "One Seed = Reborn.").replace(/\s+/g, " ").trim().slice(0, 220);
+  const savedFace = project?.cast?.faces?.find((f) => f.cells?.closed) || null;
+  const spriteUrl = savedFace
+    ? await compactSpriteWebp(savedFace.cells.closed, 96)
+    : makeDemoSprite(128);
+  const synth = synthVoiceWav(spokenText, 8000);
+  const wavBytes = synth.bytes;
+
+  const audioCtx = new AudioContext();
+  let audioBuffer;
+  try {
+    audioBuffer = await audioCtx.decodeAudioData(
+      wavBytes.buffer.slice(wavBytes.byteOffset, wavBytes.byteOffset + wavBytes.byteLength)
+    );
+  } finally {
+    audioCtx.close().catch(() => {});
+  }
+
+  const envBins = voiceEnvelope(audioBuffer);
+  const plan = lineSchedule([{ text: spokenText, audio: audioBuffer, envelope: envBins }], LINE_GAP);
+  const hop = 1 / TALK_FPS;
+  const clips = [];
+  for (let t = 0; t < plan.duration - 0.0001; t += hop) {
+    const f = frameAt(plan.captions, t);
+    const last = clips[clips.length - 1];
+    if (last && last.id === f.id) last.duration = Number((last.duration + hop).toFixed(4));
+    else clips.push({ id: f.id, start: Number(t.toFixed(4)), duration: Number(hop.toFixed(4)) });
+  }
+
+  const capsule = {
+    name: speakerName,
+    text: spokenText,
+    duration: Number(plan.duration.toFixed(3)),
+    sprite: spriteUrl,
+    voiceB64: base64(wavBytes),
+    clips
+  };
+
+  const prev = localStorage.getItem(PREV_KEY) || GENESIS;
+  const env = await buildSealEnvelope({
+    from: "brain@fraymus.world",
+    to: MAILBOX,
+    subject,
+    capsule,
+    prev,
+    keys: activeKeys
+  });
+  const wire = await packSeal(env);
+  const glyph = encodeWire(wire, cleanCarrier(carrier) || "🗣️");
+  localStorage.setItem(PREV_KEY, await sha256(textBytes(env.canon)));
+  try {
+    localStorage.setItem("fraymus.seal.incoming", glyph);
+  } catch {}
+
+  const baseImg = await toImageData(capsule.sprite, 128);
+  const cells = composeTalkCells(baseImg);
+  const rea = inspectTalk(cells.closed, cells.open);
+
+  return {
+    env,
+    wire,
+    glyph,
+    capsule,
+    merkleRoot: env.merkle.root,
+    rea
+  };
+}
+
+export async function renderAndPlaySealStage(canvasEl, capsule, playAudio = true) {
+  if (!canvasEl || !capsule?.sprite) return;
+  const baseImg = await toImageData(capsule.sprite, 128);
+  const cells = composeTalkCells(baseImg);
+  const rea = inspectTalk(cells.closed, cells.open);
+  if (!rea.ok) {
+    cells.mid = cells.closed;
+    cells.open = cells.closed;
+  }
+  drawCrisp(canvasEl, cells.closed, canvasEl.width || 160);
+  paintCaption(canvasEl, `${capsule.name}: “${capsule.text}”`);
+
+  if (!playAudio || !capsule.voiceB64) return;
+  const wavBytes = bytesFromBase64(capsule.voiceB64);
+  const ctx = new AudioContext();
+  const audio = await ctx.decodeAudioData(
+    wavBytes.buffer.slice(wavBytes.byteOffset, wavBytes.byteOffset + wavBytes.byteLength)
+  );
+  if (ctx.state === "suspended") {
+    await Promise.race([ctx.resume().catch(() => {}), new Promise((r) => setTimeout(r, 150))]);
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = audio;
+  src.connect(ctx.destination);
+  const start = ctx.currentTime;
+  src.start();
+  const clips = Array.isArray(capsule.clips) ? capsule.clips : [];
+
+  const step = () => {
+    const elapsed = ctx.currentTime - start;
+    if (elapsed >= audio.duration) {
+      ctx.close().catch(() => {});
+      drawCrisp(canvasEl, cells.closed, canvasEl.width || 160);
+      paintCaption(canvasEl, `${capsule.name}: “${capsule.text}”`);
+      return;
+    }
+    const active = clips.find((c) => elapsed >= c.start && elapsed < c.start + c.duration);
+    const cellId = active?.id || "closed";
+    drawCrisp(canvasEl, cells[cellId] || cells.closed, canvasEl.width || 160);
+    paintCaption(canvasEl, capsule.text);
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 export function applySeal(project, glyph, meta) {
   const safeGlyph = String(glyph || "");
   const title = String(meta?.name || "Living Seal");
@@ -362,6 +484,13 @@ export default function SealPage({ project, say, onApply }) {
       setKeys(next);
       setKeyPrint(await fingerprint(next.pub));
     });
+    try {
+      const fromBrain = localStorage.getItem("fraymus.seal.incoming");
+      if (fromBrain) {
+        setIncoming(fromBrain);
+        setNote("Loaded Living Seal minted by Sovereign Brain Cortex. Click Verify & Play Seal to inspect & hear it.");
+      }
+    } catch {}
   }, []);
 
   const selectedFace = useMemo(
