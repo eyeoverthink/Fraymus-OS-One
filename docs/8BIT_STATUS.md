@@ -6,6 +6,7 @@ Related chapters:
 
 - [README · 8-bit studio](../README.md#8-bit-studio) — the short tour and the still images
 - [8-bit motion](8BIT_MOTION.md) — camera, Style video, and Cartoon video, step by step
+- [Full outline](APP_OUTLINE.md) — every workspace, including this one
 - [Avatar studio](AVATAR_STUDIO.md) — Production, the cast of faces, and the mouth buffer
 
 ## What the workspace does now
@@ -19,7 +20,7 @@ Open **8-bit**. A photo becomes a pixel portrait. A webcam can be filtered live.
 | **Take picture** | The webcam, then the offline filter | A live stage. **Shutter** stores the full frame for Edit, AI Render, PNG, and Place. |
 | **Style video** | The offline filter, 10 frames a second | A pixel video of the whole clip. Fast. The picture stays photographic, so fine detail looks grainy. |
 | **Cartoon video** | The same model as AI Render, 2 frames a second, one locked seed | A flat sprite: hard edges, solid colors, black background, cyan rim. This is the drawing that matches the still AI portrait. |
-| **Talk** | Four model calls, then the voice only | `closed`, `mid`, `open`, `blink` from the approved sprite. Play and WebM do not call the model. |
+| **Talk** | Painted on the approved sprite | `closed`, `mid`, `open`, `blink`. The model is not called again. Play and WebM read those frames. |
 
 <p align="center">
   <img src="showcase/8bit-capture.png" alt="Capture panel: New picture, New video, Take picture" width="280">

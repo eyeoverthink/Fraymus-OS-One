@@ -16,6 +16,7 @@
 </p>
 
 <p align="center">
+  <a href="docs/APP_OUTLINE.md">Outline</a> ·
   <a href="#email-that-runs">Email</a> ·
   <a href="#8-bit-studio">8-bit studio</a> ·
   <a href="docs/AVATAR_STUDIO.md">Production</a> ·
@@ -30,6 +31,7 @@
 
 <p align="center">
   Chapters:
+  <a href="docs/APP_OUTLINE.md">Full outline</a> ·
   <a href="docs/8BIT_STATUS.md">8-bit status</a> ·
   <a href="docs/8BIT_MOTION.md">8-bit motion</a> ·
   <a href="docs/AVATAR_STUDIO.md">Avatar studio</a>
@@ -43,6 +45,8 @@ Write a page, see it render as you type, pair it with its stylesheet, give it a 
 
 Repository: [eyeoverthink/fraymus-css](https://github.com/eyeoverthink/fraymus-css)
 
+The full map of every workspace, including the 8-bit camera, Style video, Cartoon video, Talk, and Production, is the [outline](docs/APP_OUTLINE.md). This page stays the tour.
+
 ## At a glance
 
 | Workspace | What you do there |
@@ -54,6 +58,8 @@ Repository: [eyeoverthink/fraymus-css](https://github.com/eyeoverthink/fraymus-c
 | **[REPL](#repl)** | JavaScript and DOM commands on a live stage, with draggable methods |
 | **[Canvas](#canvas)** | Drop blocks on a 2×2, 3×3, or 4×4 cube and compile it to a page |
 | **[8-bit](#8-bit-studio)** | Photo, camera, or video. Style video is the filter. Cartoon video is the AI sprite. See the [chapters](docs/8BIT_STATUS.md). |
+| **[Production](docs/AVATAR_STUDIO.md)** | A cast of faces. Make each one into a talking sprite, then add the next face. |
+| **[HTML · JS](docs/APP_OUTLINE.md#html-and-javascript)** | HTML and JavaScript side by side, with a live preview |
 | **Emoji** | Text, DNA, and zero-width, hidden behind a glyph |
 | **Emoji Coder** | Emoji markup to HTML, CSS, JavaScript, and Java |
 | **WASM** | FrayVM bytecode, a real WebAssembly module, one emoji |

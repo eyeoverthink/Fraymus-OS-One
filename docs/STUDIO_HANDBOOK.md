@@ -10,7 +10,7 @@ A MERN app that runs on your machine:
 - **API:** Express at `127.0.0.1:4177` (`server/index.js`). Vite proxies `/api`, `/live`, `/published`, and `/vendor` to it.
 - **Start:** `npm run dev` runs both. Restart it after any edit to `server/`. It does not use `node --watch` (that hit EMFILE).
 
-The studio has one shell (`client/src/App.jsx`) and five workspaces switched from the second bar:
+The studio has one shell (`client/src/App.jsx`) and these workspaces switched from the second bar. The full map is [the outline](APP_OUTLINE.md).
 
 | Tab | id | File | What it does |
 | --- | --- | --- | --- |

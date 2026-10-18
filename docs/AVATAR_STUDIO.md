@@ -84,6 +84,7 @@ Phonemes can replace loudness later without changing the buffer. A timeline of s
 
 | Chapter | What it covers |
 | --- | --- |
+| [Full outline](APP_OUTLINE.md) | Every workspace, including Production |
 | [README](../README.md#8-bit-studio) | The tour of the studio as it stands |
 | [8-bit status](8BIT_STATUS.md) | What works today, including Cartoon video |
 | [8-bit motion](8BIT_MOTION.md) | The controls, in order |
