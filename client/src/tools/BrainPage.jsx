@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { buildAppSource, ensureMern } from "../model.js";
-import { base64, cleanCarrier, sha256, textBytes } from "./emojiCodec.js";
+import { base64, cleanCarrier, encodeGlyph, hex, sha256, textBytes } from "./emojiCodec.js";
 import { decodeWire, deflate, encodeWire, fingerprint, generateKeys, inflate, verifySignature } from "./dispatchCore.js";
 import EmojiSelect from "./EmojiSelect.jsx";
 import {
@@ -18,6 +18,10 @@ import {
 } from "./emotionCore.js";
 import { runConsciousnessAudit } from "./consciousnessProof.js";
 import { applySeal, forgeAutonomousBrainSeal, renderAndPlaySealStage } from "./SealPage.jsx";
+import { assemble, compileToWasm, forge as forgeFrayVmWasm, frayHeader, recoverProgram, runProgram, toBytecode, trueMerkle } from "./frayvm.js";
+import { applyWasm } from "./WasmPage.jsx";
+import { buildWasm as buildEmojiWasm, compileParts } from "./emojiMarkup.js";
+import { applyEmojiCode } from "./EmojiCoderPage.jsx";
 
 export const PHI = 1.618033988749895;
 export const GOLDEN_ANGLE = 2.0 * Math.PI * (1.0 - 1.0 / PHI); // 137.507764° (Patch U-01)
@@ -990,6 +994,7 @@ export default function BrainPage({ project, say, onApply }) {
   const [copilotDirective, setCopilotDirective] = useState("Live Quantum EP3 Telemetry, Centripetal Orbital Memory & 2-Bit DNA Continuity Dashboard");
   const [copilotReceipt, setCopilotReceipt] = useState(null);
   const [copilotBusy, setCopilotBusy] = useState(false);
+  const [wasmKernelReceipt, setWasmKernelReceipt] = useState(null);
 
   function pushLedger(epId, eventType, detail, fitness) {
     seqRef.current += 1;
@@ -2117,6 +2122,121 @@ export default function BrainPage({ project, say, onApply }) {
     say?.("ok", "Rolled back project to prior Co-Pilot .bak snapshot");
   }
 
+  async function compileBrainWasmAndEmojiKernel() {
+    if (copilotBusy) return;
+    setCopilotBusy(true);
+    try {
+      const gen = activeGenome?.generation ?? 0;
+      const speedVal = Math.max(100, Math.round(Number(speedup || 1) * 100));
+      const orbitCount = memoryNodesRef.current.length;
+      const topOrbits = [...memoryNodesRef.current].sort((a, b) => a.radius - b.radius).slice(0, 4);
+      const emoLabel = emotionState?.primary ? `${emotionState.primary.glyph} ${emotionState.primary.label}` : "🧐 Curiosity";
+
+      // 1. FrayVM Assembly for the Quantum Kernel + EP3 + CHSH + Speedup
+      const wasmAsm = [
+        `; FRAYMUS SOVEREIGN BRAIN · GEN ${gen} QUANTUM KERNEL + 2-BIT DNA PLASMID`,
+        `; EP3(16)=4 · CHSH=2828 · Speedup*100=${speedVal} · Orbits=${orbitCount}`,
+        "PUSH 16",
+        "PUSH 4",
+        "DIV",
+        "PUSH 2828",
+        "ADD",
+        `PUSH ${speedVal}`,
+        "ADD",
+        `PUSH ${gen}`,
+        "ADD",
+        "HALT"
+      ].join("\n");
+
+      const code = assemble(wasmAsm);
+      const vmRun = runProgram(code);
+      const bytecode = toBytecode(code);
+      const compiledBytes = compileToWasm(code);
+      const { instance: compiledInst } = await WebAssembly.instantiate(compiledBytes);
+      const mainResult = compiledInst.exports.main();
+
+      const dnaPlasmid = dnaPlasmidInfo || encodeTextToDnaPlasmid(`${wasmAsm}\n${activeGenome?.sourceCode || ""}`);
+      const merkle41 = trueMerkle(`${activeGenome?.sourceCode || ""}\n${wasmAsm}\n${dnaPlasmid.bases}`);
+      const merkleRootHex = `0x${merkle41.root.toString(16).padStart(16, "0")}`;
+      const frayPacket = frayHeader(code, merkle41.root);
+
+      const forged = await forgeFrayVmWasm(code, {
+        source: wasmAsm,
+        brainGeneration: gen,
+        codeHash: activeGenome?.codeHash?.slice(0, 16) || "genesis",
+        speedup: `${speedup}x`,
+        trueMerkle41Root: merkleRootHex,
+        dnaBasesCount: dnaPlasmid.basesCount,
+        dnaPreview: dnaPlasmid.previewBases
+      });
+      const { instance: forgedInst } = await WebAssembly.instantiate(forged.bytes);
+      const execute42 = forgedInst.exports.execute(42);
+      const recovered = recoverProgram(forged.bytes);
+      const wasmGlyph = encodeGlyph(bytecode, "🧬");
+      const nodeToken = `⟦BRAIN_GEN_${gen}_KERNEL⟧${encodeGlyph(bytecode, "🧩")}`;
+
+      // Sync with WasmPage.jsx localStorage keys so switching to WASM tab shows this kernel immediately
+      try {
+        localStorage.setItem("fraymus.wasm.src", wasmAsm);
+        const existingDoc = localStorage.getItem("fraymus.wasm.doc") || "";
+        const nextDoc = `${existingDoc.trim()}\n\nBRAIN_GEN_${gen}_KERNEL (${speedup}x · Merkle ${merkleRootHex})\n${nodeToken}\n`;
+        localStorage.setItem("fraymus.wasm.doc", nextDoc);
+      } catch {}
+
+      // 2. Transpile Brain Telemetry + Orbits into Emoji Coder DSL & reversible .wasm
+      const orbitSummary = topOrbits.map((o) => `${o.key}(r=${o.radius.toFixed(2)})`).join(" · ");
+      const emojiSource = [
+        `🧭 🎯 > 🔗{Brain Gen ${gen}}+🔗{EP3 γ=√2}+🔗{${speedup}x Speedup}+🔗{DNA ${merkleRootHex.slice(0, 10)}}`,
+        `📦.card 🔲 ⭕ 📏 > 1️⃣{◈ Sovereign Brain · Gen ${gen} WASM & DNA Kernel}+📄{Mood: ${emoLabel} · FrayVM main()=${mainResult} · execute(42)=${execute42} · True Merkle 41 Root: ${merkleRootHex}}`,
+        `📦.card 🔲 ⭕ 📏 > 2️⃣{Centripetal Orbital Memory (${orbitCount} nodes)}+📄{${orbitSummary}}`,
+        `📦.card 🔲 ⭕ 📏 > 2️⃣{2-Bit DNA Plasmid (8192 ACGT Bases)}+💻{${dnaPlasmid.previewBases}…}+🔘{Verified Round-Trip}`
+      ].join("\n");
+
+      const emojiParts = compileParts(emojiSource, {});
+      const emojiWasm = await buildEmojiWasm(emojiSource, emojiParts.html);
+      const emojiGlyph = encodeGlyph(textBytes(emojiSource), "🧠");
+
+      try {
+        localStorage.setItem("fraymus.emojicoder.source", JSON.stringify(emojiSource));
+      } catch {}
+
+      const receipt = {
+        gen,
+        wasmAsm,
+        mainResult,
+        execute42,
+        vmTop: vmRun.top,
+        compiledBytesLen: compiledBytes.length,
+        forgedBytesLen: forged.bytes.length,
+        forgedBytes: forged.bytes,
+        frayHeaderHex: hex(frayPacket.slice(0, 32)),
+        recoveredCount: recovered?.length ?? 0,
+        merkleRootHex,
+        merkleWords: merkle41.words,
+        merkleHashes: merkle41.hashCount,
+        wasmGlyph,
+        nodeToken,
+        emojiSource,
+        emojiParts,
+        emojiWasmLen: emojiWasm.bytes.length,
+        emojiGlyph,
+        dnaPreview: dnaPlasmid.previewBases
+      };
+      setWasmKernelReceipt(receipt);
+      pushLedger(
+        "BRAIN_WASM_DNA",
+        "WASM_AND_EMOJI_FORGED",
+        `Compiled Gen ${gen} to ${compiledBytes.length}B native WASM (main()=${mainResult}) + ${forged.bytes.length}B self-running Forge + True Merkle 41 (${merkleRootHex}) + Emoji Coder DSL (${emojiWasm.bytes.length}B WASM)`,
+        activeGenome?.fitness || 1
+      );
+      say?.("ok", `Compiled Gen ${gen} Quantum Kernel to WASM (${mainResult}) + True Merkle 41 DNA + Emoji Coder`);
+    } catch (error) {
+      say?.("err", error.message || "WASM/Emoji compilation failed");
+    } finally {
+      setCopilotBusy(false);
+    }
+  }
+
   async function mintBrainGlyph() {
     if (!keys || !activeGenome) return;
     const payload = {
@@ -2587,6 +2707,58 @@ export default function BrainPage({ project, say, onApply }) {
                   </div>
                 )}
               </div>
+            </div>
+
+            <div style={{ borderTop: "1px solid var(--line)", marginTop: 10, paddingTop: 10 }} className="stack">
+              <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
+                <b>3. Brain ↔ WASM &amp; Emoji Coder (FrayVM WebAssembly + True Merkle 41 DNA + Emoji Markup DSL)</b>
+                <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+                  <button className="btn on" disabled={copilotBusy} onClick={compileBrainWasmAndEmojiKernel}>
+                    🧬 Compile Quantum Kernel → WASM + Emoji Coder
+                  </button>
+                  <button
+                    className="btn"
+                    disabled={!wasmKernelReceipt || !project}
+                    onClick={() => {
+                      if (!wasmKernelReceipt || !project) return;
+                      onApply?.(applyWasm(project, wasmKernelReceipt.forgedBytes, `Brain Gen ${wasmKernelReceipt.gen} Kernel`));
+                      pushLedger("BRAIN_WASM_DNA", "WASM_PLACED_IN_PROJECT", `Placed ${wasmKernelReceipt.forgedBytesLen}B WASM kernel into project`, activeGenome?.fitness || 1);
+                      say?.("ok", project.stack === "mern" ? "Added Brain WASM Kernel page at /wasm" : "Added Brain WASM Kernel loader to HTML");
+                    }}
+                  >
+                    📦 Place WASM in Project
+                  </button>
+                  <button
+                    className="btn"
+                    disabled={!wasmKernelReceipt || !project}
+                    onClick={() => {
+                      if (!wasmKernelReceipt || !project) return;
+                      onApply?.(applyEmojiCode(project, wasmKernelReceipt.emojiParts));
+                      pushLedger("BRAIN_WASM_DNA", "EMOJI_CODED_IN_PROJECT", "Placed Brain Emoji Coder markup into project (/coded)", activeGenome?.fitness || 1);
+                      say?.("ok", project.stack === "mern" ? "Added Brain Emoji Coded page at /coded" : "Appended Brain Emoji HTML+CSS to project");
+                    }}
+                  >
+                    🎨 Place Emoji Coded in Project
+                  </button>
+                </div>
+              </div>
+              {wasmKernelReceipt && (
+                <div className="emoji-view" style={{ fontSize: 11, maxHeight: 165 }}>
+                  <div>
+                    <b style={{ color: "var(--acc)" }}>✓ FrayVM Native WASM ({wasmKernelReceipt.compiledBytesLen} B) &amp; Self-Running Forge ({wasmKernelReceipt.forgedBytesLen} B)</b>
+                    {" · "}<code>main() = {wasmKernelReceipt.mainResult}</code>
+                    {" · "}<code>execute(42) = {wasmKernelReceipt.execute42}</code>
+                    {" · "}Recovered <b>{wasmKernelReceipt.recoveredCount}</b> ops
+                  </div>
+                  <div className="muted">
+                    True Merkle 41 DNA: <b style={{ color: "#00e5ff" }}>{wasmKernelReceipt.merkleRootHex}</b> (8,192 ACGT bases → {wasmKernelReceipt.merkleWords} words → {wasmKernelReceipt.merkleHashes} FNV-1a-64 hashes) · 64B FRAY hdr: <code>{wasmKernelReceipt.frayHeaderHex.slice(0, 36)}…</code>
+                  </div>
+                  <div className="muted">
+                    WASM Carrier: <b style={{ fontSize: 14 }}>{wasmKernelReceipt.wasmGlyph}</b> · Wove <code>⟦BRAIN_GEN_{wasmKernelReceipt.gen}_KERNEL⟧</code> into <b>WASM</b> tab · Synced 4-line Emoji DSL ({wasmKernelReceipt.emojiWasmLen} B reversible WASM, carrier <b style={{ fontSize: 14 }}>{wasmKernelReceipt.emojiGlyph}</b>) into <b>Emoji Coder</b> tab.
+                  </div>
+                  <pre style={{ margin: "4px 0 0", fontSize: 10, color: "var(--text)", whiteSpace: "pre-wrap" }}>{wasmKernelReceipt.emojiSource}</pre>
+                </div>
+              )}
             </div>
           </div>
           <div className="welcome-grid" style={{ marginTop: 0 }}>

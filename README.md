@@ -17,6 +17,7 @@
 
 <p align="center">
   <a href="docs/APP_OUTLINE.md">Outline</a> ·
+  <a href="docs/SOVEREIGN_BRAIN_README.md"><b>Sovereign Brain &amp; Seal</b></a> ·
   <a href="#email-that-runs">Email</a> ·
   <a href="#8-bit-studio">8-bit studio</a> ·
   <a href="docs/AVATAR_STUDIO.md">Production</a> ·
@@ -31,6 +32,7 @@
 
 <p align="center">
   Chapters:
+  <a href="docs/SOVEREIGN_BRAIN_README.md"><b>Sovereign Brain, Living Seal &amp; Co-Pilot</b></a> ·
   <a href="docs/APP_OUTLINE.md">Full outline</a> ·
   <a href="docs/8BIT_STATUS.md">8-bit status</a> ·
   <a href="docs/8BIT_MOTION.md">8-bit motion</a> ·
@@ -59,6 +61,8 @@ The full map of every workspace, including the 8-bit camera, Style video, Cartoo
 | **[Canvas](#canvas)** | Drop blocks on a 2×2, 3×3, or 4×4 cube and compile it to a page |
 | **[8-bit](#8-bit-studio)** | Photo, camera, or video. Style video is the filter. Cartoon video is the AI sprite. See the [chapters](docs/8BIT_STATUS.md). |
 | **[Production](docs/AVATAR_STUDIO.md)** | A cast of faces. Make each one into a talking sprite, then add the next face. |
+| **[Seal](docs/SOVEREIGN_BRAIN_README.md#2-living-seal-sealpagejsx--fsel-v1-talking-emoji-capsule)** | Pack an 8-bit talking sprite, WAV voice, lip-sync timeline, 4-leaf Merkle tree, and Ed25519 signature into one emoji (`FSEL` v1) |
+| **[Brain](docs/SOVEREIGN_BRAIN_README.md)** | Ouroboros 5-Stage Quantum RSI, Centripetal Memory, Constructed Emotion, 4-Proof Consciousness Audit, Local Ollama Cortex, and Autonomous Studio Co-Pilot |
 | **[HTML · JS](docs/APP_OUTLINE.md#html-and-javascript)** | HTML and JavaScript side by side, with a live preview |
 | **Emoji** | Text, DNA, and zero-width, hidden behind a glyph |
 | **Emoji Coder** | Emoji markup to HTML, CSS, JavaScript, and Java |
