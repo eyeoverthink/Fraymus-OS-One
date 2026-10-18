@@ -16,10 +16,84 @@
 // 13. Self-Created Recursively Intelligent Chatbot (+1 Thesis / -1 Antithesis / 0 Synthesis Strange Loop)
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { buildAppSource, ensureMern } from "../model.js";
-
 export const PHI = 1.618033988749895;
 export const NEEDLE3_LLOYD_MAX_C = 1.2240064;
+
+const DEFAULT_MERN_PAGES = [
+  { name: "Home", path: "/", file: "client/src/pages/Home.jsx", auth: false },
+  { name: "Dashboard", path: "/dashboard", file: "client/src/pages/Dashboard.jsx", auth: true },
+  { name: "Login", path: "/login", file: "client/src/pages/Login.jsx", auth: false },
+  { name: "Settings", path: "/settings", file: "client/src/pages/Settings.jsx", auth: false }
+];
+
+export function buildMernAppSource(pages = []) {
+  const list = Array.isArray(pages) && pages.length ? pages : DEFAULT_MERN_PAGES;
+  const imports = list.map((page) => `import ${page.name} from "./pages/${page.name}.jsx";`).join("\n");
+  const entries = list
+    .map((page) => `  { path: "${page.path || page.route || "/"}", label: "${page.name}", name: "${page.name}", auth: ${page.auth ? "true" : "false"} }`)
+    .join(",\n");
+  return `import React from "react";
+${imports}
+
+const PAGES = [
+${entries}
+];
+
+export default function App() {
+  const [route, setRoute] = React.useState(window.location.hash.replace(/^#/, "") || "/");
+  React.useEffect(() => {
+    const onHash = () => setRoute(window.location.hash.replace(/^#/, "") || "/");
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  const page = PAGES.find((item) => item.path === route) || PAGES[0];
+  const authed = window.sessionStorage.getItem("fray-token");
+  const MAP = { ${list.map((page) => page.name).join(", ")} };
+  const Comp = page.auth && !authed ? Login : MAP[page.name] || Home;
+  return (
+    <div className="app">
+      <nav className="nav">
+        <a className="brand" href="#/">◈ {window.FRAY_NAME || "Fraymus"}</a>
+        <div className="links">
+          {PAGES.map((item) => (
+            <a key={item.path} href={"#" + item.path} className={route === item.path ? "on" : ""}>{item.label}</a>
+          ))}
+        </div>
+      </nav>
+      <Comp />
+      <footer className="ft">
+        <a href="#/">◈ Fraymus</a>
+        <span>© 2026 Fraymus Web Studio</span>
+        <a href="#/">φ^75 = 4721424167835376.00</a>
+        <span>One Seed = Reborn</span>
+        <span>FRAY 0x46524159</span>
+      </footer>
+    </div>
+  );
+}
+`;
+}
+
+export function ensureMernProject(project = {}) {
+  const pages = Array.isArray(project.pages) && project.pages.length
+    ? project.pages.map((p) => ({
+        name: p.name,
+        path: p.path || p.route || "/",
+        file: p.file || `client/src/pages/${p.name}.jsx`,
+        auth: Boolean(p.auth)
+      }))
+    : DEFAULT_MERN_PAGES.map((p) => ({ ...p }));
+  const files = {
+    "client/src/App.jsx": buildMernAppSource(pages),
+    ...(project.files || {})
+  };
+  return {
+    ...project,
+    stack: "mern",
+    pages,
+    files
+  };
+}
 
 function fnv1a32(text) {
   const s = String(text || "");
@@ -501,7 +575,7 @@ export function runReaForensicAudit(project) {
   const isMern = p.stack === "mern";
   const files = isMern
     ? {
-        "client/src/App.jsx": buildAppSource(ensureMern(p)),
+        "client/src/App.jsx": buildMernAppSource(ensureMernProject(p).pages),
         ...(p.files || {})
       }
     : {
@@ -773,7 +847,7 @@ export function runHypitAnalysisAndSvml(project, scriptText, vocalCues = []) {
   const p = project || {};
   const codeSample =
     p.stack === "mern"
-      ? Object.values(p.files || {}).join("\n") + "\n" + buildAppSource(ensureMern(p))
+      ? Object.values(p.files || {}).join("\n") + "\n" + buildMernAppSource(ensureMernProject(p).pages)
       : `${p.html || ""}\n${p.css || ""}\n${p.js || ""}`;
 
   const decisions = (codeSample.match(/\b(if|else\s+if|for|while|case|catch)\b|&&|\|\||\?/g) || []).length;
@@ -1181,7 +1255,7 @@ export class NcmMemoryBank {
 export function applySynthesizedPackageToProject(project, pkgResult) {
   const pkg = pkgResult || recommendAndForgePackages(project);
   if (project.stack === "mern") {
-    const next = ensureMern(project);
+    const next = ensureMernProject(project);
     const files = {
       ...(next.files || {}),
       [pkg.synthesizedPackageName]: pkg.synthesizedPackageCode
@@ -1199,45 +1273,46 @@ export function applyContentSuiteToProject(project, suiteBundle) {
   });
 
   if (project.stack === "mern") {
-    const next = ensureMern(project);
+    const next = ensureMernProject(project);
     const pageName = "ContentSuite";
+    const file = `client/src/pages/${pageName}.jsx`;
     const pageCode = `import React from "react";
 
-export default function ContentSuitePage() {
+export default function ContentSuite() {
   return (
-    <div style={{ padding: 20, background: "#050608", color: "#e8fff3", fontFamily: "monospace" }}>
+    <main className="page" style={{ padding: 20, background: "#050608", color: "#e8fff3", fontFamily: "monospace" }}>
       <h2>◈ Fraymus Offline Content Suite (${comp.title.replace(/"/g, "")})</h2>
       <p style={{ color: "#8aa899" }}>ArtCraft 3D Stage + HyperFrames 60fps HTML Timeline + Hypit SVML + VocalStudio ${comp.voice.baseHz}Hz WAV</p>
       <div dangerouslySetInnerHTML={{ __html: ${JSON.stringify(comp.htmlComposition)} }} />
       <pre style={{ marginTop: 12, padding: 12, background: "#090d0b", border: "1px solid #1f3328", borderRadius: 8, overflowX: "auto", fontSize: 11 }}>
         {${JSON.stringify(comp.analysis.svml)}}
       </pre>
-    </div>
+    </main>
   );
 }
 `;
     const pages = [...(next.pages || [])];
     const existingIdx = pages.findIndex((p) => p.name === pageName);
     const pageEntry = {
-      id: existingIdx >= 0 ? pages[existingIdx].id : `pg_${Date.now()}`,
       name: pageName,
-      route: "/content-suite",
-      summary: "Offline ArtCraft + HyperFrames + Hypit SVML + VocalStudio Suite"
+      path: "/content-suite",
+      file,
+      auth: false
     };
     if (existingIdx >= 0) pages[existingIdx] = pageEntry;
     else pages.push(pageEntry);
 
     const files = {
       ...(next.files || {}),
-      [`client/src/pages/${pageName}.jsx`]: pageCode,
+      [file]: pageCode,
       "frame.md": comp.frameMd,
-      "composition.svml": comp.analysis.svml
+      "composition.svml": comp.analysis.svml,
+      "client/src/App.jsx": buildMernAppSource(pages)
     };
     return {
       ...next,
       pages,
-      files,
-      appSource: buildAppSource({ ...next, pages, files })
+      files
     };
   }
 
