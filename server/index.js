@@ -1010,6 +1010,67 @@ app.post("/api/brain/think", async (req, res) => {
   }
 });
 
+// ─── AFK RECURSIVE PONDER LEDGER & NODULAR Δt FREQUENCY BUS PERSISTENCE ───
+const brainAfkFile = path.join(brainDir, "afk_ponder.json");
+const brainNodularFile = path.join(brainDir, "nodular_bus.json");
+
+app.get("/api/brain/afk", (_req, res) => {
+  try {
+    const doc = fs.existsSync(brainAfkFile)
+      ? JSON.parse(fs.readFileSync(brainAfkFile, "utf8"))
+      : null;
+    res.json({ ok: true, afkState: doc });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Could not read AFK state." });
+  }
+});
+
+app.post("/api/brain/afk", (req, res) => {
+  try {
+    fs.mkdirSync(brainDir, { recursive: true });
+    const body = req.body || {};
+    const doc = {
+      cycle: Number(body.cycle || 1),
+      compositeScore: Number(body.compositeScore || 0),
+      procedures: Array.isArray(body.procedures) ? body.procedures.slice(0, 20) : [],
+      ponderLedger: Array.isArray(body.ponderLedger) ? body.ponderLedger.slice(0, 50) : [],
+      updatedAt: new Date().toISOString()
+    };
+    fs.writeFileSync(brainAfkFile, JSON.stringify(doc, null, 2));
+    res.json({
+      ok: true,
+      cycle: doc.cycle,
+      ledgerCount: doc.ponderLedger.length,
+      updatedAt: doc.updatedAt
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Could not persist AFK ponder state." });
+  }
+});
+
+app.post("/api/brain/nodular-bus", (req, res) => {
+  try {
+    fs.mkdirSync(brainDir, { recursive: true });
+    const body = req.body || {};
+    const existing = fs.existsSync(brainNodularFile)
+      ? JSON.parse(fs.readFileSync(brainNodularFile, "utf8"))
+      : { packets: [] };
+    const packet = {
+      freqHz: Number(body.freqHz || 448.489872),
+      piIndex: Number(body.piIndex ?? 847),
+      dtSlot: Number(body.dtSlot || 12),
+      payloadMessage: String(body.payloadMessage || "").slice(0, 240),
+      protocolFrames: body.protocolFrames || {},
+      ts: new Date().toISOString()
+    };
+    const packets = [packet, ...(existing.packets || [])].slice(0, 50);
+    fs.writeFileSync(brainNodularFile, JSON.stringify({ packets, updatedAt: packet.ts }, null, 2));
+    res.json({ ok: true, packet, totalBuffered: packets.length });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Could not dispatch nodular bus frame." });
+  }
+});
+
 app.use("/published", express.static(publishedDir, { index: "index.html" }));
 
 const dist = path.resolve("client/dist");
