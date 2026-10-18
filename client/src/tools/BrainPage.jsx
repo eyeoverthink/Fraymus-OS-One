@@ -4206,7 +4206,7 @@ export default function BrainPage({ project, say, onApply }) {
                   <div className="emoji-view" style={{ maxHeight: 270, fontSize: 11 }}>
                     <b style={{ color: "#00e5ff" }}>📜 Per-Symbol Dedicated Slice Readout (Base = symIdx × 70) &amp; Babel Lexer:</b>
                     <div className="muted" style={{ marginBottom: 4 }}>
-                      Babel Lexed Tokens: <b style={{ color: "var(--acc)" }}>{flyGnnReport.babelTokenCount} tokens</b> (<code>{flyGnnReport.babelTokensPreview?.slice(0, 6).map((t) => `${t.type}:${t.val}`).join(" · ")}</code>)
+                      Babel Lexed Tokens: <b style={{ color: "var(--acc)" }}>{flyGnnReport.babelTokenCount} tokens</b> (<code>{flyGnnReport.babelTokensPreview?.slice(0, 6).map((t) => `${t.type}:${t.value ?? t.val}`).join(" · ")}</code>)
                     </div>
                     {flyGnnReport.connectomeSnapshot?.sliceSummaries?.map((sl) => (
                       <div key={sl.symId} style={{ padding: "3px 0", borderBottom: "1px dashed var(--line)" }}>

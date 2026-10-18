@@ -187,6 +187,7 @@ export function lexBabelProgram(source = "") {
       tokens.push({
         type: keywords.has(word) ? "KEYWORD" : "WORD",
         value: word,
+        val: word,
         start: r
       });
       r = u;
@@ -745,6 +746,7 @@ export function triggerBoobyTrapInstruction(noduleState, attackerGuessHz, trueFr
     residualHz: residual,
     morphedIndexFrom: oldIndex,
     morphedIndexTo: nextIndex,
+    newSecretIndex: nextIndex,
     adaptedBaseHz: nextBaseHz,
     baitHoneyPotHz,
     assimilatedEnergy: Number(Math.abs(residual * 0.15).toFixed(4)),
@@ -846,6 +848,7 @@ export function runNodularFrequencyMesh(payloadMessage = "SYNC_FLYGNN_HEBBIAN_SL
     engine: "Nodular Frequency, Δt Counter-Clock & Entanglement Communication Bus",
     payloadMessage,
     canonicalKey,
+    piHiddenKey: canonicalKey,
     dtCoincidenceCount: dtEvents.length,
     activeDtWindow,
     kuramotoOrderParameterR: 0.9998,
@@ -860,12 +863,16 @@ export function runNodularFrequencyMesh(payloadMessage = "SYNC_FLYGNN_HEBBIAN_SL
 }
 
 // ─── 4. MAKE THE GAUNTLET A THINKING PROCESS + AFK RECURSIVE PONDER DAEMON ───
-export function runGauntletThinkingProcess({
-  prompt = "Optimize FlyGNN dedicated slices, harden nodular Δt frequency bus, and evolve SOP procedures",
-  procedures = null,
-  ponderLedger = [],
-  cycle = 1
-} = {}) {
+export function runGauntletThinkingProcess(arg1 = {}, directiveOverride = null) {
+  const isStateWithDirective = Boolean(arg1 && Array.isArray(arg1.ponderLedger) && !arg1.prompt);
+  const prompt = directiveOverride
+    || arg1?.prompt
+    || "Optimize FlyGNN dedicated slices, harden nodular Δt frequency bus, and evolve SOP procedures";
+  const procedures = arg1?.procedures || null;
+  const ponderLedger = arg1?.ponderLedger || [];
+  const cycle = isStateWithDirective
+    ? Number(arg1.cycle || 0) + 1
+    : Number(arg1?.cycle || 1);
   const t0 = typeof performance !== "undefined" ? performance.now() : Date.now();
   const currentProcedures = Array.isArray(procedures) && procedures.length
     ? JSON.parse(JSON.stringify(procedures))
