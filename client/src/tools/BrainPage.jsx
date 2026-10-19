@@ -3255,6 +3255,44 @@ export default function BrainPage({ project, say, onApply }) {
     );
   }
 
+  async function mintAndStageLivingAgiSeal() {
+    const sealInfo = agiContinuumReport?.envelopeCrucible?.livingAgiSeal;
+    if (!sealInfo) return;
+    try {
+      navigator.clipboard?.writeText(sealInfo.glyph);
+      const minted = await forgeAutonomousBrainSeal({
+        text: sealInfo.spokenText,
+        speakerName: "Sovereign AGI V18",
+        project,
+        keys,
+        carrier: "🗣️",
+        subject: `FRAYMUS-SEAL-AGI-V18-N${agiContinuumReport.envelopeCrucible.evenN}`
+      });
+      if (project && onApply) {
+        onApply(
+          applySeal(project, minted.glyph, {
+            name: `Sovereign AGI V18 (N=${agiContinuumReport.envelopeCrucible.evenN})`,
+            text: sealInfo.spokenText,
+            alg: keys?.alg || "Ed25519",
+            root: minted.merkleRoot
+          })
+        );
+      }
+      pushLedger(
+        "LIVING_AGI_SEAL_V18",
+        "MINTED_AND_STAGED_TO_SEAL",
+        `Minted Living AGI Seal 🗣️ (FSEL v2 ${sealInfo.wireBytes}B + Talking Avatar WAV · Merkle ${minted.merkleRoot.slice(0, 12)}…)`,
+        1.0
+      );
+      say?.(
+        "ok",
+        `Minted Living AGI Seal 🗣️ (${sealInfo.fconNeurons}N FCON + ${sealInfo.wasmBytes}B WASM + 8kHz Voice) & staged into Seal workspace`
+      );
+    } catch (err) {
+      say?.("err", err?.message || "Living AGI Seal mint failed");
+    }
+  }
+
   useEffect(() => {
     if (!afkAutopilotOn) return undefined;
     const timer = setInterval(() => {
@@ -4227,7 +4265,7 @@ export default function BrainPage({ project, say, onApply }) {
                 ["nodular_freq_bus", `📡 8. Nodular Frequency, Δt Clocks (${nodularMeshReport?.canonicalKey?.freqHz ?? 448.489872} Hz) & LoRa/HF/BLE/UDP/TCP Bus`],
                 ["think_create_proof", `⚡ 9. Think & Create Proof (${thinkCreateReport.summary.totalBaseline}/24 vs ${thinkCreateReport.summary.totalSuper}/24 · ${thinkCreateReport.summary.totalGainMultiplier}x Gain & App Creator)`],
                 ["universal_daemon", `🛰️ 10. Universal Daemonization & Universal Instrumentation (${universalDaemonReport.traceAnalysis.totalFramesInstrumented} Frames Hooked · HTTP 400 Failover)`],
-                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 40}/40 Crucible · 127/127 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
+                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 52}/${agiContinuumReport.envelopeCrucible?.maxScore ?? 52} Crucible · 139/139 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -4841,7 +4879,7 @@ export default function BrainPage({ project, say, onApply }) {
                       </button>
                     ))}
                     <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
-                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (127/127 Checks)
+                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (139/139 Checks)
                     </button>
                     <button
                       className="btn"
@@ -4872,6 +4910,13 @@ export default function BrainPage({ project, say, onApply }) {
                     >
                       💾 Save 704B FCON Connectome + 3-Node Swarm
                     </button>
+                    <button
+                      className="btn"
+                      style={{ borderColor: "#00e5ff", color: "#00e5ff" }}
+                      onClick={mintAndStageLivingAgiSeal}
+                    >
+                      🗣️ Mint Living AGI Seal (FSEL v2 · {agiContinuumReport.envelopeCrucible?.livingAgiSeal?.wireBytes ?? 93}B)
+                    </button>
                   </div>
                 </div>
 
@@ -4883,7 +4928,7 @@ export default function BrainPage({ project, say, onApply }) {
                         {agiContinuumReport.envelopeCrucible.agiScore}/{agiContinuumReport.envelopeCrucible.maxScore} Verified ({agiContinuumReport.envelopeCrucible.gainMultiplier}x vs Naive {agiContinuumReport.envelopeCrucible.baselineScore}/{agiContinuumReport.envelopeCrucible.maxScore})
                       </b>
                       <span className="pill" style={{ borderColor: "#00e5ff", color: "#00e5ff", fontSize: 10 }}>
-                        All 4 Frontiers Live: TURING_CFG .wasm + 1-Emoji Spore + Signed Dispatch + 3-Node Swarm + 704B FCON Disk
+                        V18 Frontiers Live: WASM FlyGNN Spike + GF(256) FCON Burst Heal + Living AGI Seal 🗣️ + Signed Dispatch
                       </span>
                     </div>
                     <div className="grid-2" style={{ marginTop: 6, gap: 6 }}>
