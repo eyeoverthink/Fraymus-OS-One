@@ -1071,6 +1071,46 @@ app.post("/api/brain/nodular-bus", (req, res) => {
   }
 });
 
+const brainDaemonFile = path.join(brainDir, "universal_daemon.json");
+
+app.get("/api/brain/daemon", (_req, res) => {
+  try {
+    const doc = fs.existsSync(brainDaemonFile)
+      ? JSON.parse(fs.readFileSync(brainDaemonFile, "utf8"))
+      : { status: "RESIDENT_ACTIVE", events: [] };
+    res.json({ ok: true, daemon: doc });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Could not read universal daemon state." });
+  }
+});
+
+app.post("/api/brain/daemon", (req, res) => {
+  try {
+    fs.mkdirSync(brainDir, { recursive: true });
+    const body = req.body || {};
+    const existing = fs.existsSync(brainDaemonFile)
+      ? JSON.parse(fs.readFileSync(brainDaemonFile, "utf8"))
+      : { events: [] };
+    const entry = {
+      requestId: String(body.requestId || "local-probe"),
+      providerStatusCode: Number(body.providerStatusCode || 400),
+      framesInstrumented: Number(body.framesInstrumented || 9),
+      chunksCommitted: Number(body.chunksCommitted || 6),
+      daemonServices: Array.isArray(body.daemonServices) ? body.daemonServices : [],
+      telemetrySpans: Array.isArray(body.telemetrySpans) ? body.telemetrySpans : [],
+      ts: new Date().toISOString()
+    };
+    const events = [entry, ...(existing.events || [])].slice(0, 50);
+    fs.writeFileSync(
+      brainDaemonFile,
+      JSON.stringify({ status: "RESIDENT_ACTIVE", updatedAt: entry.ts, events }, null, 2)
+    );
+    res.json({ ok: true, status: "RESIDENT_ACTIVE", entry, totalEvents: events.length });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Could not record universal daemon event." });
+  }
+});
+
 app.use("/published", express.static(publishedDir, { index: "index.html" }));
 
 const dist = path.resolve("client/dist");

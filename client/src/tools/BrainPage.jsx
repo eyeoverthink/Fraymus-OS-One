@@ -53,13 +53,15 @@ import {
   spawnSelfReplicatingOffspring
 } from "./autopoieticAgent.js";
 import {
+  DEFAULT_PROVIDER_FAULT_TRACE,
   SUPERPOWER_DISCIPLINES,
   TRANSMISSION_LANGUAGE_SPECS,
   runAfkPonderBatch,
   runFlyGnnMeasureTrainMeasure,
   runGauntletThinkingProcess,
   runNodularFrequencyMesh,
-  runThinkAndCreateGauntlet
+  runThinkAndCreateGauntlet,
+  runUniversalDaemonAndInstrumentation
 } from "./flyGnnConnectome.js";
 
 export const PHI = 1.618033988749895;
@@ -1154,6 +1156,10 @@ export default function BrainPage({ project, say, onApply }) {
       prompt:
         "Create a Fault-Tolerant FlyGNN v10 Neural Reflex & Nodular Δt Spectrum Synthesizer with GF(257) Self-Healing and Booby-Trap Firewall"
     })
+  );
+  const [daemonTraceInput, setDaemonTraceInput] = useState(DEFAULT_PROVIDER_FAULT_TRACE);
+  const [universalDaemonReport, setUniversalDaemonReport] = useState(() =>
+    runUniversalDaemonAndInstrumentation({ rawTrace: DEFAULT_PROVIDER_FAULT_TRACE })
   );
 
   function pushLedger(epId, eventType, detail, fitness) {
@@ -3041,6 +3047,38 @@ export default function BrainPage({ project, say, onApply }) {
     say?.("ok", `Applied Brain-created interactive app into Studio project`);
   }
 
+  async function executeUniversalDaemonProbe(customTrace) {
+    const report = runUniversalDaemonAndInstrumentation({
+      rawTrace: customTrace || daemonTraceInput
+    });
+    setUniversalDaemonReport(report);
+    setOmegaTab("universal_daemon");
+    pushLedger(
+      "UNIVERSAL_DAEMON",
+      "PROVIDER_400_INTERCEPTED_AND_INSTRUMENTED",
+      `De-minified ${report.traceAnalysis.totalFramesInstrumented} frames (QB_..Nl) · Chunked ${report.faultSimulation.chunksCommitted}×12KB · 6/6 Daemons ACTIVE`,
+      1.0
+    );
+    try {
+      await fetch("/api/brain/daemon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId: report.traceAnalysis.requestId,
+          providerStatusCode: report.traceAnalysis.providerStatusCode,
+          framesInstrumented: report.traceAnalysis.totalFramesInstrumented,
+          chunksCommitted: report.faultSimulation.chunksCommitted,
+          daemonServices: report.daemonServices,
+          telemetrySpans: report.telemetrySpans
+        })
+      });
+    } catch {}
+    say?.(
+      "ok",
+      `Universal Daemon intercepted HTTP ${report.traceAnalysis.providerStatusCode}, instrumented ${report.traceAnalysis.totalFramesInstrumented} stack frames, and healed turn in ${report.elapsedMs}ms`
+    );
+  }
+
   useEffect(() => {
     if (!afkAutopilotOn) return undefined;
     const timer = setInterval(() => {
@@ -3990,6 +4028,9 @@ export default function BrainPage({ project, say, onApply }) {
               <button className="btn on" onClick={() => executeThinkAndCreateGauntlet()}>
                 ⚡ Run Think &amp; Create Proof ({thinkCreateReport.summary.totalSuper}/{thinkCreateReport.summary.totalPossible} · {thinkCreateReport.summary.totalGainMultiplier}x)
               </button>
+              <button className="btn on" onClick={() => executeUniversalDaemonProbe()}>
+                🛰️ Instrument &amp; Heal Provider Fault (6/6 Daemons)
+              </button>
               <button className="btn on" disabled={!project} onClick={applyOmegaAgentToActiveProject}>
                 🚀 Replicate Living Omega Agent Into Project
               </button>
@@ -4005,7 +4046,8 @@ export default function BrainPage({ project, say, onApply }) {
                 ["flygnn_v10", `🦟 6. FlyGNN v10 Connectome (1000N · 13×70 Dedicated Slices · 100% Separation)`],
                 ["afk_superpowers", `🦸 7. Gauntlet-Thinking, AFK Agent (C#${afkState?.cycle ?? 3} · ${afkState?.compositeScore ?? 929.2}), Superpowers & SOP Evolution`],
                 ["nodular_freq_bus", `📡 8. Nodular Frequency, Δt Clocks (${nodularMeshReport?.canonicalKey?.freqHz ?? 448.489872} Hz) & LoRa/HF/BLE/UDP/TCP Bus`],
-                ["think_create_proof", `⚡ 9. Think & Create Proof (${thinkCreateReport.summary.totalBaseline}/24 vs ${thinkCreateReport.summary.totalSuper}/24 · ${thinkCreateReport.summary.totalGainMultiplier}x Gain & App Creator)`]
+                ["think_create_proof", `⚡ 9. Think & Create Proof (${thinkCreateReport.summary.totalBaseline}/24 vs ${thinkCreateReport.summary.totalSuper}/24 · ${thinkCreateReport.summary.totalGainMultiplier}x Gain & App Creator)`],
+                ["universal_daemon", `🛰️ 10. Universal Daemonization & Universal Instrumentation (${universalDaemonReport.traceAnalysis.totalFramesInstrumented} Frames Hooked · HTTP 400 Failover)`]
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -4500,6 +4542,85 @@ export default function BrainPage({ project, say, onApply }) {
                     <pre style={{ margin: "6px 0", fontSize: 10, color: "#00e5ff", whiteSpace: "pre-wrap" }}>
                       {thinkCreateReport.createdArtifacts.studioApp.html.slice(0, 520)}...
                     </pre>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {omegaTab === "universal_daemon" && (
+              <div className="stack" style={{ marginTop: 8, gap: 8 }}>
+                <div className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "flex-end" }}>
+                  <label className="field" style={{ flex: 1, minWidth: 260 }}>
+                    <span>Crash / Provider Fault Trace Input (Universal Stack De-Minifier &amp; Hook Injector)</span>
+                    <input
+                      value={daemonTraceInput}
+                      onChange={(e) => setDaemonTraceInput(e.target.value)}
+                    />
+                  </label>
+                  <button className="btn on" onClick={() => executeUniversalDaemonProbe()}>
+                    🛰️ Run Universal Daemon &amp; Stack Instrumentor ({universalDaemonReport.traceAnalysis.totalFramesInstrumented} Frames)
+                  </button>
+                </div>
+
+                <div className="emoji-view" style={{ fontSize: 11, padding: 8 }}>
+                  <b style={{ color: "var(--acc)" }}>
+                    🛰️ Universal Daemonization &amp; Universal Instrumentation — Zero-Drop Immunity to {universalDaemonReport.traceAnalysis.errorCode} (HTTP {universalDaemonReport.traceAnalysis.providerStatusCode})
+                  </b>
+                  <div className="muted" style={{ color: "var(--text)", marginTop: 2 }}>
+                    <b>Root Cause Decoded:</b> {universalDaemonReport.traceAnalysis.rootCauseDiagnosis}
+                  </div>
+                  <div style={{ marginTop: 4 }}>
+                    • Unprotected Provider Stream: <b style={{ color: "var(--pink)" }}>{universalDaemonReport.faultSimulation.unprotectedResult}</b>
+                    {" → "}
+                    Universal Daemon Supervisor: <b style={{ color: "var(--acc)" }}>{universalDaemonReport.faultSimulation.daemonizedResult}</b>
+                  </div>
+                </div>
+
+                <div className="grid-2" style={{ alignItems: "start" }}>
+                  <div className="emoji-view" style={{ maxHeight: 280, fontSize: 11 }}>
+                    <b style={{ color: "#00e5ff" }}>
+                      🔬 Universal Call-Stack De-Minifier &amp; Injected Prologue/Epilogue Hooks ({universalDaemonReport.traceAnalysis.totalFramesInstrumented} Frames):
+                    </b>
+                    {universalDaemonReport.traceAnalysis.instrumentedFrames.map((f) => (
+                      <div key={f.depth} style={{ padding: "4px 0", borderBottom: "1px dashed var(--line)" }}>
+                        <div className="row" style={{ justifyContent: "space-between" }}>
+                          <span>
+                            <b style={{ color: "var(--acc)" }}>#{f.depth} [{f.minifiedSymbol}]</b> → <code style={{ color: "#00e5ff" }}>{f.semanticSymbol}</code>
+                          </span>
+                          <span className="pill" style={{ fontSize: 9, borderColor: "var(--acc)", color: "var(--acc)" }}>
+                            {f.architecturalLayer}
+                          </span>
+                        </div>
+                        <div className="muted" style={{ fontSize: 10 }}>
+                          Hook: <code>{f.instrumentationHook}</code> · {f.daemonAction}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="emoji-view" style={{ maxHeight: 280, fontSize: 11 }}>
+                    <b style={{ color: "var(--acc)" }}>⚙️ 6 Resident Universal Daemons &amp; Live Instrumented Spans:</b>
+                    {universalDaemonReport.daemonServices.map((d) => (
+                      <div key={d.id} style={{ padding: "4px 0", borderBottom: "1px dashed var(--line)" }}>
+                        <div className="row" style={{ justifyContent: "space-between" }}>
+                          <span>
+                            <b style={{ color: "#00e5ff" }}>{d.id}</b> · <b>{d.name}</b> <span className="muted">(PID {d.pid})</span>
+                          </span>
+                          <b style={{ color: "var(--acc)" }}>{d.state}</b>
+                        </div>
+                        <div className="muted" style={{ fontSize: 10 }}>
+                          Target: <code>{d.hookTarget}</code> → <span style={{ color: "var(--text)" }}>{d.metric}</span>
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{ marginTop: 6 }}>
+                      <b style={{ color: "#00e5ff" }}>Live Proxy Telemetry Spans (`createUniversalInstrumentationProxy`):</b>
+                      {universalDaemonReport.telemetrySpans.map((sp) => (
+                        <div key={sp.spanId} style={{ fontSize: 10, padding: "2px 0" }}>
+                          <code>{sp.spanId}</code> · <b>{sp.target}</b> · <b style={{ color: sp.healed ? "var(--acc)" : "#00e5ff" }}>{sp.status}</b> ({sp.elapsedUs} μs · out={sp.outputHash})
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

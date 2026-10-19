@@ -57,28 +57,72 @@ Repository: [eyeoverthink/fraymus-css](https://github.com/eyeoverthink/fraymus-c
 
 The full map of every workspace, including the 8-bit camera, Style video, Cartoon video, Talk, and Production, is the [outline](docs/APP_OUTLINE.md). This page stays the tour.
 
-## At a glance
+## At a glance: All 14 Studio Workspaces (`client/src/App.jsx`)
 
-| Workspace | What you do there |
-| --- | --- |
-| **[Dispatch](#email-that-runs)** | Sign a program, hide it in emoji, verify it, run it |
-| **[Mail](#email-that-runs)** | Read and send from Gmail or the mailbox on this machine |
-| **[Code](#html-react-and-pair)** | Snippet library, editor, Pair view, live preview, console |
-| **[CRUD](#crud)** | Name a resource, then `POST`, `GET`, `PUT`, `PATCH`, `DELETE` it, then compile it into the project |
-| **[REPL](#repl)** | JavaScript and DOM commands on a live stage, with draggable methods |
-| **[Canvas](#canvas)** | Drop blocks on a 2×2, 3×3, or 4×4 cube and compile it to a page |
-| **[8-bit](#8-bit-studio)** | Photo, camera, or video. Style video is the filter. Cartoon video is the AI sprite. See the [chapters](docs/8BIT_STATUS.md). |
-| **[Production](docs/AVATAR_STUDIO.md)** | A cast of faces. Make each one into a talking sprite, then add the next face. |
-| **[Seal](docs/SOVEREIGN_BRAIN_README.md#2-living-seal-sealpagejsx--fsel-v1-talking-emoji-capsule)** | Pack an 8-bit talking sprite, WAV voice, lip-sync timeline, 4-leaf Merkle tree, and Ed25519 signature into one emoji (`FSEL` v1) |
-| **[Brain](docs/SOVEREIGN_BRAIN_README.md)** | 8-Lobe Sovereign Cortex: Ouroboros 5-Stage Quantum RSI, Centripetal Memory, Constructed Emotion, 4-Proof Consciousness Audit, Local Ollama Cortex (`3.75x` LLM Gain), Ternary `{-1,0,+1}` + `NCM` Continual Mesh, 12-Skill Nexus Claw, `OMEGA-3` $\text{Thinking}^3$ (`9.00x` Hard Gauntlet), `FlyGNN v10` (`1000N` Dedicated Slices), AFK Superpowers Agent, and Nodular $\Delta t$ Frequency Bus (`448.489872 Hz`) |
-| **[HTML · JS](docs/APP_OUTLINE.md#html-and-javascript)** | HTML and JavaScript side by side, with a live preview |
-| **Emoji** | Text, DNA, and zero-width, hidden behind a glyph |
-| **Emoji Coder** | Emoji markup to HTML, CSS, JavaScript, and Java |
-| **WASM** | FrayVM bytecode, a real WebAssembly module, one emoji |
+Every workspace receives `{ project, say, onApply }` and writes cleanly into both **Static/React** (`html`, `css`, `js`, `wasmB64`) and **MERN** (`ensureMern`, `client/src/pages/*.jsx`, `client/src/App.jsx`, `server/routes/*.js`) projects:
+
+| # | Workspace Tab | Source Module | Project Mutator (`onApply`) | Core Capabilities &amp; UI Panes |
+| :-: | :--- | :--- | :--- | :--- |
+| **1** | **[Code](#html-react-and-pair)** (`studio`) | `client/src/App.jsx` + `client/src/model.js` | `withFile()`, `applyLibraryItem()`, `addPage()`, `ensureMern()` | 110+ snippet library (`Components`, `CSS`, `Tailwind`, `Shadcn`, `Graphics`, `3D`, `Templates`, `Assets`, `MERN`), side-by-side **Pair** editor, responsive live preview (`Desktop`/`Tablet`/`Mobile`), interactive `fray` console, and `⌘K` palette. |
+| **2** | **[CRUD](#crud)** (`crud`) | `client/src/tools/CrudPage.jsx` | `applyCrud(project, resource, fields)` | 6-step REST builder (`Schema`, `Create`, `Read`, `Update`, `Delete`, `Compile`) bound to `/live/:id/api/r/:resource` (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`). Compiles `client/src/pages/Records.jsx` + `server/routes/resources.js`. |
+| **3** | **[REPL](#repl)** (`repl`) | `client/src/tools/ReplPage.jsx` | Live DOM Stage + `localStorage` (`fraymus-repl-methods`) | 22 built-in DOM &amp; JS commands (`query`, `queryAll`, `text`, `html`, `style`, `class`, `attr`, `create`, `append`, `remove`, `click`, `focus`, `box`, `tree`, `keys`, `json`, `range`, `sum`, `now`, `typeof`), draggable method strip, and custom method designer. |
+| **4** | **[Canvas](#canvas)** (`canvas`) | `client/src/tools/CanvasPage.jsx` | `applyCanvas(project, doc)` / `renderCanvas(doc)` | Obsidian-themed (`#7c6af7`) entity-component block builder on a 2×2, 3×3, or 4×4 3D cube (`Front`, `Right`, `Back`, `Stack`). Compiles to `client/src/pages/Board.jsx` (`#/board`). |
+| **5** | **[8-bit](#8-bit-studio)** (`pixel`) | `client/src/tools/PixelPage.jsx` + `pixelEngine.js` + `pixelMotion.js` + `pixelMouth.js` + `pixelTalk.js` | `applySprite(project, dataUrl)` | Turns any photo, document (`sips`/Quick Look), webcam stream, or video into an 8-bit character (`Character`, `Trace`, `Abstract`), **AI Render** (`FLUX.2 Klein` Real Outfit or Avatar), **Style video** (10 fps), **Cartoon video** (2 fps seed-locked), and 4-cell lip-synced **Talk** WebM. |
+| **6** | **[Production](#production-avatar-cast-studio)** (`production`) | `client/src/tools/StudioPage.jsx` | `applyCast(project, cast)` | Multi-character avatar cast pipeline: add faces, render each into an 8-bit talking sprite, assign individual voices &amp; dialogue lines, and persist the cast inside the project. |
+| **7** | **[Seal](#seal-living-talking-emoji-capsule)** (`seal`) | `client/src/tools/SealPage.jsx` | `applySeal(project, glyph, meta)` / `forgeAutonomousBrainSeal()` | Forges a 128×128 8-bit sprite, 4 mouth cells (`closed`, `ajar`, `open`, `wide`), 8 kHz WAV voice track, lip-sync envelope, 4-leaf SHA-256 Merkle tree, and `Ed25519` signature into **one single emoji** (`FSEL` v1) that plays back on `<canvas>` + WebAudio. |
+| **8** | **[Brain](#sovereign-brain-ternary-ncm-cortex--12-skill-nexus-claw)** (`brain`) | `client/src/tools/BrainPage.jsx` + `emotionCore.js` + `consciousnessProof.js` + `sovereignEcosystem.js` + `autopoieticAgent.js` + `flyGnnConnectome.js` | `applyBrain()`, `applyBrainCopilot()`, `applyContentSuiteToProject()`, `applySynthesizedPackageToProject()`, `replicateOmegaAgentIntoProject()` | **8 Cortical Lobes + 10 OMEGA-3 / FlyGNN / Nodular / Universal Daemon Sub-Tabs:** 5-Stage Quantum RSI (`81.53x` speedup), Centripetal Memory (`137.5077°`), Constructed Emotion, 4-Proof Consciousness Audit ($\Phi_{\text{MIP}} = 0.5322$), Local Ollama Cortex (`3.75x` Gain), Ternary `{-1,0,+1}` + `NCM`, 12-Skill Nexus Claw, `OMEGA-3` $\text{Thinking}^3$ (`9.00x` Gauntlet), `FlyGNN v10` (`1000N` Dedicated Slices), AFK Superpowers Agent, Nodular $\Delta t$ Bus (`448.489872 Hz`), Think &amp; Create Proof (`24/24` · `4.00x`), and Universal Daemonization &amp; Instrumentation. |
+| **9** | **[HTML · JS](#html--js-dual-pane-live-sandbox)** (`webjs`) | `client/src/tools/WebJsPage.jsx` + `webjsStarters.js` | `applyWebJs(project, html, js)` / `buildDocument(html, js, run)` | Side-by-side HTML &amp; JS playground with instant `postMessage` console/error bridge, 4 viewport presets (`Fill`, `390 Phone`, `768 Tablet`, `1280 Desktop`), starter templates, and compilation to `client/src/pages/Live.jsx`. |
+| **10** | **[Emoji](#emoji-steganographic-variation-selector-dna--zero-width-codec)** (`emoji`) | `client/src/tools/EmojiPage.jsx` + `emojiCodec.js` | `applyGlyph(project, glyph)` | Encodes up to 64 KB of UTF-8 text or binary into **1 emoji** via Unicode Variation Selectors (`U+FE00..U+FE0F`, `U+E0100..U+E01EF`), quaternary **DNA** (`A C G T`), or **Zero-Width** (`U+200B`/`U+200D`) with 10 live views (`Text`, `Hex`, `Base64`, `JSON`, `C`, `JS`, `Java`, `Python`, `DNA`, `x86` emulator). |
+| **11** | **[Emoji Coder](#emoji-coder-emoji-markup-to-9-compile-targets)** (`coder`) | `client/src/tools/EmojiCoderPage.jsx` + `emojiMarkup.js` + `emojiCatalog.js` | `applyEmojiCode(project, parts)` | Emmet-style emoji shorthand (`> `, `+ `, `*3`, `( )`, `{text}`, `.cls`, `#id`) + custom CSS key bindings compiled simultaneously to **9 targets**: `HTML`, `JS DOM`, `React JSX`, `Java`, `Pug`, `Markdown`, `JSON AST`, `WebAssembly (.wasm)`, and `1-Emoji Capsule`. |
+| **12** | **[Dispatch](#email-that-runs)** (`dispatch`) | `client/src/tools/DispatchPage.jsx` + `dispatchCore.js` | `applyDispatch(project, program)` | Packages a 4-leaf program (`CSS`, `JS`, `HTML`, `WASM`), signs its canonical string with `Ed25519` (`WebCrypto`), compresses with raw `DEFLATE`, encodes into the 64-emoji `FRAY` wire alphabet, and runs the 6-tick verification heartbeat to local/Gmail mail. |
+| **13** | **[WASM](#wasm-frayvm-29-opcode-stack-machine-wasm-compiler--true-merkle-41-dna-forge)** (`wasm`) | `client/src/tools/WasmPage.jsx` + `frayvm.js` | `applyWasm(project, bytes, label)` | 29-opcode **FrayVM** stack machine, assembler/disassembler, native WebAssembly (`00 61 73 6d`) compiler, **True Merkle 41** (`256 × 32-bit` words = `8,192` DNA bases across `41` SHA-256 nodes) `.wasm` custom-section forge, and `⟦label⟧🧩` inline document program nodes. |
+| **14** | **[Mail](#email-that-runs)** (`mail`) | `client/src/tools/MailPage.jsx` + `server/mailbox.js` + `server/gmailBox.js` | `applyMail(project, messages)` | Full dual-backend email client (**Local Mailbox** `data/mailbox/box.json` + live **Gmail IMAP/SMTP**): folders (`Inbox`, `Sent`, `Drafts`, `Starred`, `Archive`, `Spam`, `Trash`), compose, reply, forward, `.eml`/`.mbox` import &amp; export, and one-click handoff of `FRAYMUS-DEPLOY-` payloads to Dispatch. |
 
 ## Sovereign Brain, Ternary-NCM Cortex &amp; 12-Skill Nexus Claw
 
 Full technical specifications live in [Sovereign Brain, Living Seal &amp; Co-Pilot](docs/SOVEREIGN_BRAIN_README.md), [Sovereign Agent Ecosystem &amp; Ternary-NCM Outline](docs/SOVEREIGN_AGENT_ECOSYSTEM_OUTLINE.md), and [FlyGNN v10, AFK Superpowers &amp; Nodular Frequency Bus Outline](docs/FLYGNN_NODULAR_SUPERPOWERS_OUTLINE.md).
+
+### Overview of All 8 Cortical Lobes in `BrainPage.jsx`
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/showcase/brain-quantum-rsi.png" alt="Lobe 1 & 2: Ouroboros 5-Stage Quantum RSI & Centripetal Orbital Memory" width="100%">
+      <br><b>Lobes 1 &amp; 2:</b> Ouroboros 5-Stage Quantum RSI Arena (<code>81.53x</code> speedup) &amp; Golden-Angle Centripetal Orbital Memory (<code>137.507764°</code>)
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/showcase/brain-constructed-feeling.png" alt="Lobe 3: Interoceptive Body, Constructed Emotion & Somatic Steering" width="100%">
+      <br><b>Lobe 3:</b> Interoceptive Body ($b$ vs $b^*$), Scherer/OCC Appraisal, 8 Constructed Emotions, Damasio Somatic Markers &amp; OPEG WASM Bridge
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/showcase/brain-consciousness-audit.png" alt="Lobe 4: 4-Proof Mathematical Consciousness Audit" width="100%">
+      <br><b>Lobe 4:</b> 4-Proof Mathematical Consciousness Audit ($\Phi_{\text{MIP}} = 0.5322\text{ bits}$, Downward Causation $14.37\text{ bits}$, Strange Loop $r = 1.000$)
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/showcase/brain-copilot-cortexops.png" alt="Lobe 6: Autonomous Studio Co-Pilot & Multi-Tool Orchestrator" width="100%">
+      <br><b>Lobe 6:</b> Fear-Gated Autonomous Studio Co-Pilot (<code>CortexOps.jsx</code>, <code>.bak</code> Rollback, Forge Seal, Compile WASM + Emoji Coder + DNA)
+    </td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="docs/showcase/brain-copilot-seal-wasm.png" alt="Co-Pilot Forged Living Seal & WASM Kernel" width="100%">
+      <br><b>Cross-Tool Forge:</b> Autonomous Living Seal (<code>FSEL</code>) + <code>FrayVM</code> WASM
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/showcase/brain-to-emojicoder.png" alt="Brain Co-Pilot to Emoji Coder" width="100%">
+      <br><b>Cross-Tool Emit:</b> Brain Telemetry → Emoji Coder Shorthand
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/showcase/brain-to-wasm-nodes.png" alt="Brain Co-Pilot to WASM Program Nodes" width="100%">
+      <br><b>Cross-Tool Emit:</b> Brain Telemetry → <code>⟦label⟧🧩</code> WASM Nodes
+    </td>
+  </tr>
+</table>
 
 <p align="center">
   <img src="docs/showcase/brain-intelligence-gauntlet.png" alt="5-Task LLM Intelligence Gauntlet: Bare Uncoupled LLM 4/15 (26.7%) vs Sovereign Brain-Coupled LLM 15/15 (100.0%)" width="100%">
@@ -177,6 +221,19 @@ Implemented in `client/src/tools/autopoieticAgent.js` and wired into `BrainPage.
   <img src="docs/showcase/brain-flygnn-nodular-afk.png" alt="FlyGNN v10 1000N Connectome, Gauntlet-as-Thinking-Process, AFK Autonomous Ponder Daemon, Superpowers SOP Evolution, and Nodular Δt Frequency Bus" width="100%">
 </p>
 
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/showcase/brain-flygnn-v10-connectome.png" alt="Tab 6: FlyGNN v10 Drosophila Connectome (1000N · 13x70 Dedicated Slices · 100% Separation)" width="100%">
+      <br><b>Tab 6 (<code>FlyGNN v10</code>):</b> 1,000 Drosophila Neurons · <code>13 × 70 = 910</code> Dedicated Slices + <code>90</code> Spare · <code>100%</code> Two-Context Separation
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/showcase/brain-nodular-dt-bus.png" alt="Tab 8: Nodular Frequency, Counter-Rotating Dt Clocks (448.489872 Hz) & LoRa/HF/BLE/UDP/TCP Bus" width="100%">
+      <br><b>Tab 8 (<code>Nodular Δt Bus</code>):</b> Hidden $\pi$-Index <code>847</code> (<code>448.489872 Hz</code>), Counter-Rotating $\varphi/\pi$ Clocks, Booby-Trap-as-Instruction &amp; 6-Protocol Transducer
+    </td>
+  </tr>
+</table>
+
 Full architecture and reconstructed physics notes live in [FlyGNN v10, AFK Superpowers &amp; Nodular Frequency Bus Outline](docs/FLYGNN_NODULAR_SUPERPOWERS_OUTLINE.md), implemented in `client/src/tools/flyGnnConnectome.js` and persisted via `/api/brain/afk` and `/api/brain/nodular-bus`:
 
 - **`FlyGNN v10` (`1,000` Drosophila Neurons × Babel Dedicated Slices):**
@@ -216,6 +273,36 @@ To prove that `FlyGNN v10` (`1,000N` dedicated slices), the `5-Stage Gauntlet-as
 | **`CREATE-02` · Synthesize &amp; VM-Verify Multi-Tenant Slice-Isolated State Engine** | **CREATE** | `1 / 4` (`25%`) | **`4 / 4` (`100%`)** | Naive shared-object store clobbers `mary.action` with `fire.action`, mutates rollback references, and allows `__proto__` pollution; `FlyGNN` slice addressing (`base = symIdx * 70`) + `SP-04` isolates tenants, deep-clones history, and blocks `__proto__`. |
 | **`CREATE-03` · Synthesize Complete Interactive HTML/CSS/JS Studio Application** | **CREATE** | `1 / 4` (`25%`) | **`4 / 4` (`100%`)** | Static template lacks verified controller or security checks; Superpowered Creator synthesizes a complete Fraymus-tokenized HTML+CSS+JS app, VM-verifies its slice + booby-trap controller, and applies it directly into the Studio project. |
 | **Combined Think + Create Proof (`12` Think + `12` Create Checks)** | **BOTH** | **`6 / 24` (`25.0%`)** | **`24 / 24` (`100.0%`)** | **`4.00x` Thinking Accuracy Gain (`3/12 → 12/12`) &amp; `4.00x` Creation Verification Gain (`3/12 → 12/12`)** |
+
+### 7. Universal Daemonization &amp; Universal Instrumentation (`runUniversalDaemonAndInstrumentation` · `9` Stack Frames Hooked · HTTP `400` Zero-Drop Failover)
+
+<p align="center">
+  <img src="docs/showcase/brain-universal-daemon-instrumentation.png" alt="Tab 10: Universal Daemonization & Universal Instrumentation — 9 Frames Hooked & HTTP 400 Zero-Drop Failover" width="100%">
+</p>
+
+When an upstream cloud model provider fails mid-turn—for example throwing `NonRetriableError: Provider Error (providerStatusCode: "400")` inside the workbench agent loop (`QB_ ← DOo._executeTurn ← DOo.executeTurn ← gpe.runAgentLoop ← xva.streamFromAgentBackend ← xva.getAgentStreamResponse ← yEe._submitChatMaybeAbortCurrent ← yEe.submitChatMaybeAbortCurrent ← Nl`)—an uninstrumented client aborts the turn with `0%` completion.
+
+**Tab 10 (`🛰️ 10. Universal Daemonization & Universal Instrumentation`)** in `client/src/tools/flyGnnConnectome.js`, `client/src/tools/BrainPage.jsx`, and `server/index.js` (`/api/brain/daemon`) implements **Universal Instrumentation** (`parseAndInstrumentStackTrace`, `createUniversalInstrumentationProxy`) and **Universal Daemonization** (`runUniversalDaemonAndInstrumentation`):
+
+| Frame Depth | Minified Symbol | De-Minified Semantic Symbol | Architectural Layer | Injected Instrumentation Hook &amp; Universal Daemon Action |
+| :-: | :--- | :--- | :--- | :--- |
+| **`#0`** | `QB_` | `ProviderHttpGateway.throwStatusError` | `L7_PROVIDER_GATEWAY` | `INTERCEPT_HTTP_400_AND_CHUNK_SPLIT` — Catches `NonRetriableError(400)`, splits oversized writes into `≤ 12 KB` idempotent chunks (`64 KB → 6 × 12 KB`), and fails over to `127.0.0.1` Sovereign Cortex. |
+| **`#1`** | `DOo._executeTurn` | `TurnExecutor._executeTurnInner` | `L6_TURN_EXECUTOR` | `PRE_POST_TURN_CHECKPOINT_RING` — Snapshots turn state into a $\text{GF}(257)$ ring buffer prior to provider streaming; replays from the last verified tool boundary. |
+| **`#2`** | `DOo.executeTurn` | `TurnExecutor.executeTurn` | `L5_TURN_SUPERVISOR` | `IDEMPOTENT_TURN_ENVELOPE` — Converts non-retriable upstream errors into daemon-managed local continuations. |
+| **`#3`** | `gpe.runAgentLoop` | `AgentLoopKernel.runAgentLoop` | `L4_AGENT_LOOP_KERNEL` | `DAEMON_HEARTBEAT_WATCHDOG` — Keeps the autonomous agent loop alive across provider disconnects via $\Delta t = 12$ (`448.489872 Hz`) ticks. |
+| **`#4`** | `xva.streamFromAgentBackend` | `AgentStreamBridge.streamFromAgentBackend` | `L3_STREAM_TRANSPORT` | `ZERO_DROP_STREAM_MUX` — Splices local `FlyGNN v10` + `OMEGA-3` stream frames when remote SSE/gRPC streams drop. |
+| **`#5`** | `xva.getAgentStreamResponse` | `AgentStreamBridge.getAgentStreamResponse` | `L2_RESPONSE_BROKER` | `SPAN_TELEMETRY_PROBE` — Records microsecond latency, input/output FNV-1a hashes, and provenance digests on every call. |
+| **`#6`** | `yEe._submitChatMaybeAbortCurrent` | `ChatSessionController._submitChatMaybeAbortCurrent` | `L1_SESSION_CONTROLLER` | `GRACEFUL_ABORT_GUARD` — Flushes partial progress to `data/brain/universal_daemon.json` before any abort signal. |
+| **`#7`** | `yEe.submitChatMaybeAbortCurrent` | `ChatSessionController.submitChatMaybeAbortCurrent` | `L1_SESSION_FACADE` | `USER_INTENT_LEDGER_STAMP` — Pins user intent hash so background daemons finish pending work even if the tab reloads. |
+| **`#8`** | `Nl` | `WorkbenchCommandDispatcher.invokeAction` | `L0_UI_WORKBENCH_ENTRY` | `ROOT_SPAN_ORIGIN` — Opens the root deterministic telemetry span (`span_*`). |
+
+- **6 Resident Universal Daemons (`DAEMON-01` .. `DAEMON-06`):**
+  1. **`DAEMON-01` (`PID 44801` · Provider-Fault Circuit Breaker &amp; Chunk Splitter):** Intercepts HTTP `400` / `502` / `503` and splits `64 KB` payloads into `6 × 12 KB` commits with `0` drops.
+  2. **`DAEMON-02` (`PID 44802` · Universal Call-Stack De-Minifier &amp; Span Probe):** Wraps arbitrary JS objects/modules in `createUniversalInstrumentationProxy(targetObj, namespace)` to record microsecond spans and auto-heal thrown exceptions.
+  3. **`DAEMON-03` (`PID 44803` · `FlyGNN v10` `1000N` Subconscious Slice Sentinel):** Keeps `[0..909]` dedicated symbol slices and `[910..999]` spare subconscious neurons phase-locked at `100%` context isolation.
+  4. **`DAEMON-04` (`PID 44804` · Nodular $\Delta t$ Counter-Clock Heartbeat Watchdog):** Locks all 5 cortical nodules to `448.489872 Hz` ($\pi$-index `847`) at $\Delta t = 12$ ($\Delta\theta = 0.941^\circ$).
+  5. **`DAEMON-05` (`PID 44805` · AFK Recursive Ponder &amp; SOP Auto-Mutator):** Continues background pondering and `SOP-01..04` evolution via `/api/brain/afk`.
+  6. **`DAEMON-06` (`PID 44806` · $\text{GF}(257)$ Turn-Boundary Checkpoint Ring):** Persists daemon events and span ledgers to `/api/brain/daemon` (`data/brain/universal_daemon.json`).
 
 ## Against the Grain: How It Stands Out &amp; Stays Ahead
 
@@ -472,6 +559,91 @@ Each block is an entity. Its components are content, media, link, style (color, 
 
 The canvas uses an Obsidian palette: near-black ground, muted purple `#7c6af7` / `#a99bf7`. The rest of the studio stays emerald.
 
+## Production: Avatar Cast Studio
+
+Implemented in `client/src/tools/StudioPage.jsx` (`applyCast(project, cast)`):
+
+- **Multi-Character Cast Pipeline:** Build a persistent cast of characters (`cast[]`). For each actor, upload or capture a photo, render their 8-bit talking sprite (`Make avatar`), synthesize their 4-cell mouth buffer (`composeTalkCells`), and assign custom dialogue lines and voice presets (`/api/voice/speak` or `VocalStudio` 432 Hz WAV).
+- **HyperFrames Export &amp; Project Injection:** Export multi-character scenes via `/api/cast/hyperframes` or click **Keep cast** (`applyCast`) to embed the interactive cast stage directly into the active Static or MERN project (`client/src/pages/Cast.jsx` at `#/cast`).
+
+## Seal: Living Talking Emoji Capsule (`FSEL` v1)
+
+<p align="center">
+  <img src="docs/showcase/brain-copilot-seal-wasm.png" alt="Living Seal FSEL v1 Talking Emoji Capsule & WASM Kernel" width="100%">
+</p>
+
+Implemented in `client/src/tools/SealPage.jsx` (`forgeAutonomousBrainSeal`, `renderAndPlaySealStage`, `applySeal`):
+
+- **What Travels Inside 1 Emoji (`FSEL` v1):**
+  1. **Sprite Leaf (`sprite`):** 128×128 8-bit character portrait + 4 lip-sync mouth frames (`closed`, `ajar`, `open`, `wide`) built via `inspectTalk` and `composeTalkCells`.
+  2. **Voice Leaf (`audio`):** Playable 8 kHz mono WAV audio buffer + hop-by-hop amplitude envelope (`voiceEnvelope`, `mouthAt`).
+  3. **Script &amp; Telemetry Leaf (`meta`):** Dialogue script, word schedule (`lineSchedule`, `frameAt`), recipient FRAYMUS number (`fx-4041-f10e-7ee2-2bdc` or `FRAYNIX`/`BROADCAST`), and Brain telemetry.
+  4. **4-Leaf SHA-256 Merkle Root &amp; `Ed25519` Signature:** Deflate-compressed (`deflate`), signed with WebCrypto `Ed25519` (`generateKeys`, `verifySignature`), and encoded into a single carrier emoji using Unicode Variation Selectors (`encodeWire` / `encodeGlyph`).
+- **6-Tick Verification &amp; Live Playback:** Paste any `FSEL` emoji into **Receive &amp; Verify** to run the 6-tick verification (`Decode`, `Ed25519 Sig`, `4-Leaf Merkle`, `Time Window`, `Unpack Sprite+Audio`, `Play Talking Stage`) and inject it into the project (`client/src/pages/Seal.jsx` at `#/seal`).
+
+## HTML · JS: Dual-Pane Live Sandbox
+
+<p align="center">
+  <img src="docs/showcase/htmljs.png" alt="HTML · JS dual-pane workspace with live preview and console bridge" width="100%">
+</p>
+
+Implemented in `client/src/tools/WebJsPage.jsx` (`buildDocument`, `applyWebJs`) and `client/src/tools/webjsStarters.js` (`STARTERS`):
+
+- **Side-by-Side HTML &amp; JS Panes:** Edit raw HTML markup and JavaScript side by side with synchronized line gutters and instant auto-run (`buildDocument(html, js, run)`).
+- **`postMessage` Telemetry &amp; Error Bridge:** Captures `console.log`, `console.info`, `console.warn`, `console.error`, uncaught runtime exceptions (mapped back to exact JS line numbers via `jsLine`), and unhandled promise rejections inside the sandboxed preview iframe.
+- **Viewport Presets &amp; Project Compilation:** Switch between `Fill`, `390px Phone`, `768px Tablet`, and `1280px Desktop`, load interactive starters (`STARTERS`), or click **Place in project** (`applyWebJs`) to mount `client/src/pages/Live.jsx` (`#/live`).
+
+## Emoji: Steganographic Variation-Selector, DNA &amp; Zero-Width Codec
+
+<p align="center">
+  <img src="docs/showcase/emoji.png" alt="Emoji workspace: Hide and Reveal text, bytes, DNA, and x86 inside one glyph" width="100%">
+</p>
+
+Implemented in `client/src/tools/EmojiPage.jsx` (`applyGlyph`) and `client/src/tools/emojiCodec.js`:
+
+- **4 Steganographic Modes (`MODES`):**
+  - **Hide (`encodeGlyph` / `encodeMeaning`):** Packs up to `65,536` bytes (`MAX_BYTES`) into a single visible emoji carrier (`CARRIERS`) by mapping bytes `0..15` to `U+FE00..U+FE0F` (`VS_LOW`) and bytes `16..255` to `U+E0100..U+E01EF` (`VS_HIGH`).
+  - **Reveal (`decodeGlyph` / `readBack` / `detect`):** Auto-detects variation-selector glyphs, zero-width strings, or DNA sequences and reconstructs the exact original byte array + `SHA-256` and `FNV-1a 64-bit` (`fnv1a64`) digests.
+  - **DNA (`bytesToDna` / `dnaToBytes`):** Bijective 2-bit quaternary encoding (`00 = A`, `01 = C`, `10 = G`, `11 = T`, 4 bases per byte).
+  - **Zero-Width (`bytesToZeroWidth` / `zeroWidthToBytes` / `hideZeroWidth`):** Hides binary payloads invisibly inside ordinary prose using `U+200B` (`ZWS`) and `U+200D` (`ZWJ`).
+- **10 Live Inspector Views (`views`):** Inspect any payload simultaneously as `Text`, `Hex`, `Base64`, `JSON`, `C` byte array, `JS` `Uint8Array`, standalone `Java` decoder (`javaSource`), `Python`, `DNA`, or execute it inside the built-in **`x86` subset CPU emulator (`x86Subset`)**.
+
+## Emoji Coder: Emoji Markup to 9 Compile Targets
+
+<p align="center">
+  <img src="docs/showcase/emoji-coder.png" alt="Emoji Coder workspace compiling emoji shorthand into HTML, CSS, React JSX, Java, and WASM" width="100%">
+</p>
+
+Implemented in `client/src/tools/EmojiCoderPage.jsx` (`applyEmojiCode`) and `client/src/tools/emojiMarkup.js` (`createCompiler`, `compileParts`, `emit`, `buildWasm`, `readWasmLedger`):
+
+- **Emmet-Style Emoji Shorthand (`OPERATORS` &amp; `REGISTRY`):**
+  - Combine semantic emoji tags (`📦` `div`, `📄` `p`, `🔘` `button`, `🧭` `nav`, `🃏` `.card`, etc.) with structural operators: child `>`, sibling `+`, repeat `*N`, grouping `( )`, text `{...}`, class `.cls`, and ID `#id`.
+  - Define custom emoji bindings (`BIND_MODES`: `Combination` macro, `Element` tag, or `CSS` declaration) or auto-import rules from any CSS stylesheet (`parseStylesheet`).
+- **9 Simultaneous Compile Targets (`TARGETS`):**
+  1. `HTML` (`index.html` via `genHTML`)
+  2. `JS DOM` (`page.js` `document.createElement` tree)
+  3. `React JSX` (`Page.jsx`)
+  4. `Java` (`EmojiPage.java`)
+  5. `Pug` (`page.pug`)
+  6. `Markdown` (`page.md`)
+  7. `JSON AST` (`page.json`)
+  8. `WebAssembly` (`page.wasm` via `buildWasm` with embedded custom-section ledger `readWasmLedger`)
+  9. `1-Emoji Capsule` (`page.emoji.txt`)
+
+## WASM: FrayVM 29-Opcode Stack Machine, WASM Compiler &amp; True Merkle 41 DNA Forge
+
+<p align="center">
+  <img src="docs/showcase/wasm.png" alt="WASM workspace: FrayVM assembly, bytecode, WebAssembly binary, True Merkle 41 DNA header, and 1-emoji program nodes" width="100%">
+</p>
+
+Implemented in `client/src/tools/WasmPage.jsx` (`applyWasm`) and `client/src/tools/frayvm.js` (`FrayVM`, `ISA`, `assemble`, `disassemble`, `toBytecode`, `fromBytecode`, `compileToWasm`, `forge`, `trueMerkle`, `frayHeader`, `recoverProgram`):
+
+- **29-Opcode `FrayVM` Stack Machine (`ISA`):** Supports `NOP`, `HALT`, `DUP`, `DROP`, `SWAP`, `OVER`, `ROT`, `2DUP`, `2DROP`, `ADD`, `SUB`, `MUL`, `DIV`, `MOD`, `INC`, `DEC`, `NEG`, `ABS`, `EQ`, `LT`, `GT`, `LE`, `GE`, `JZ`, `JNZ`, `JUMP`, `PUSH`, `POP_PRINT`, and `EMIT`, plus 11 verified presets (`Fibonacci < 100`, `Primes up to 40`, `GCD(48, 36)`, `Factorial 5`, etc.) and the `runGolden()` verification suite.
+- **Native WebAssembly Compiler &amp; True Merkle 41 DNA Forge (`forge`):**
+  - Compiles `FrayVM` programs into valid `.wasm` binaries (`00 61 73 6d 01 00 00 00`) executable via `WebAssembly.instantiate`.
+  - Stamps a **True Merkle 41 (`trueMerkle` + `frayHeader`)** custom section into the `.wasm` binary: `256 × 32-bit` words (`8,192` DNA bases) hashed across a 4-level SHA-256 Merkle tree (`32 + 8 + 1 = 41` hashes) so `recoverProgram(bytes)` can extract and verify the original source directly from the `.wasm` bytes.
+- **Compressed Document Program Nodes (`⟦label⟧🧩`):** Weave whole executable `FrayVM` programs invisibly into a single emoji inside markdown/text documents and expand + execute every node in one click (`Resolve`).
+
 ## Live, Node, VM, publish, export
 
 <p align="center">
@@ -571,13 +743,49 @@ Bound to `127.0.0.1:4177` unless `FRAYMUS_PORT` is set.
 | POST | `/api/publish` | Write the published site |
 | POST | `/api/export/zip` | Download a zip |
 | POST | `/api/pixel/render` | AI 8-bit render. Body: `image`, optional `style`, `mode` (`real` or `avatar`), optional `seed` |
-| POST | `/api/pixel/convert` | Any image or document in, PNG out (macOS). File name in `X-File-Name` |
+| POST | `/api/pixel/convert` | Any image or document in, PNG out (macOS `sips` / Quick Look). File name in `X-File-Name` |
+| GET | `/api/voice/health` | Check local TTS / voice synthesis engine availability |
+| POST | `/api/voice/speak` | Synthesize spoken audio for 8-bit Talk / Production cast lines |
+| POST | `/api/cast/hyperframes` | Compile multi-actor Avatar Cast into a seekable HyperFrames scene |
+| GET | `/api/mail/status` | Local mailbox status (`data/mailbox/box.json`) |
+| GET, POST | `/api/mail/messages` | List or send messages in the local mailbox |
+| GET, PATCH, DELETE | `/api/mail/messages/:id` | Read, update flags/folder, or delete a local message |
+| POST, GET | `/api/mail/import`, `/api/mail/export` | Import or export `.eml` and `.mbox` archives locally |
+| GET, POST, DELETE | `/api/mail/gmail/status`, `/api/mail/gmail/connect` | Connect, inspect, or disconnect live Gmail IMAP/SMTP session |
+| GET, POST, PATCH, DELETE | `/api/mail/gmail/messages`, `/api/mail/gmail/messages/:id` | Full live Gmail message read, send, move, star, trash, and `.eml`/`.mbox` import/export |
 | GET | `/api/brain/status` | Probe local Ollama (`127.0.0.1:11434`) models and disk continuity state |
-| GET | `/api/brain/memory` | Load saved Centripetal Orbital Memory, somatic markers, and continuity ledger |
+| GET, POST | `/api/brain/memory` | Load or save Centripetal Orbital Memory, somatic markers, and continuity ledger |
 | POST | `/api/brain/continuity` | Persist Brain orbits, collapsed shards, and 2-bit DNA continuity to `data/brain/continuity.json` |
 | POST | `/api/brain/think` | Steered local Ollama `/api/chat` execution coupled to Tier-0 Needle reflex &amp; somatic dials |
+| GET, POST | `/api/brain/afk` | Load or persist AFK Autonomous Ponder cycles, evolved `SOP-01..04` procedures, and synthesized skills (`data/brain/afk_ponder.json`) |
+| POST | `/api/brain/nodular-bus` | Persist and broadcast 5-nodule $\Delta t$ (`448.489872 Hz`) multi-spectrum frames (`LoRa`/`HF`/`BLE`/`UDP`/`TCP`/`Δt`) (`data/brain/nodular_bus.json`) |
+| GET, POST | `/api/brain/daemon` | Load or record Universal Daemon &amp; Universal Instrumentation stack-frame hooks, chunked failovers, and telemetry spans (`data/brain/universal_daemon.json`) |
 | GET | `/vendor/<file>` | React, ReactDOM, Babel |
 | GET | `/published/<slug>/` | A published site |
+
+### Complete Exported Function Reference Across All Client Modules
+
+| Module (`client/src/...`) | Exported Classes, Constants &amp; Functions |
+| :--- | :--- |
+| **`model.js`** | `BRAND`, `PHI`, `TABS`, `DEMO_WASM`, `uid`, `demoWasmB64`, `wasmInfo`, `defaultPackage`, `blankProject`, `buildAppSource`, `pageSource`, `mernFiles`, `mernProject`, `ensureMern`, `libraryItems`, `fileValue`, `withFile`, `addPage`, `updatePage`, `removePage`, `applyLibraryItem`, `projectFiles`, `languageFor`, `pairTarget`, `buildPreview`, `singleFileHtml`, `deployFiles`, `tidy`, `lineCount`, `byteSize`, `formatBytes`, `splitHtml`, `searchScore`, `staticServerSource` |
+| **`tools/BrainPage.jsx`** | `PHI`, `GOLDEN_ANGLE`, `QUANTUM_EPSILON`, `EVENT_HORIZON_RADIUS`, `WolframRule30`, `calculateStructuralEntropy`, `computeRadius`, `computeContinuity`, `GEN_0_DENSE_KRONECKER_JS`, `GEN_1_ALPHA_HOISTED_JS`, `GEN_2_GAMMA_BUTTERFLY_JS`, `GEN_3_DELTA_CORTEX_JS`, `evaluateInArena`, `applyBrain`, `verifyCopilotCode`, `applyBrainCopilot` |
+| **`tools/flyGnnConnectome.js`** | `PHI`, `PI`, `PHI_75`, `PI_DIGITS_1000`, `FLYGNN_NEUROPILS`, `FLYGNN_TRANSMITTERS`, `FLYGNN_DEFAULT_VOCAB`, `FLYGNN_TRUST_LADDER`, `SUPERPOWER_DISCIPLINES`, `TRANSMISSION_LANGUAGE_SPECS`, `DEFAULT_PROVIDER_FAULT_TRACE`, `mulberry32`, `fnv1a32`, `hex32`, `wordToHex`, `hexToIdNum`, `computeHdc8D`, `lexBabelProgram`, `FlyGNNv10`, `runFlyGnnMeasureTrainMeasure`, `createInitialProcedureRegistry`, `derivePiHiddenFrequency`, `composeRainbowBeatChord`, `triggerBoobyTrapInstruction`, `runNodularFrequencyMesh`, `runGauntletThinkingProcess`, `runAfkPonderBatch`, `runThinkAndCreateGauntlet`, `parseAndInstrumentStackTrace`, `createUniversalInstrumentationProxy`, `runUniversalDaemonAndInstrumentation` |
+| **`tools/autopoieticAgent.js`** | `PHI`, `PHI_75`, `GOLDEN_ANGLE`, `CONSTITUTIONAL_INVARIANTS`, `COGNITIVE_TOPOLOGIES`, `fnv1a32`, `hex32`, `signature64`, `computeByteTag16`, `computeGenomeParity`, `recoverByteByLocusTag`, `verifyGenomeParity`, `healGenomeBytes`, `createDefaultOperatorTensor`, `computeOperatorEntropy`, `evaluateOmegaIntelligence`, `createInitialOmegaAgent`, `createGoldenCheckpoint`, `compileAndVerifySkillInVm`, `executeThinkingCubedCycle`, `injectChaosSabotage`, `runAutonomicSelfHeal`, `spawnSelfReplicatingOffspring`, `generateKleeneQuineSporeCode`, `executeLiveQuineSporeVerification`, `replicateOmegaAgentIntoProject`, `runOmegaHardGauntletBenchmark` |
+| **`tools/sovereignEcosystem.js`** | `PHI`, `FREQ_432_HZ`, `NEEDLE3_LLOYD_MAX_C`, `INITIAL_NCM_CLASSES`, `NEEDLE3_LADDER_SPECS`, `buildMernAppSource`, `ensureMernProject`, `embedVector64`, `createInitialTernaryCortex`, `packNeedle3TernaryCrumbs`, `unpackNeedle3TernaryCrumbs`, `quantizeAndEvaluateTernaryCortex`, `ternaryDot`, `growHyperSynapseTriad`, `createInitialNcmState`, `classifyAndUpdateNcm`, `NcmMemoryBank`, `runReaForensicAudit`, `synthesizeVocalStudioOffline`, `composeArtCraftStage`, `runHypitAnalysisAndSvml`, `compileHyperFramesComposition`, `runHindsightMemoryCycle`, `runNeedle3LadderDispatch`, `runTelecomBrainDiagnostics`, `runJedBeadStateMachine`, `recommendAndForgePackages`, `applySynthesizedPackageToProject`, `applyContentSuiteToProject`, `buildBijectiveIsaPermutation`, `runAsymmetricMoatEngine` |
+| **`tools/emotionCore.js`** | `SETPOINTS`, `EMOTION_PROTOTYPES`, `BABEL_AREAS`, `BABEL_TASKS`, `FRAYMUS_DNA_ANCHOR`, `computeInteroceptionAndAffect`, `appraiseSituation`, `computeBehavioralDials`, `appraisePartnerState`, `runBabelSomaticTrial`, `buildTransmissionBridgeWasmBytes`, `executeOpegBridgeWasm`, `packBytesToDna`, `unpackDnaToBytes`, `encodeTextToDnaPlasmid`, `emojiPrecedenceSimilarity`, `runLocalNeedleReflex` |
+| **`tools/consciousnessProof.js`** | `klDivergenceBits`, `auditArchitecture`, `theaterZombie`, `feedforwardDag`, `splitBrain`, `strangeLoop`, `runConsciousnessAudit` |
+| **`tools/SealPage.jsx`** | `forgeAutonomousBrainSeal`, `renderAndPlaySealStage`, `applySeal` |
+| **`tools/PixelPage.jsx` &amp; `pixel*.js`** | `applySprite`, `GROUND`, `buildSubjectMask`, `brushMask`, `traceCut`, `liftMask`, `portraitPhoto`, `trimCeiling`, `trimSides`, `offsetMask`, `renderPixel`, `presentBlocks`, `drawCrisp`, `fitSource`, `motionView`, `portraitJpeg`, `styleImage`, `buildMosaic`, `paintMosaic`, `packFrame`, `knownDuration`, `measureDuration`, `seekVideo`, `isVideoFile`, `stampWebmDuration`, `webmMime`, `inspectTalk`, `composeTalkCells`, `voiceEnvelope`, `mouthAt`, `lineSchedule`, `frameAt`, `talkMime` |
+| **`tools/StudioPage.jsx`** | `applyCast` |
+| **`tools/CrudPage.jsx`** | `applyCrud` |
+| **`tools/ReplPage.jsx`** | `ReplPage` (22 interactive DOM/JS commands + custom method designer) |
+| **`tools/CanvasPage.jsx`** | `renderCanvas`, `applyCanvas` |
+| **`tools/WebJsPage.jsx` &amp; `webjsStarters.js`** | `STARTERS`, `buildDocument`, `applyWebJs` |
+| **`tools/EmojiPage.jsx` &amp; `emojiCodec.js`** | `applyGlyph`, `VS_LOW`, `VS_HIGH`, `ZWS`, `ZWJ`, `DNA`, `MAX_BYTES`, `CARRIERS`, `MEANINGS`, `textBytes`, `bytesText`, `isUtf8`, `toVS`, `fromVS`, `cleanCarrier`, `encodeGlyph`, `encodeMeaning`, `decodeGlyph`, `bytesToDna`, `dnaToBytes`, `bytesToZeroWidth`, `zeroWidthToBytes`, `hideZeroWidth`, `detect`, `readBack`, `fnv1a64`, `sha256`, `hex`, `hexToBytes`, `base64`, `views`, `javaSource`, `x86Subset`, `codepoints` |
+| **`tools/EmojiCoderPage.jsx`, `emojiMarkup.js` &amp; `emojiCatalog.js`** | `applyEmojiCode`, `CATEGORIES`, `weigh`, `REGISTRY`, `PALETTE`, `OPERATORS`, `PRESETS`, `SAMPLE`, `PREVIEW_CSS`, `TARGETS`, `describeEntry`, `parseStyleDeclarations`, `parseStylesheet`, `styleText`, `classifyKey`, `createCompiler`, `genHTML`, `genCSS`, `buildWasm`, `readWasmLedger`, `emit`, `compileParts` |
+| **`tools/DispatchPage.jsx` &amp; `dispatchCore.js`** | `applyDispatch`, `ALPHABET`, `PAD`, `MAGIC`, `GENESIS`, `WINDOWS`, `LEAVES`, `MOVIE`, `bytesFromBase64`, `toEmoji64`, `fromEmoji64`, `deflate`, `inflate`, `generateKeys`, `verifySignature`, `merkle`, `canonOf`, `buildEnvelope`, `packEnvelope`, `encodeWire`, `decodeWire`, `unpackWire`, `fingerprint`, `mailtoLink`, `gmailLink`, `buildMovieWasm`, `stageDoc` |
+| **`tools/WasmPage.jsx` &amp; `frayvm.js`** | `PRESETS`, `applyWasm`, `ISA`, `BY_NAME`, `BY_OP`, `ARG_OPS`, `GOLDEN`, `FrayVM`, `runProgram`, `assemble`, `disassemble`, `toBytecode`, `fromBytecode`, `canCompile`, `compileToWasm`, `forge`, `readCustomSections`, `recoverProgram`, `runGolden`, `trueMerkle`, `frayHeader` |
+| **`tools/MailPage.jsx`** | `applyMail` |
 
 ### Live project API
 
