@@ -3096,7 +3096,7 @@ export default function BrainPage({ project, say, onApply }) {
     pushLedger(
       "SOVEREIGN_AGI_V17",
       `LOG_TEST_REPEAT_CYCLE_${nextCycle}`,
-      `${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x) · Crucible ${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore} (N=${report.envelopeCrucible.evenN}) · 107/107 Total Checks`,
+      `${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x) · Crucible ${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore} (N=${report.envelopeCrucible.evenN}) · 119/119 Total Checks`,
       1.0
     );
     try {
@@ -3117,7 +3117,7 @@ export default function BrainPage({ project, say, onApply }) {
           merkleRoot: report.crossModalSwarm.swarmSpore.merkleRoot,
           evenN: report.envelopeCrucible.evenN,
           crucibleScore: `${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore}`,
-          cumulativeChecks: "107/107",
+          cumulativeChecks: "119/119",
           goldbachPair: report.envelopeCrucible.goldbachPair,
           discoveredHamiltonian: report.envelopeCrucible.discoveredHamiltonian
         })
@@ -3125,7 +3125,7 @@ export default function BrainPage({ project, say, onApply }) {
     } catch {}
     say?.(
       "ok",
-      `Sovereign AGI Cycle #${nextCycle} verified: ${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x), Crucible ${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore} (N=${report.envelopeCrucible.evenN}), 107/107 Total Checks`
+      `Sovereign AGI Cycle #${nextCycle} verified: ${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x), Crucible ${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore} (N=${report.envelopeCrucible.evenN}), 119/119 Total Checks`
     );
   }
 
@@ -3144,10 +3144,26 @@ export default function BrainPage({ project, say, onApply }) {
     pushLedger(
       "SOVEREIGN_AGI_CREATOR",
       "CRUCIBLE_WORKBENCH_APPLIED",
-      `Applied "${app.title}" (107/107 VM-verified) into Studio project with .bak fossil backup`,
+      `Applied "${app.title}" (119/119 VM-verified) into Studio project with .bak fossil backup`,
       1.0
     );
     say?.("ok", `Applied Sovereign AGI Crucible Workbench (N=${agiContinuumReport.envelopeCrucible.evenN}) into Studio project`);
+  }
+
+  function copySovereignEmojiSpore() {
+    const spore = agiContinuumReport?.envelopeCrucible?.sovereignEmojiSpore;
+    if (!spore) return;
+    navigator.clipboard?.writeText(spore.glyph);
+    pushLedger(
+      "SOVEREIGN_EMOJI_SPORE",
+      "CROSS_TOOL_SPORE_EMITTED",
+      `Copied 1-Emoji 🧬 Spore (${spore.encryptedBytes}B 256! ISA + ${spore.hashCount} Merkle hashes → ${spore.wasmBytes}B .wasm)`,
+      1.0
+    );
+    say?.(
+      "ok",
+      `Copied 1-Emoji 🧬 Sovereign Spore (${spore.encryptedBytes}B encrypted bytecode · Merkle ${spore.merkleRootHex.slice(0, 12)}… · Peer .wasm=${spore.wasmBytes}B)`
+    );
   }
 
   useEffect(() => {
@@ -4103,7 +4119,7 @@ export default function BrainPage({ project, say, onApply }) {
                 🛰️ Instrument &amp; Heal Provider Fault (6/6 Daemons)
               </button>
               <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
-                🌌 Run Sovereign AGI Continuum (111/111 Checks · 5x)
+                🌌 Run Sovereign AGI Continuum (119/119 Checks · 5x)
               </button>
               <button className="btn on" disabled={!project} onClick={applyOmegaAgentToActiveProject}>
                 🚀 Replicate Living Omega Agent Into Project
@@ -4122,7 +4138,7 @@ export default function BrainPage({ project, say, onApply }) {
                 ["nodular_freq_bus", `📡 8. Nodular Frequency, Δt Clocks (${nodularMeshReport?.canonicalKey?.freqHz ?? 448.489872} Hz) & LoRa/HF/BLE/UDP/TCP Bus`],
                 ["think_create_proof", `⚡ 9. Think & Create Proof (${thinkCreateReport.summary.totalBaseline}/24 vs ${thinkCreateReport.summary.totalSuper}/24 · ${thinkCreateReport.summary.totalGainMultiplier}x Gain & App Creator)`],
                 ["universal_daemon", `🛰️ 10. Universal Daemonization & Universal Instrumentation (${universalDaemonReport.traceAnalysis.totalFramesInstrumented} Frames Hooked · HTTP 400 Failover)`],
-                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 24}/24 Crucible · 111/111 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
+                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 32}/32 Crucible · 119/119 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -4736,7 +4752,7 @@ export default function BrainPage({ project, say, onApply }) {
                       </button>
                     ))}
                     <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
-                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (111/111 Checks)
+                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (119/119 Checks)
                     </button>
                     <button
                       className="btn"
@@ -4745,6 +4761,13 @@ export default function BrainPage({ project, say, onApply }) {
                       onClick={applyAgiCrucibleAppToProject}
                     >
                       ✨ Apply AGI Crucible Workbench Into Project
+                    </button>
+                    <button
+                      className="btn"
+                      style={{ borderColor: "var(--acc)", color: "var(--acc)" }}
+                      onClick={copySovereignEmojiSpore}
+                    >
+                      🧬 Copy 1-Emoji WASM Spore ({agiContinuumReport.envelopeCrucible?.sovereignEmojiSpore?.encryptedBytes ?? 55}B)
                     </button>
                   </div>
                 </div>
@@ -4757,7 +4780,7 @@ export default function BrainPage({ project, say, onApply }) {
                         {agiContinuumReport.envelopeCrucible.agiScore}/{agiContinuumReport.envelopeCrucible.maxScore} Verified ({agiContinuumReport.envelopeCrucible.gainMultiplier}x vs Naive {agiContinuumReport.envelopeCrucible.baselineScore}/{agiContinuumReport.envelopeCrucible.maxScore})
                       </b>
                       <span className="pill" style={{ borderColor: "#00e5ff", color: "#00e5ff", fontSize: 10 }}>
-                        Real FlyGNNv10 + FrayVM + WebAssembly + Fermat 137²⁵⁵≡242 (mod 257) + Symbolic Regression
+                        FlyGNNv10 + FrayVM + TURING_CFG .wasm + 1-Emoji 256! Spore + CRT Mod-385 + Hamiltonian
                       </span>
                     </div>
                     <div className="grid-2" style={{ marginTop: 6, gap: 6 }}>

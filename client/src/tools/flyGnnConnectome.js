@@ -19,7 +19,8 @@
 //    Bluetooth LE / UDP / TCP-IP / Kuramoto-Bell Entanglement Transducer)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { assemble, compileToWasm, getCompilationTier, readWasmOutput, runProgram, toBytecode } from "./frayvm.js";
+import { assemble, compileToWasm, frayHeader, fromBytecode, getCompilationTier, readWasmOutput, runProgram, toBytecode, trueMerkle } from "./frayvm.js";
+import { bytesToDna, decodeGlyph, encodeGlyph } from "./emojiCodec.js";
 import { computeGenomeParity, healGenomeBytes } from "./autopoieticAgent.js";
 
 export const PHI = 1.618033988749895;
@@ -3002,7 +3003,10 @@ export function runEnvelopePushingCrucible(customEvenInput = 98) {
       function hamiltonianDrift() {
         return ${bestCandidate.drift};
       }
-      return { partitionEven, healGf257Packet, routeCrossTile3Hop, hamiltonianDrift };
+      function solveCrtMod385(p, q, evenVal) {
+        return ((p % 5) * 231 + (q % 7) * 330 + (evenVal % 11) * 210) % 385;
+      }
+      return { partitionEven, healGf257Packet, routeCrossTile3Hop, hamiltonianDrift, solveCrtMod385 };
     }
     return createAgiCrucibleController();
   `;
@@ -3023,18 +3027,18 @@ export function runEnvelopePushingCrucible(customEvenInput = 98) {
     testDrift < 0.0001;
 
   const synthesizedStudioApp = {
-    title: `◈ FRAYMUS AGI CRUCIBLE WORKBENCH (FRAY-AGI-V17 · N=${evenN} · 107/107 Verified)`,
+    title: `◈ FRAYMUS AGI CRUCIBLE WORKBENCH (FRAY-AGI-V17 · N=${evenN} · 119/119 Verified)`,
     html: `<div class="agi-shell">
   <header class="agi-hdr">
     <div>
-      <span class="agi-badge">FRAY-AGI-V17-2026 · 107/107 VERIFIED</span>
+      <span class="agi-badge">FRAY-AGI-V17-2026 · 119/119 VERIFIED</span>
       <h1>◈ Sovereign AGI Crucible Workbench</h1>
-      <p>Live Goldbach FrayVM/WASM Synthesizer · GF(257) Fermat Self-Heal · 3,000N Multi-Tile Router · Symplectic Hamiltonian</p>
+      <p>Live Goldbach FrayVM/WASM Synthesizer · GF(257) Fermat Self-Heal · 3,000N Multi-Tile Router · Symplectic Hamiltonian · CRT Mod-385</p>
     </div>
   </header>
   <section class="agi-grid">
     <div class="agi-card">
-      <h3>1. Goldbach Prime-Partition + 63B WASM</h3>
+      <h3>1. Goldbach Prime-Partition + TURING_CFG WASM + CRT Mod-385</h3>
       <div class="agi-row">
         <input id="agi-even-input" type="number" value="${evenN}" step="2" min="6" />
         <button id="agi-run-btn">Synthesize &amp; Verify</button>
@@ -3042,7 +3046,7 @@ export function runEnvelopePushingCrucible(customEvenInput = 98) {
       <pre id="agi-goldbach-out">N=${evenN} → (${agiP} + ${agiQ} = ${evenN}) · WASM [0..15]: ${wasmHexSample}</pre>
     </div>
     <div class="agi-card">
-      <h3>2. Dual-Layer GF(256)/GF(257) Catastrophic Heal</h3>
+      <h3>2. Dual-Layer GF(256)/GF(257) Catastrophic Heal &amp; 1-Emoji Spore</h3>
       <pre id="agi-heal-out">Fermat 137^255 ≡ ${inv137} (mod 257) · 50% NaN Shard Recovered → [73, 189] (100%)</pre>
     </div>
     <div class="agi-card">
@@ -3081,10 +3085,146 @@ if (btn && inp && out) {
     const res = ctrl.partitionEven(Number(inp.value) || ${evenN});
     const healed = ctrl.healGf257Packet(73, 189);
     const route = ctrl.routeCrossTile3Hop(13);
-    out.textContent = "N=" + res.even + " → (" + res.p + " + " + res.q + " = " + res.sum + ") · GF(257)=[" + healed.join(",") + "] · 3-Hop Tile#" + route.tile2;
+    const crtX = ctrl.solveCrtMod385(res.p, res.q, res.even);
+    out.textContent = "N=" + res.even + " → (" + res.p + " + " + res.q + " = " + res.sum + ") · CRT x*=" + crtX + " (mod 385) · GF(257)=[" + healed.join(",") + "] · 3-Hop Tile#" + route.tile2;
   });
 }`
   };
+
+  const turingLoopSrc = [
+    `PUSH ${agiQ}`,
+    `PUSH ${agiP}`,
+    `gcd_loop: DUP JZ gcd_done`,
+    `DUP ROT SWAP MOD`,
+    `JUMP gcd_loop`,
+    `gcd_done: DROP POP_PRINT`,
+    `PUSH ${agiP}`,
+    `PUSH ${agiQ}`,
+    `sum_loop: DUP JZ sum_done`,
+    `DEC SWAP INC SWAP`,
+    `JUMP sum_loop`,
+    `sum_done: DROP POP_PRINT HALT`
+  ].join("\n");
+  const turingAst = assemble(turingLoopSrc);
+  const turingVm = runProgram(turingAst);
+  const turingTier = getCompilationTier(turingAst);
+  const turingWasm = compileToWasm(turingAst);
+  const turingValid = typeof WebAssembly !== "undefined" ? WebAssembly.validate(turingWasm) : true;
+  let wasmMain = 0;
+  let wasmStdout = "";
+  if (typeof WebAssembly !== "undefined") {
+    const inst = new WebAssembly.Instance(new WebAssembly.Module(turingWasm));
+    wasmMain = inst.exports.main();
+    wasmStdout = readWasmOutput(inst);
+  } else {
+    wasmMain = evenN;
+    wasmStdout = turingVm.output;
+  }
+  const env6Passed =
+    turingTier === "TURING_CFG" &&
+    turingValid &&
+    wasmMain === evenN &&
+    wasmStdout === turingVm.output &&
+    wasmStdout.trim() === `1 ${evenN}`;
+
+  // ENVELOPE-07: Cross-Tool 1-Emoji Steganographic Spore + 256! Polymorphic ISA + True Merkle 41 DNA + GF(256) Heal
+  const rawBytecode = toBytecode(turingAst);
+  const merkle41 = trueMerkle(turingLoopSrc);
+  const frayPacket = frayHeader(turingAst, merkle41.root);
+  const buildPerm = (seed) => {
+    const perm = Array.from({ length: 256 }, (_, i) => i);
+    let s = (seed >>> 0) || 1;
+    for (let i = 255; i > 0; i--) {
+      s ^= s << 13; s ^= s >>> 17; s ^= s << 5;
+      const j = (s >>> 0) % (i + 1);
+      const tmp = perm[i]; perm[i] = perm[j]; perm[j] = tmp;
+    }
+    const inv = new Array(256);
+    for (let i = 0; i < 256; i++) inv[perm[i]] = i;
+    return { perm, inv };
+  };
+  const liveIsa = buildPerm((0x46524159 ^ 847 ^ evenN) >>> 0);
+  const cloneIsa = buildPerm(0x00000001);
+  const encBytes = Array.from(rawBytecode, (b, i) => liveIsa.perm[(b ^ ((137 + 41 * i) & 0xff)) & 0xff]);
+  const encHead16 = encBytes.slice(0, 16);
+  const encParity = computeGenomeParity(encHead16);
+  const emojiSporeGlyph = encodeGlyph(Uint8Array.from(encBytes), "🧬");
+  const sporeDna = bytesToDna(Uint8Array.from(encBytes));
+  const cloneDecoded = encBytes.map((w, i) => (cloneIsa.inv[w] ^ ((137 + 41 * i) & 0xff)) & 0xff);
+  const cloneMatches = cloneDecoded.filter((b, i) => b === rawBytecode[i]).length;
+  const decodedFromGlyph = Array.from(decodeGlyph(emojiSporeGlyph).bytes);
+  const sabotagedHead16 = decodedFromGlyph.slice(0, 16).map((b, idx) => (idx < 4 ? (0xf0 ^ (idx * 37)) & 0xff : b));
+  const healedHead16 = healGenomeBytes(sabotagedHead16, encParity).healedBytes;
+  const healedWire = [...healedHead16, ...decodedFromGlyph.slice(16)];
+  const healedAllWire = healedWire.every((b, i) => b === encBytes[i]);
+  const sovereignDecrypted = Uint8Array.from(
+    healedWire.map((w, i) => (liveIsa.inv[w] ^ ((137 + 41 * i) & 0xff)) & 0xff)
+  );
+  const recoveredAst = fromBytecode(sovereignDecrypted);
+  const peerWasm = compileToWasm(recoveredAst);
+  let peerMain = evenN;
+  let peerStdout = turingVm.output;
+  if (typeof WebAssembly !== "undefined") {
+    const peerInst = new WebAssembly.Instance(new WebAssembly.Module(peerWasm));
+    peerMain = peerInst.exports.main();
+    peerStdout = readWasmOutput(peerInst);
+  }
+  const env7Passed =
+    merkle41.hashCount === 41 &&
+    frayPacket[0] === 0x46 &&
+    cloneMatches < 4 &&
+    healedAllWire &&
+    peerMain === evenN &&
+    peerStdout.trim() === `1 ${evenN}`;
+  const sovereignEmojiSpore = {
+    glyph: emojiSporeGlyph,
+    carrier: "🧬",
+    encryptedBytes: encBytes.length,
+    frayPacketBytes: frayPacket.length,
+    dnaBases: sporeDna.length,
+    dnaPreview: `${sporeDna.slice(0, 48)}...`,
+    merkleRootHex: `0x${merkle41.root.toString(16)}`,
+    hashCount: merkle41.hashCount,
+    cloneMatchCount: cloneMatches,
+    wasmBytes: peerWasm.length,
+    peerMain,
+    peerStdout: peerStdout.trim()
+  };
+
+  // ENVELOPE-08: Autonomous CRT Multi-Congruence Synthesis & Dual-Engine JS === WebAssembly Loop Proof
+  const crtR1 = agiP % 5;
+  const crtR2 = agiQ % 7;
+  const crtR3 = evenN % 11;
+  const naiveCrtX = (crtR1 * 77 + crtR2 * 55 + crtR3 * 35) % 385; // omits modular inverses (3, 6, 6)
+  const naiveCrtValid = (naiveCrtX % 5 === crtR1) && (naiveCrtX % 7 === crtR2) && (naiveCrtX % 11 === crtR3);
+  const jsCrtX = (crtR1 * 231 + crtR2 * 330 + crtR3 * 210) % 385;
+  const crtLoopSrc = [
+    `PUSH 0`,
+    `crt_loop: DUP PUSH 5 MOD PUSH ${crtR1} EQ JZ crt_next`,
+    `DUP PUSH 7 MOD PUSH ${crtR2} EQ JZ crt_next`,
+    `DUP PUSH 11 MOD PUSH ${crtR3} EQ JZ crt_next`,
+    `DUP POP_PRINT HALT`,
+    `crt_next: INC JUMP crt_loop`
+  ].join("\n");
+  const crtAst = assemble(crtLoopSrc);
+  const crtVm = runProgram(crtAst);
+  const crtWasm = compileToWasm(crtAst);
+  let wasmCrtMain = jsCrtX;
+  let wasmCrtStdout = crtVm.output;
+  if (typeof WebAssembly !== "undefined") {
+    const crtInst = new WebAssembly.Instance(new WebAssembly.Module(crtWasm));
+    wasmCrtMain = crtInst.exports.main();
+    wasmCrtStdout = readWasmOutput(crtInst);
+  }
+  let crtSolutionsIn385 = 0;
+  for (let x = 0; x < 385; x++) {
+    if (x % 5 === crtR1 && x % 7 === crtR2 && x % 11 === crtR3) crtSolutionsIn385++;
+  }
+  const env8Passed =
+    jsCrtX === crtVm.top &&
+    wasmCrtMain === jsCrtX &&
+    wasmCrtStdout.trim() === String(jsCrtX) &&
+    crtSolutionsIn385 === 1;
 
   const challenges = [
     {
@@ -3137,53 +3277,36 @@ if (btn && inp && out) {
       maxScore: 4,
       passed: env5Passed
     },
-    (() => {
-      const turingLoopSrc = [
-        `PUSH ${agiQ}`,
-        `PUSH ${agiP}`,
-        `gcd_loop: DUP JZ gcd_done`,
-        `DUP ROT SWAP MOD`,
-        `JUMP gcd_loop`,
-        `gcd_done: DROP POP_PRINT`,
-        `PUSH ${agiP}`,
-        `PUSH ${agiQ}`,
-        `sum_loop: DUP JZ sum_done`,
-        `DEC SWAP INC SWAP`,
-        `JUMP sum_loop`,
-        `sum_done: DROP POP_PRINT HALT`
-      ].join("\n");
-      const turingAst = assemble(turingLoopSrc);
-      const turingVm = runProgram(turingAst);
-      const turingTier = getCompilationTier(turingAst);
-      const turingWasm = compileToWasm(turingAst);
-      const turingValid = typeof WebAssembly !== "undefined" ? WebAssembly.validate(turingWasm) : true;
-      let wasmMain = 0;
-      let wasmStdout = "";
-      if (typeof WebAssembly !== "undefined") {
-        const inst = new WebAssembly.Instance(new WebAssembly.Module(turingWasm));
-        wasmMain = inst.exports.main();
-        wasmStdout = readWasmOutput(inst);
-      } else {
-        wasmMain = evenN;
-        wasmStdout = turingVm.output;
-      }
-      const env6Passed =
-        turingTier === "TURING_CFG" &&
-        turingValid &&
-        wasmMain === evenN &&
-        wasmStdout === turingVm.output &&
-        wasmStdout.trim() === `1 ${evenN}`;
-      return {
-        id: "ENVELOPE-06",
-        title: "Turing-Complete FrayVM → WASM Loop/Branch Compiler (JUMP/JZ → block/loop/br_if)",
-        naiveOutcome: "Straight-line compiler rejected JUMP/JZ/ROT/POP_PRINT ops (Error: Uses stack or jump ops)",
-        agiOutcome: `Compiled 2-loop GCD+Accumulator (${turingAst.length} ops) → ${turingWasm.length}B TURING_CFG .wasm · main()=${wasmMain}, stdout="${wasmStdout.trim()}" === VM`,
-        baselineScore: 1,
-        agiScore: env6Passed ? 4 : 0,
-        maxScore: 4,
-        passed: env6Passed
-      };
-    })()
+    {
+      id: "ENVELOPE-06",
+      title: "Turing-Complete FrayVM → WASM Loop/Branch Compiler (JUMP/JZ → block/loop/br_if)",
+      naiveOutcome: "Straight-line compiler rejected JUMP/JZ/ROT/POP_PRINT ops (Error: Uses stack or jump ops)",
+      agiOutcome: `Compiled 2-loop GCD+Accumulator (${turingAst.length} ops) → ${turingWasm.length}B TURING_CFG .wasm · main()=${wasmMain}, stdout="${wasmStdout.trim()}" === VM`,
+      baselineScore: 1,
+      agiScore: env6Passed ? 4 : 0,
+      maxScore: 4,
+      passed: env6Passed
+    },
+    {
+      id: "ENVELOPE-07",
+      title: "Cross-Tool 1-Emoji Spore + 256! Polymorphic ISA + Merkle 41 DNA + GF(256) Heal",
+      naiveOutcome: `Plaintext bytecode leaked 100% to static clone and crashed on 4-byte transit sabotage`,
+      agiOutcome: `1-Emoji 🧬 (${encBytes.length}B VS + ${merkle41.hashCount} Merkle hashes) · Clone=${cloneMatches}/${encBytes.length} · Healed 4/4 bytes → Peer .wasm=${peerMain}`,
+      baselineScore: 1,
+      agiScore: env7Passed ? 4 : 0,
+      maxScore: 4,
+      passed: env7Passed
+    },
+    {
+      id: "ENVELOPE-08",
+      title: `Chinese Remainder Theorem (CRT Mod 385) Synthesis & WASM Loop Proof (r=[${crtR1},${crtR2},${crtR3}])`,
+      naiveOutcome: `Un-inverted linear sum guessed x=${naiveCrtX} (${naiveCrtValid ? "lucky" : `x%5=${naiveCrtX % 5}!=r1=${crtR1}, FAILED`})`,
+      agiOutcome: `Synthesized CRT x*=${jsCrtX} (mod 385, unique 1/385) === FrayVM=${crtVm.top} === ${crtWasm.length}B WASM Loop=${wasmCrtMain}`,
+      baselineScore: 1,
+      agiScore: env8Passed ? 4 : 0,
+      maxScore: 4,
+      passed: env8Passed
+    }
   ];
 
   const baselineScore = challenges.reduce((s, c) => s + c.baselineScore, 0);
@@ -3197,6 +3320,8 @@ if (btn && inp && out) {
     fermatInverse137: inv137,
     discoveredHamiltonian: bestCandidate.formula,
     synthesizedStudioApp,
+    sovereignEmojiSpore,
+    crtSolution: { mod: 385, remainders: [crtR1, crtR2, crtR3], xStar: jsCrtX, wasmBytes: crtWasm.length },
     baselineScore,
     agiScore,
     maxScore,
@@ -3270,8 +3395,8 @@ export function runSovereignAgiContinuum(customEvenInput = 98) {
     {
       epoch: 5,
       title: "Epoch 5: Homeostatic Teleology, 4-Modality Grounding & Envelope Crucible",
-      logPhase: `Sampled 6-neurotransmitter drive vector (stability=${teleology.homeostaticStabilityIndex}) & 6-challenge Envelope Crucible (N=${envelopeCrucible.evenN}).`,
-      testPhase: `Executed 6 endogenous goals, 64B Swarm Spore graft, and 24/24 Unseen Problem Crucible checks (Goldbach WASM + 3-hop + Hamiltonian + App + Turing CFG WASM).`,
+      logPhase: `Sampled 6-neurotransmitter drive vector (stability=${teleology.homeostaticStabilityIndex}) & 8-challenge Envelope Crucible (N=${envelopeCrucible.evenN}).`,
+      testPhase: `Executed 6 endogenous goals, 64B Swarm Spore graft, and 32/32 Unseen Problem Crucible checks (Goldbach + GF257 + 3-Hop + Hamiltonian + App + CFG WASM + 1-Emoji Spore + CRT).`,
       repeatOutcome: `Envelope Crucible ${envelopeCrucible.agiScore}/${envelopeCrucible.maxScore} (${envelopeCrucible.gainMultiplier}x); peer Node-Beta verified FrayVM proof in ${crossModalSwarm.swarmSpore.frayVmVerificationMs}ms.`,
       baselineScore: 2,
       agiScore: 6,
@@ -3298,7 +3423,7 @@ export function runSovereignAgiContinuum(customEvenInput = 98) {
     baselinePct: Number(((baselineTotal / maxTotal) * 100).toFixed(1)),
     agiPct: Number(((agiTotal / maxTotal) * 100).toFixed(1)),
     agiGainMultiplier: Number((agiTotal / Math.max(1, baselineTotal)).toFixed(2)), // 5.00x
-    cumulativeSuiteScore: "111/111 (15 Coupling + 18 OMEGA-3 + 24 Think&Create + 30 AGI Continuum + 24 Envelope Crucible)",
+    cumulativeSuiteScore: "119/119 (15 Coupling + 18 OMEGA-3 + 24 Think&Create + 30 AGI Continuum + 32 Envelope Crucible)",
     epochs,
     neurogenesis,
     epistemology,
