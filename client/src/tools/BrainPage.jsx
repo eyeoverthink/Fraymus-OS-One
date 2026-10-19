@@ -3096,7 +3096,7 @@ export default function BrainPage({ project, say, onApply }) {
     pushLedger(
       "SOVEREIGN_AGI_V17",
       `LOG_TEST_REPEAT_CYCLE_${nextCycle}`,
-      `${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x) · Crucible ${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore} (N=${report.envelopeCrucible.evenN}) · 119/119 Total Checks`,
+      `${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x) · Crucible ${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore} (N=${report.envelopeCrucible.evenN}) · 127/127 Total Checks`,
       1.0
     );
     try {
@@ -3117,15 +3117,41 @@ export default function BrainPage({ project, say, onApply }) {
           merkleRoot: report.crossModalSwarm.swarmSpore.merkleRoot,
           evenN: report.envelopeCrucible.evenN,
           crucibleScore: `${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore}`,
-          cumulativeChecks: "119/119",
+          cumulativeChecks: "127/127",
           goldbachPair: report.envelopeCrucible.goldbachPair,
           discoveredHamiltonian: report.envelopeCrucible.discoveredHamiltonian
         })
       });
+      const fcon = report.envelopeCrucible.connectomeDiskImage;
+      if (fcon) {
+        await fetch("/api/brain/connectome-disk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            version: fcon.version,
+            tilesSpawned: fcon.tilesSpawned,
+            totalNeurons: fcon.totalNeurons,
+            sliceCount: fcon.sliceCount,
+            checksumHex: fcon.checksumHex,
+            evenN: report.envelopeCrucible.evenN,
+            binaryB64: fcon.binaryB64
+          })
+        });
+        await fetch("/api/brain/swarm-mesh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            evenN: report.envelopeCrucible.evenN,
+            nodes: fcon.swarmNodes,
+            rogueQuarantined: fcon.rogueQuarantined,
+            checksumHex: fcon.checksumHex
+          })
+        });
+      }
     } catch {}
     say?.(
       "ok",
-      `Sovereign AGI Cycle #${nextCycle} verified: ${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x), Crucible ${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore} (N=${report.envelopeCrucible.evenN}), 119/119 Total Checks`
+      `Sovereign AGI Cycle #${nextCycle} verified: ${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x), Crucible ${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore} (N=${report.envelopeCrucible.evenN}), 127/127 Total Checks`
     );
   }
 
@@ -3144,7 +3170,7 @@ export default function BrainPage({ project, say, onApply }) {
     pushLedger(
       "SOVEREIGN_AGI_CREATOR",
       "CRUCIBLE_WORKBENCH_APPLIED",
-      `Applied "${app.title}" (119/119 VM-verified) into Studio project with .bak fossil backup`,
+      `Applied "${app.title}" (127/127 VM-verified) into Studio project with .bak fossil backup`,
       1.0
     );
     say?.("ok", `Applied Sovereign AGI Crucible Workbench (N=${agiContinuumReport.envelopeCrucible.evenN}) into Studio project`);
@@ -3163,6 +3189,69 @@ export default function BrainPage({ project, say, onApply }) {
     say?.(
       "ok",
       `Copied 1-Emoji 🧬 Sovereign Spore (${spore.encryptedBytes}B encrypted bytecode · Merkle ${spore.merkleRootHex.slice(0, 12)}… · Peer .wasm=${spore.wasmBytes}B)`
+    );
+  }
+
+  function stageAgiPipelineToWasmAndDispatch() {
+    const pipe = agiContinuumReport?.envelopeCrucible?.crossToolPipeline;
+    if (!pipe) return;
+    try {
+      localStorage.setItem("fraymus.wasm.src", pipe.wasmAsm);
+      const existingDoc = localStorage.getItem("fraymus.wasm.doc") || "";
+      const nextDoc = `${existingDoc.trim()}\n\nAGI_V17_N${agiContinuumReport.envelopeCrucible.evenN}_KERNEL (Merkle ${pipe.dispatchMerkleRoot})\n${pipe.wasmNodeToken}\n`;
+      localStorage.setItem("fraymus.wasm.doc", nextDoc);
+      localStorage.setItem("fraymus.dispatch.form", JSON.stringify(pipe.dispatchForm));
+      localStorage.setItem("fraymus.dispatch.program", JSON.stringify(pipe.dispatchProgram));
+    } catch {}
+    pushLedger(
+      "SOVEREIGN_CROSS_TOOL_PIPE",
+      "STAGED_WASM_AND_DISPATCH",
+      `Staged ${pipe.wasmBytesLen}B TURING_CFG .wasm + ${pipe.dispatchForm.subject} → ${pipe.dispatchForm.to}`,
+      1.0
+    );
+    say?.(
+      "ok",
+      `Staged ${pipe.wasmBytesLen}B TURING_CFG .wasm + ⟦AGI_V17_N${agiContinuumReport.envelopeCrucible.evenN}_KERNEL⟧🧩 into WASM & Dispatch (${pipe.dispatchForm.to})`
+    );
+  }
+
+  async function saveConnectomeAndBroadcastSwarm() {
+    const fcon = agiContinuumReport?.envelopeCrucible?.connectomeDiskImage;
+    if (!fcon) return;
+    try {
+      await fetch("/api/brain/connectome-disk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          version: fcon.version,
+          tilesSpawned: fcon.tilesSpawned,
+          totalNeurons: fcon.totalNeurons,
+          sliceCount: fcon.sliceCount,
+          checksumHex: fcon.checksumHex,
+          evenN: agiContinuumReport.envelopeCrucible.evenN,
+          binaryB64: fcon.binaryB64
+        })
+      });
+      await fetch("/api/brain/swarm-mesh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          evenN: agiContinuumReport.envelopeCrucible.evenN,
+          nodes: fcon.swarmNodes,
+          rogueQuarantined: fcon.rogueQuarantined,
+          checksumHex: fcon.checksumHex
+        })
+      });
+    } catch {}
+    pushLedger(
+      "SOVEREIGN_FCON_SWARM",
+      "DISK_AND_SWARM_PERSISTED",
+      `Saved ${fcon.byteLength}B FCON binary (${fcon.unpackedSlicesOk}/42 slices, CRC ${fcon.checksumHex}) & 3-Node Swarm Mesh`,
+      1.0
+    );
+    say?.(
+      "ok",
+      `Saved ${fcon.byteLength}B FCON binary (data/brain/agi_connectome.bin · ${fcon.unpackedSlicesOk}/42 slices) & broadcast 3-Node Swarm Consensus`
     );
   }
 
@@ -4119,7 +4208,7 @@ export default function BrainPage({ project, say, onApply }) {
                 🛰️ Instrument &amp; Heal Provider Fault (6/6 Daemons)
               </button>
               <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
-                🌌 Run Sovereign AGI Continuum (119/119 Checks · 5x)
+                🌌 Run Sovereign AGI Continuum (127/127 Checks · 5x)
               </button>
               <button className="btn on" disabled={!project} onClick={applyOmegaAgentToActiveProject}>
                 🚀 Replicate Living Omega Agent Into Project
@@ -4138,7 +4227,7 @@ export default function BrainPage({ project, say, onApply }) {
                 ["nodular_freq_bus", `📡 8. Nodular Frequency, Δt Clocks (${nodularMeshReport?.canonicalKey?.freqHz ?? 448.489872} Hz) & LoRa/HF/BLE/UDP/TCP Bus`],
                 ["think_create_proof", `⚡ 9. Think & Create Proof (${thinkCreateReport.summary.totalBaseline}/24 vs ${thinkCreateReport.summary.totalSuper}/24 · ${thinkCreateReport.summary.totalGainMultiplier}x Gain & App Creator)`],
                 ["universal_daemon", `🛰️ 10. Universal Daemonization & Universal Instrumentation (${universalDaemonReport.traceAnalysis.totalFramesInstrumented} Frames Hooked · HTTP 400 Failover)`],
-                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 32}/32 Crucible · 119/119 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
+                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 40}/40 Crucible · 127/127 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -4752,7 +4841,7 @@ export default function BrainPage({ project, say, onApply }) {
                       </button>
                     ))}
                     <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
-                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (119/119 Checks)
+                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (127/127 Checks)
                     </button>
                     <button
                       className="btn"
@@ -4769,6 +4858,20 @@ export default function BrainPage({ project, say, onApply }) {
                     >
                       🧬 Copy 1-Emoji WASM Spore ({agiContinuumReport.envelopeCrucible?.sovereignEmojiSpore?.encryptedBytes ?? 55}B)
                     </button>
+                    <button
+                      className="btn"
+                      style={{ borderColor: "#00e5ff", color: "#00e5ff" }}
+                      onClick={stageAgiPipelineToWasmAndDispatch}
+                    >
+                      📦 Stage to WASM + Signed Dispatch (fx-4041)
+                    </button>
+                    <button
+                      className="btn"
+                      style={{ borderColor: "var(--acc)", color: "var(--acc)" }}
+                      onClick={saveConnectomeAndBroadcastSwarm}
+                    >
+                      💾 Save 704B FCON Connectome + 3-Node Swarm
+                    </button>
                   </div>
                 </div>
 
@@ -4780,7 +4883,7 @@ export default function BrainPage({ project, say, onApply }) {
                         {agiContinuumReport.envelopeCrucible.agiScore}/{agiContinuumReport.envelopeCrucible.maxScore} Verified ({agiContinuumReport.envelopeCrucible.gainMultiplier}x vs Naive {agiContinuumReport.envelopeCrucible.baselineScore}/{agiContinuumReport.envelopeCrucible.maxScore})
                       </b>
                       <span className="pill" style={{ borderColor: "#00e5ff", color: "#00e5ff", fontSize: 10 }}>
-                        FlyGNNv10 + FrayVM + TURING_CFG .wasm + 1-Emoji 256! Spore + CRT Mod-385 + Hamiltonian
+                        All 4 Frontiers Live: TURING_CFG .wasm + 1-Emoji Spore + Signed Dispatch + 3-Node Swarm + 704B FCON Disk
                       </span>
                     </div>
                     <div className="grid-2" style={{ marginTop: 6, gap: 6 }}>

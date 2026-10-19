@@ -1164,6 +1164,97 @@ app.post("/api/brain/agi-continuum", (req, res) => {
   }
 });
 
+const brainConnectomeBinFile = path.join(brainDir, "agi_connectome.bin");
+const brainConnectomeMetaFile = path.join(brainDir, "agi_connectome_meta.json");
+
+app.get("/api/brain/connectome-disk", (_req, res) => {
+  try {
+    if (!fs.existsSync(brainConnectomeBinFile)) {
+      return res.json({ ok: true, exists: false, byteLength: 0 });
+    }
+    const buf = fs.readFileSync(brainConnectomeBinFile);
+    const meta = fs.existsSync(brainConnectomeMetaFile)
+      ? JSON.parse(fs.readFileSync(brainConnectomeMetaFile, "utf8"))
+      : {};
+    const magic = buf.slice(0, 4).toString("ascii");
+    res.json({
+      ok: true,
+      exists: true,
+      magic,
+      byteLength: buf.length,
+      binaryB64: buf.toString("base64"),
+      meta
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Could not read connectome disk image." });
+  }
+});
+
+app.post("/api/brain/connectome-disk", (req, res) => {
+  try {
+    fs.mkdirSync(brainDir, { recursive: true });
+    const body = req.body || {};
+    const b64 = String(body.binaryB64 || "");
+    const buf = Buffer.from(b64, "base64");
+    if (buf.length < 32 || buf.slice(0, 4).toString("ascii") !== "FCON") {
+      return res.status(400).json({ error: "Invalid FCON binary header." });
+    }
+    fs.writeFileSync(brainConnectomeBinFile, buf);
+    const meta = {
+      magic: "FCON",
+      version: Number(body.version || 17),
+      byteLength: buf.length,
+      tilesSpawned: Number(body.tilesSpawned || 3),
+      totalNeurons: Number(body.totalNeurons || 3000),
+      sliceCount: Number(body.sliceCount || 42),
+      checksumHex: String(body.checksumHex || ""),
+      evenN: Number(body.evenN || 98),
+      savedAt: new Date().toISOString()
+    };
+    fs.writeFileSync(brainConnectomeMetaFile, JSON.stringify(meta, null, 2));
+    res.json({ ok: true, saved: true, meta });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Could not write connectome disk image." });
+  }
+});
+
+const brainSwarmMeshFile = path.join(brainDir, "swarm_mesh.json");
+
+app.get("/api/brain/swarm-mesh", (_req, res) => {
+  try {
+    const doc = fs.existsSync(brainSwarmMeshFile)
+      ? JSON.parse(fs.readFileSync(brainSwarmMeshFile, "utf8"))
+      : { carrierHz: 448.489872, dtSlot: 12, broadcasts: [] };
+    res.json({ ok: true, swarm: doc });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Could not read swarm mesh state." });
+  }
+});
+
+app.post("/api/brain/swarm-mesh", (req, res) => {
+  try {
+    fs.mkdirSync(brainDir, { recursive: true });
+    const body = req.body || {};
+    const existing = fs.existsSync(brainSwarmMeshFile)
+      ? JSON.parse(fs.readFileSync(brainSwarmMeshFile, "utf8"))
+      : { carrierHz: 448.489872, dtSlot: 12, broadcasts: [] };
+    const entry = {
+      broadcastId: `SWARM-${(existing.broadcasts?.length || 0) + 1}`,
+      evenN: Number(body.evenN || 98),
+      nodes: Array.isArray(body.nodes) ? body.nodes : [],
+      rogueQuarantined: String(body.rogueQuarantined || ""),
+      checksumHex: String(body.checksumHex || ""),
+      ts: new Date().toISOString()
+    };
+    const broadcasts = [entry, ...(existing.broadcasts || [])].slice(0, 50);
+    const updated = { carrierHz: 448.489872, dtSlot: 12, updatedAt: entry.ts, broadcasts };
+    fs.writeFileSync(brainSwarmMeshFile, JSON.stringify(updated, null, 2));
+    res.json({ ok: true, entry, totalBroadcasts: broadcasts.length });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Could not broadcast swarm mesh state." });
+  }
+});
+
 app.use("/published", express.static(publishedDir, { index: "index.html" }));
 
 const dist = path.resolve("client/dist");
