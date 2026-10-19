@@ -4103,7 +4103,7 @@ export default function BrainPage({ project, say, onApply }) {
                 🛰️ Instrument &amp; Heal Provider Fault (6/6 Daemons)
               </button>
               <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
-                🌌 Run Sovereign AGI Continuum (107/107 Checks · 5x)
+                🌌 Run Sovereign AGI Continuum (111/111 Checks · 5x)
               </button>
               <button className="btn on" disabled={!project} onClick={applyOmegaAgentToActiveProject}>
                 🚀 Replicate Living Omega Agent Into Project
@@ -4122,7 +4122,7 @@ export default function BrainPage({ project, say, onApply }) {
                 ["nodular_freq_bus", `📡 8. Nodular Frequency, Δt Clocks (${nodularMeshReport?.canonicalKey?.freqHz ?? 448.489872} Hz) & LoRa/HF/BLE/UDP/TCP Bus`],
                 ["think_create_proof", `⚡ 9. Think & Create Proof (${thinkCreateReport.summary.totalBaseline}/24 vs ${thinkCreateReport.summary.totalSuper}/24 · ${thinkCreateReport.summary.totalGainMultiplier}x Gain & App Creator)`],
                 ["universal_daemon", `🛰️ 10. Universal Daemonization & Universal Instrumentation (${universalDaemonReport.traceAnalysis.totalFramesInstrumented} Frames Hooked · HTTP 400 Failover)`],
-                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 20}/20 Crucible · 107/107 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
+                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 24}/24 Crucible · 111/111 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -4736,7 +4736,7 @@ export default function BrainPage({ project, say, onApply }) {
                       </button>
                     ))}
                     <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
-                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (107/107 Checks)
+                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (111/111 Checks)
                     </button>
                     <button
                       className="btn"

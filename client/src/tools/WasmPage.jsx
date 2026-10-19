@@ -4,7 +4,7 @@ import { base64, decodeGlyph, encodeGlyph, hex } from "./emojiCodec.js";
 import EmojiSelect from "./EmojiSelect.jsx";
 import {
   ISA, assemble, canCompile, compileToWasm, disassemble, forge, frayHeader,
-  fromBytecode, readCustomSections, recoverProgram, runGolden, runProgram, toBytecode, trueMerkle
+  fromBytecode, getCompilationTier, readCustomSections, readWasmOutput, recoverProgram, runGolden, runProgram, toBytecode, trueMerkle
 } from "./frayvm.js";
 
 const SRC_KEY = "fraymus.wasm.src";
@@ -153,11 +153,16 @@ export default function WasmPage({ project, say, onApply }) {
     if (!assembled.code) return;
     try {
       const bytes = compileToWasm(assembled.code);
+      const tier = getCompilationTier(assembled.code);
       const { instance } = await WebAssembly.instantiate(bytes);
       const value = instance.exports.main();
-      setBuilt({ kind: "compiled", bytes, main: value, exports: Object.keys(instance.exports), note: `main() = ${value}` });
+      const stdout = readWasmOutput(instance);
+      const note = stdout
+        ? `main() = ${value} · stdout = "${stdout.replace(/\n/g, "\\n")}" · tier = ${tier}`
+        : `main() = ${value} · tier = ${tier}`;
+      setBuilt({ kind: "compiled", bytes, main: value, stdout, tier, exports: Object.keys(instance.exports), note });
       setView("build");
-      say?.(`Compiled ${assembled.code.length} instructions to a ${bytes.length}-byte module · main() = ${value}`);
+      say?.(`Compiled ${assembled.code.length} instructions (${tier}) to a ${bytes.length}-byte module · ${note}`);
     } catch (error) { say?.(error.message); }
   }
 
@@ -189,6 +194,8 @@ export default function WasmPage({ project, say, onApply }) {
           catch { try { calls.push(`${entry.name}() = ${fn()}`); break; } catch (error) { calls.push(`${entry.name}: ${error.message.slice(0, 40)}`); break; } }
         }
       }
+      const stdout = readWasmOutput(instance);
+      if (stdout) calls.push(`stdout = "${stdout.replace(/\n/g, "\\n")}"`);
       const recovered = recoverProgram(bytes);
       setProbe({ name, valid: true, bytes: bytes.length, exports: exports.map((entry) => `${entry.name} (${entry.kind})`), sections: Object.keys(sections), calls, recovered: recovered ? disassemble(recovered) : null });
       setView("probe");
@@ -218,7 +225,7 @@ export default function WasmPage({ project, say, onApply }) {
     <div className="tool wasm">
       <aside className="tool-side">
         <b>FrayVM program</b>
-        <span className="muted">A tiny stack machine. Assemble it, run it, compile the arithmetic subset to real WebAssembly, or forge a self-running module that carries its own program.</span>
+        <span className="muted">A 53-opcode dual-stack machine. Assemble it, run it, compile any program (straight-line or Turing-complete JUMP/JZ loops) to real WebAssembly, or forge a self-running module.</span>
         <label className="field">
           <span>Programs</span>
           <select value="" onChange={(event) => { if (event.target.value) setSrc(SAMPLES[event.target.value]); }}>
@@ -245,7 +252,7 @@ export default function WasmPage({ project, say, onApply }) {
           <b>Self-running WASM</b>
           <span className="muted">{assembled.code ? `${assembled.code.length} instructions · ${bytecode.length} bytecode bytes` : "parse error"} · golden {goldenPass}/{golden.length}</span>
           <span style={{ flex: 1 }} />
-          <button className="btn" onClick={compile} disabled={!compilable} title={compilable ? "Compile to real WebAssembly" : "Uses stack or jump ops — forge it instead"}>Compile</button>
+          <button className="btn" onClick={compile} disabled={!compilable} title="Compile to real WebAssembly (Direct Stack or Turing-Complete CFG)">Compile</button>
           <button className="btn" onClick={forgeModule} disabled={!assembled.code}>Forge</button>
           <button className="btn on" disabled={!built} onClick={() => { onApply(applyWasm(project, built.bytes, built.kind === "forged" ? "forged module" : "compiled module")); say?.(project.stack === "mern" ? "Added a WASM page at /wasm" : "Added a WASM loader to the HTML"); }}>Place in project</button>
         </div>
@@ -355,12 +362,15 @@ export default function WasmPage({ project, say, onApply }) {
               )}
               {view === "golden" && (
                 <div className="stack">
-                  <span className="muted">The archive's 13 golden tests, run live on this VM.</span>
+                  <span className="muted">The archive's 13 golden tests, verified live on both FrayVM and compiled WebAssembly (TURING_CFG).</span>
                   {golden.map((test) => (
                     <div key={test.name} className={`wasm-golden ${test.pass ? "ok" : "bad"}`}>
                       <span>{test.pass ? "✓" : "✕"}</span>
                       <code>{test.name}</code>
-                      <small className="muted">{JSON.stringify(test.output)}{test.pass ? "" : ` ≠ ${JSON.stringify(test.expect)}`}</small>
+                      <small className="muted">
+                        VM={JSON.stringify(test.output)} · WASM({test.wasmBytes}B, main={test.wasmMain})={JSON.stringify(test.wasmOutput)}
+                        {test.pass ? "" : ` ≠ ${JSON.stringify(test.expect)}`}
+                      </small>
                     </div>
                   ))}
                 </div>

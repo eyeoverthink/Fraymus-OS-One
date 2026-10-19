@@ -201,9 +201,9 @@ export function fromBytecode(bytes) {
   return code;
 }
 
-// ---- straight-line FrayVM -> WASM compiler ----
-// Maps the arithmetic/compare subset directly onto the wasm operand stack.
-// DUP and stack-shuffles are supported via 2 i32 scratch locals (local 0, local 1).
+// ---- Dual-Tier FrayVM -> WASM Compiler ----
+// Tier 1 (DIRECT_STACK): Maps straight-line arithmetic/compare/stack-shuffle ops directly onto the WASM operand stack (2 scratch locals).
+// Tier 2 (TURING_CFG): Structured block/loop/br_if control-flow + linear-memory stack & stdout buffer supporting all 53 ISA opcodes including JUMP/JZ loops.
 const WASM_DIRECT = {
   0x20: [0x1a],
   0x21: [0x21, 0x00, 0x21, 0x01, 0x20, 0x00, 0x20, 0x01],
@@ -215,10 +215,19 @@ const WASM_DIRECT = {
   0x45: null, 0x49: [0x71], 0x4a: [0x72], 0x4b: [0x73], 0x4c: [0x74], 0x4d: [0x76], 0x4f: null, 0x50: null,
   0x60: [0x46], 0x61: [0x47], 0x62: [0x48], 0x63: [0x4a], 0x64: [0x4e], 0x65: [0x4c], 0x66: [0x45]
 };
-const COMPILABLE = new Set(Object.keys(WASM_DIRECT).map(Number).concat([0x00, 0x01]));
+const COMPILABLE_DIRECT = new Set(Object.keys(WASM_DIRECT).map(Number).concat([0x00, 0x01]));
+
+export function isDirectStackCompilable(code) {
+  return Array.isArray(code) && code.length > 0 && code.every((instruction) => COMPILABLE_DIRECT.has(instruction.op));
+}
+
+export function getCompilationTier(code) {
+  if (!Array.isArray(code) || !code.length) return "NONE";
+  return isDirectStackCompilable(code) ? "DIRECT_STACK" : "TURING_CFG";
+}
 
 export function canCompile(code) {
-  return code.every((instruction) => COMPILABLE.has(instruction.op));
+  return Array.isArray(code) && code.length > 0 && code.every((instruction) => BY_OP.has(instruction.op));
 }
 
 function sleb(value) {
@@ -238,28 +247,316 @@ function uleb(value) {
 const wsection = (id, body) => [id, ...uleb(body.length), ...body];
 const wname = (text) => [...uleb(textBytes(text).length), ...textBytes(text)];
 
-export function compileToWasm(code) {
-  if (!canCompile(code)) throw new Error("This program uses stack or control-flow ops; run it on the VM or forge it instead.");
-  const bodyOps = [];
-  for (const instruction of code) {
-    const op = instruction.op;
-    if (op === 0x00 || op === 0x01) continue;
-    if (op === 0x80) { bodyOps.push(0x41, ...sleb(instruction.arg | 0)); continue; }
-    if (op === 0x45) { bodyOps.push(0x41, ...sleb(-1), 0x6c); continue; }
-    if (op === 0x4f) { bodyOps.push(0x41, ...sleb(1), 0x6a); continue; }
-    if (op === 0x50) { bodyOps.push(0x41, ...sleb(1), 0x6b); continue; }
-    bodyOps.push(...WASM_DIRECT[op]);
+function compileTuringCfgToWasm(code) {
+  const SP = 0, PC = 1, STEPS = 2, A = 3, B = 4, C = 5, D = 6, LAST_OUT = 7, OUT_PTR = 8, FSP = 9;
+  const LGET = (i) => [0x20, i];
+  const LSET = (i) => [0x21, i];
+  const LTEE = (i) => [0x22, i];
+  const ICONST = (v) => [0x41, ...sleb(v | 0)];
+  const ILOAD = (off = 0) => [0x28, 0x02, ...uleb(off)];
+  const ISTORE = (off = 0) => [0x36, 0x02, ...uleb(off)];
+  const ILOAD8U = (off = 0) => [0x2d, 0x00, ...uleb(off)];
+  const ISTORE8 = (off = 0) => [0x3a, 0x00, ...uleb(off)];
+
+  const popTo = (loc) => [
+    ...LGET(SP), ...ICONST(0), 0x4a,
+    0x04, 0x7f,
+      ...LGET(SP), ...ICONST(4), 0x6b, ...LTEE(SP), ...ILOAD(0),
+    0x05,
+      ...ICONST(0),
+    0x0b,
+    ...LSET(loc)
+  ];
+  const pushExpr = (expr) => [
+    ...LGET(SP), ...expr, ...ISTORE(0),
+    ...LGET(SP), ...ICONST(4), 0x6a, ...LSET(SP)
+  ];
+
+  const emitInstructionOps = (ins) => {
+    const op = ins.op;
+    const arg = ins.arg | 0;
+    switch (op) {
+      case 0x01: return [];
+      case 0x10: return [
+        ...popTo(A), ...LGET(A), ...LSET(LAST_OUT),
+        ...LGET(OUT_PTR), ...LGET(A), ...ISTORE8(0),
+        ...LGET(OUT_PTR), ...ICONST(1), 0x6a, ...LSET(OUT_PTR)
+      ];
+      case 0x20: return [...popTo(A)];
+      case 0x21: return [...popTo(A), ...popTo(B), ...pushExpr(LGET(A)), ...pushExpr(LGET(B))];
+      case 0x22: return [...popTo(A), ...popTo(B), ...pushExpr(LGET(B)), ...pushExpr(LGET(A)), ...pushExpr(LGET(B))];
+      case 0x23: return [
+        ...LGET(SP), ...ICONST(12), 0x4e, 0x04, 0x40,
+          ...popTo(A), ...popTo(B), ...popTo(C),
+          ...pushExpr(LGET(B)), ...pushExpr(LGET(A)), ...pushExpr(LGET(C)),
+        0x0b
+      ];
+      case 0x24: return [
+        ...LGET(SP), ...ICONST(8), 0x4e, 0x04, 0x40,
+          ...popTo(A), ...popTo(B), ...pushExpr(LGET(A)),
+        0x0b
+      ];
+      case 0x25: return [...popTo(A), ...popTo(B), ...pushExpr(LGET(A)), ...pushExpr(LGET(B)), ...pushExpr(LGET(A))];
+      case 0x26: return [...popTo(A), ...popTo(B), ...pushExpr(LGET(B)), ...pushExpr(LGET(A)), ...pushExpr(LGET(B)), ...pushExpr(LGET(A))];
+      case 0x27: return [
+        ...LGET(SP), ...ICONST(16), 0x4e, 0x04, 0x40,
+          ...popTo(A), ...popTo(B), ...popTo(C), ...popTo(D),
+          ...pushExpr(LGET(B)), ...pushExpr(LGET(A)), ...pushExpr(LGET(D)), ...pushExpr(LGET(C)),
+        0x0b
+      ];
+      case 0x28: return [
+        ...LGET(SP), ...ICONST(16), 0x4e, 0x04, 0x40,
+          ...LGET(SP), ...ICONST(16), 0x6b, ...ILOAD(0), ...LSET(A),
+          ...LGET(SP), ...ICONST(12), 0x6b, ...ILOAD(0), ...LSET(B),
+          ...pushExpr(LGET(A)), ...pushExpr(LGET(B)),
+        0x0b
+      ];
+      case 0x29: return [...pushExpr([...LGET(SP), ...ICONST(2), 0x76])];
+      case 0x2a: return [
+        ...(ins.arg !== undefined ? [...ICONST(arg), ...LSET(A)] : popTo(A)),
+        ...LGET(SP), ...ICONST(4), 0x6b, ...LGET(A), ...ICONST(2), 0x74, 0x6b, ...LSET(B),
+        ...LGET(B), ...ICONST(0), 0x4e, ...LGET(B), ...LGET(SP), 0x48, 0x71,
+        0x04, 0x7f, ...LGET(B), ...ILOAD(0), 0x05, ...ICONST(0), 0x0b,
+        ...LSET(C), ...pushExpr(LGET(C))
+      ];
+      case 0x2b: return [
+        ...(ins.arg !== undefined ? [...ICONST(arg), ...LSET(A)] : popTo(A)),
+        ...LGET(SP), ...ICONST(4), 0x6b, ...LGET(A), ...ICONST(2), 0x74, 0x6b, ...LSET(B),
+        ...LGET(B), ...ICONST(0), 0x4e, ...LGET(B), ...LGET(SP), 0x48, 0x71,
+        0x04, 0x40,
+          ...LGET(B), ...ILOAD(0), ...LSET(C),
+          0x02, 0x40, 0x03, 0x40,
+            ...LGET(B), ...ICONST(4), 0x6a, ...LGET(SP), 0x4e, 0x0d, 0x01,
+            ...LGET(B), ...LGET(B), ...ICONST(4), 0x6a, ...ILOAD(0), ...ISTORE(0),
+            ...LGET(B), ...ICONST(4), 0x6a, ...LSET(B), 0x0c, 0x00,
+          0x0b, 0x0b,
+          ...LGET(SP), ...ICONST(4), 0x6b, ...LGET(C), ...ISTORE(0),
+        0x0b
+      ];
+      case 0x2c: return [...popTo(A), ...pushExpr(LGET(A)), ...pushExpr(LGET(A))];
+      case 0x2d: return [
+        ...popTo(A), ...pushExpr(LGET(A)),
+        ...LGET(A), ...ICONST(0), 0x47, 0x04, 0x40, ...pushExpr(LGET(A)), 0x0b
+      ];
+      case 0x2e: return [...popTo(A), ...popTo(B)];
+      case 0x40: return [...popTo(A), ...popTo(B), ...pushExpr([...LGET(B), ...LGET(A), 0x6a])];
+      case 0x41: return [...popTo(A), ...popTo(B), ...pushExpr([...LGET(B), ...LGET(A), 0x6b])];
+      case 0x42: return [...popTo(A), ...popTo(B), ...pushExpr([...LGET(B), ...LGET(A), 0x6c])];
+      case 0x43: return [
+        ...popTo(A), ...popTo(B),
+        ...LGET(A), 0x45, 0x04, 0x7f, ...ICONST(0), 0x05, ...LGET(B), ...LGET(A), 0x6d, 0x0b,
+        ...LSET(C), ...pushExpr(LGET(C))
+      ];
+      case 0x44: return [
+        ...popTo(A), ...popTo(B),
+        ...LGET(A), 0x45, 0x04, 0x7f, ...ICONST(0), 0x05, ...LGET(B), ...LGET(A), 0x6f, 0x0b,
+        ...LSET(C), ...pushExpr(LGET(C))
+      ];
+      case 0x45: return [...popTo(A), ...pushExpr([...ICONST(0), ...LGET(A), 0x6b])];
+      case 0x46: return [
+        ...popTo(A),
+        ...LGET(A), ...ICONST(0), 0x48, 0x04, 0x7f, ...ICONST(0), ...LGET(A), 0x6b, 0x05, ...LGET(A), 0x0b,
+        ...LSET(B), ...pushExpr(LGET(B))
+      ];
+      case 0x47: return [
+        ...popTo(A), ...popTo(B),
+        ...LGET(B), ...LGET(A), 0x48, 0x04, 0x7f, ...LGET(B), 0x05, ...LGET(A), 0x0b,
+        ...LSET(C), ...pushExpr(LGET(C))
+      ];
+      case 0x48: return [
+        ...popTo(A), ...popTo(B),
+        ...LGET(B), ...LGET(A), 0x4a, 0x04, 0x7f, ...LGET(B), 0x05, ...LGET(A), 0x0b,
+        ...LSET(C), ...pushExpr(LGET(C))
+      ];
+      case 0x49: return [...popTo(A), ...popTo(B), ...pushExpr([...LGET(B), ...LGET(A), 0x71])];
+      case 0x4a: return [...popTo(A), ...popTo(B), ...pushExpr([...LGET(B), ...LGET(A), 0x72])];
+      case 0x4b: return [...popTo(A), ...popTo(B), ...pushExpr([...LGET(B), ...LGET(A), 0x73])];
+      case 0x4c: return [...popTo(A), ...popTo(B), ...pushExpr([...LGET(B), ...LGET(A), ...ICONST(31), 0x71, 0x74])];
+      case 0x4d: return [...popTo(A), ...popTo(B), ...pushExpr([...LGET(B), ...LGET(A), ...ICONST(31), 0x71, 0x76])];
+      case 0x4e: return [...popTo(A), ...pushExpr([...LGET(A), ...ICONST(-1), 0x73])];
+      case 0x4f: return [...popTo(A), ...pushExpr([...LGET(A), ...ICONST(1), 0x6a])];
+      case 0x50: return [...popTo(A), ...pushExpr([...LGET(A), ...ICONST(1), 0x6b])];
+      case 0x60: return [...popTo(A), ...popTo(B), ...pushExpr([...LGET(B), ...LGET(A), 0x46])];
+      case 0x61: return [...popTo(A), ...popTo(B), ...pushExpr([...LGET(B), ...LGET(A), 0x47])];
+      case 0x62: return [...popTo(A), ...popTo(B), ...pushExpr([...LGET(B), ...LGET(A), 0x48])];
+      case 0x63: return [...popTo(A), ...popTo(B), ...pushExpr([...LGET(B), ...LGET(A), 0x4a])];
+      case 0x64: return [...popTo(A), ...popTo(B), ...pushExpr([...LGET(B), ...LGET(A), 0x4e])];
+      case 0x65: return [...popTo(A), ...popTo(B), ...pushExpr([...LGET(B), ...LGET(A), 0x4c])];
+      case 0x66: case 0x6a: return [...popTo(A), ...pushExpr([...LGET(A), 0x45])];
+      case 0x67: case 0x6b: return [...popTo(A), ...pushExpr([...LGET(A), ...ICONST(0), 0x47])];
+      case 0x68: return [...popTo(A), ...pushExpr([...LGET(A), ...ICONST(1), 0x71, 0x45])];
+      case 0x69: return [...popTo(A), ...pushExpr([...LGET(A), ...ICONST(1), 0x71, ...ICONST(0), 0x47])];
+      case 0x6c: return [
+        ...popTo(A),
+        ...LGET(A), 0x45, 0x04, 0x7f, ...ICONST(0), 0x05,
+          ...LGET(A), ...ICONST(0), 0x4a, 0x04, 0x7f, ...ICONST(1), 0x05, ...ICONST(-1), 0x0b,
+        0x0b,
+        ...LSET(B), ...pushExpr(LGET(B))
+      ];
+      case 0x6d: return [
+        ...popTo(A), ...popTo(B), ...popTo(C),
+        ...pushExpr([...LGET(C), ...LGET(B), 0x4e, ...LGET(C), ...LGET(A), 0x4c, 0x71])
+      ];
+      case 0x6e: return [
+        ...popTo(A), ...popTo(B), ...popTo(C),
+        ...LGET(C), ...LGET(B), 0x48, 0x04, 0x40, ...LGET(B), ...LSET(C), 0x0b,
+        ...LGET(C), ...LGET(A), 0x4a, 0x04, 0x40, ...LGET(A), ...LSET(C), 0x0b,
+        ...pushExpr(LGET(C))
+      ];
+      case 0x6f: return [...pushExpr(ICONST(1))];
+      case 0x70: return [...pushExpr(ICONST(0))];
+      case 0x80: return [...pushExpr(ICONST(arg))];
+      case 0x81: return [
+        ...popTo(A), ...LGET(A), ...LSET(LAST_OUT),
+        ...LGET(A), ...ICONST(0), 0x48, 0x04, 0x40,
+          ...LGET(OUT_PTR), ...ICONST(45), ...ISTORE8(0),
+          ...LGET(OUT_PTR), ...ICONST(1), 0x6a, ...LSET(OUT_PTR),
+          ...ICONST(0), ...LGET(A), 0x6b, ...LSET(A),
+        0x0b,
+        ...LGET(A), 0x45, 0x04, 0x40,
+          ...LGET(OUT_PTR), ...ICONST(48), ...ISTORE8(0),
+          ...LGET(OUT_PTR), ...ICONST(1), 0x6a, ...LSET(OUT_PTR),
+        0x05,
+          ...ICONST(0), ...LSET(D),
+          0x03, 0x40,
+            ...LGET(D), ...LGET(A), ...ICONST(10), 0x70, ...ICONST(48), 0x6a, ...ISTORE8(0x0f00),
+            ...LGET(D), ...ICONST(1), 0x6a, ...LSET(D),
+            ...LGET(A), ...ICONST(10), 0x6e, ...LTEE(A), ...ICONST(0), 0x4b, 0x0d, 0x00,
+          0x0b,
+          0x03, 0x40,
+            ...LGET(D), ...ICONST(1), 0x6b, ...LSET(D),
+            ...LGET(OUT_PTR), ...LGET(D), ...ILOAD8U(0x0f00), ...ISTORE8(0),
+            ...LGET(OUT_PTR), ...ICONST(1), 0x6a, ...LSET(OUT_PTR),
+            ...LGET(D), ...ICONST(0), 0x4a, 0x0d, 0x00,
+          0x0b,
+        0x0b,
+        ...LGET(OUT_PTR), ...ICONST(32), ...ISTORE8(0),
+        ...LGET(OUT_PTR), ...ICONST(1), 0x6a, ...LSET(OUT_PTR)
+      ];
+      case 0x90: return [
+        ...popTo(A), ...LGET(FSP), ...LGET(A), ...ISTORE(0),
+        ...LGET(FSP), ...ICONST(4), 0x6a, ...LSET(FSP)
+      ];
+      case 0x91: return [
+        ...LGET(FSP), ...ICONST(0x0800), 0x4a, 0x04, 0x7f,
+          ...LGET(FSP), ...ICONST(4), 0x6b, ...LTEE(FSP), ...ILOAD(0),
+        0x05, ...ICONST(0), 0x0b,
+        ...LSET(A), ...pushExpr(LGET(A))
+      ];
+      case 0x92: return [
+        ...LGET(FSP), ...ICONST(0x0800), 0x4a, 0x04, 0x40,
+          ...LGET(FSP), ...LGET(FSP), ...ICONST(4), 0x6b, ...ILOAD(0), ...ISTORE(0),
+          ...LGET(FSP), ...ICONST(4), 0x6a, ...LSET(FSP),
+        0x0b
+      ];
+      case 0x93: return [
+        ...LGET(FSP), ...ICONST(0x0800), 0x4a, 0x04, 0x40,
+          ...LGET(FSP), ...ICONST(4), 0x6b, ...LSET(FSP),
+        0x0b
+      ];
+      default: return [];
+    }
+  };
+
+  const blocks = [];
+  for (let k = 0; k < code.length; k++) {
+    const ins = code[k];
+    const op = ins.op;
+    let body;
+    if (op === 0x00) {
+      body = [0x0c, 0x02]; // br 2 ($exit)
+    } else if (op === 0xa0) {
+      body = [...ICONST(ins.arg ?? 0), ...LSET(PC), 0x0c, 0x01]; // $pc = target; br 1 ($dispatch)
+    } else if (op === 0xa1) {
+      body = [
+        ...popTo(A),
+        ...LGET(A), 0x45, 0x04, 0x7f, ...ICONST(ins.arg ?? (k + 1)), 0x05, ...ICONST(k + 1), 0x0b,
+        ...LSET(PC), 0x0c, 0x01
+      ];
+    } else {
+      body = [...emitInstructionOps(ins), ...ICONST(k + 1), ...LSET(PC), 0x0c, 0x01];
+    }
+    blocks.push(...LGET(PC), ...ICONST(k), 0x46, 0x04, 0x40, ...body, 0x0b);
   }
-  const funcBody = [0x01, 0x02, 0x7f, ...bodyOps, 0x0b];
-  const bytes = new Uint8Array([
+
+  const mainOps = [
+    ...ICONST(0x1000), ...LSET(OUT_PTR),
+    ...ICONST(0x0800), ...LSET(FSP),
+    0x02, 0x40, // block $exit
+      0x03, 0x40, // loop $dispatch
+        ...LGET(STEPS), ...ICONST(1), 0x6a, ...LTEE(STEPS), ...ICONST(STEP_LIMIT), 0x4a, 0x0d, 0x01,
+        ...LGET(PC), ...ICONST(0), 0x48, 0x0d, 0x01,
+        ...LGET(PC), ...ICONST(code.length), 0x4e, 0x0d, 0x01,
+        ...blocks,
+      0x0b,
+    0x0b,
+    ...ICONST(0x0ffc), ...LGET(OUT_PTR), ...ICONST(0x1000), 0x6b, ...ISTORE(0),
+    ...LGET(SP), ...ICONST(0), 0x4a, 0x04, 0x7f,
+      ...LGET(SP), ...ICONST(4), 0x6b, ...ILOAD(0),
+    0x05,
+      ...LGET(LAST_OUT),
+    0x0b
+  ];
+
+  const mainBody = [0x01, 0x0a, 0x7f, ...mainOps, 0x0b];
+  const outLenBody = [0x00, ...ICONST(0x0ffc), ...ILOAD(0), 0x0b];
+  const outPtrBody = [0x00, ...ICONST(0x1000), 0x0b];
+
+  return new Uint8Array([
     0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
     ...wsection(1, [0x01, 0x60, 0x00, 0x01, 0x7f]),
-    ...wsection(3, [0x01, 0x00]),
-    ...wsection(7, [0x01, ...wname("main"), 0x00, 0x00]),
-    ...wsection(10, [0x01, ...uleb(funcBody.length), ...funcBody]),
+    ...wsection(3, [0x03, 0x00, 0x00, 0x00]),
+    ...wsection(5, [0x01, 0x00, 0x01]),
+    ...wsection(7, [
+      0x04,
+      ...wname("main"), 0x00, 0x00,
+      ...wname("out_len"), 0x00, 0x01,
+      ...wname("out_ptr"), 0x00, 0x02,
+      ...wname("mem"), 0x02, 0x00
+    ]),
+    ...wsection(10, [
+      0x03,
+      ...uleb(mainBody.length), ...mainBody,
+      ...uleb(outLenBody.length), ...outLenBody,
+      ...uleb(outPtrBody.length), ...outPtrBody
+    ]),
     ...wsection(0, [...wname("fraymus.frayvm"), ...toBytecode(code)])
   ]);
-  return bytes;
+}
+
+export function readWasmOutput(instance) {
+  const ex = instance?.exports;
+  if (!ex || !ex.mem || typeof ex.out_len !== "function" || typeof ex.out_ptr !== "function") return "";
+  const len = ex.out_len() | 0;
+  const ptr = ex.out_ptr() | 0;
+  if (len <= 0) return "";
+  return new TextDecoder().decode(new Uint8Array(ex.mem.buffer, ptr, len));
+}
+
+export function compileToWasm(code, options = {}) {
+  if (!canCompile(code)) throw new Error("Program contains unknown FrayVM instructions.");
+  if (!options.forceCfg && isDirectStackCompilable(code)) {
+    const bodyOps = [];
+    for (const instruction of code) {
+      const op = instruction.op;
+      if (op === 0x00 || op === 0x01) continue;
+      if (op === 0x80) { bodyOps.push(0x41, ...sleb(instruction.arg | 0)); continue; }
+      if (op === 0x45) { bodyOps.push(0x41, ...sleb(-1), 0x6c); continue; }
+      if (op === 0x4f) { bodyOps.push(0x41, ...sleb(1), 0x6a); continue; }
+      if (op === 0x50) { bodyOps.push(0x41, ...sleb(1), 0x6b); continue; }
+      bodyOps.push(...WASM_DIRECT[op]);
+    }
+    const funcBody = [0x01, 0x02, 0x7f, ...bodyOps, 0x0b];
+    return new Uint8Array([
+      0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+      ...wsection(1, [0x01, 0x60, 0x00, 0x01, 0x7f]),
+      ...wsection(3, [0x01, 0x00]),
+      ...wsection(7, [0x01, ...wname("main"), 0x00, 0x00]),
+      ...wsection(10, [0x01, ...uleb(funcBody.length), ...funcBody]),
+      ...wsection(0, [...wname("fraymus.frayvm"), ...toBytecode(code)])
+    ]);
+  }
+  return compileTuringCfgToWasm(code);
 }
 
 // ---- self-running forge: a real module that carries its own program + proofs ----
@@ -330,7 +627,18 @@ export function runGolden() {
     try {
       const code = assemble(test.src);
       const output = runProgram(code).output;
-      return { ...test, output, pass: output === test.expect };
+      const wasmBytes = compileToWasm(code);
+      const inst = new WebAssembly.Instance(new WebAssembly.Module(wasmBytes));
+      const wasmMain = inst.exports.main();
+      const wasmOutput = readWasmOutput(inst);
+      return {
+        ...test,
+        output,
+        wasmOutput,
+        wasmMain,
+        wasmBytes: wasmBytes.length,
+        pass: output === test.expect && wasmOutput === test.expect
+      };
     } catch (error) {
       return { ...test, output: error.message, pass: false };
     }

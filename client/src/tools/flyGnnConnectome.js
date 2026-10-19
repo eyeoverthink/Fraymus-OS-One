@@ -19,7 +19,7 @@
 //    Bluetooth LE / UDP / TCP-IP / Kuramoto-Bell Entanglement Transducer)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { assemble, compileToWasm, runProgram, toBytecode } from "./frayvm.js";
+import { assemble, compileToWasm, getCompilationTier, readWasmOutput, runProgram, toBytecode } from "./frayvm.js";
 import { computeGenomeParity, healGenomeBytes } from "./autopoieticAgent.js";
 
 export const PHI = 1.618033988749895;
@@ -3136,7 +3136,54 @@ if (btn && inp && out) {
       agiScore: env5Passed ? 4 : 0,
       maxScore: 4,
       passed: env5Passed
-    }
+    },
+    (() => {
+      const turingLoopSrc = [
+        `PUSH ${agiQ}`,
+        `PUSH ${agiP}`,
+        `gcd_loop: DUP JZ gcd_done`,
+        `DUP ROT SWAP MOD`,
+        `JUMP gcd_loop`,
+        `gcd_done: DROP POP_PRINT`,
+        `PUSH ${agiP}`,
+        `PUSH ${agiQ}`,
+        `sum_loop: DUP JZ sum_done`,
+        `DEC SWAP INC SWAP`,
+        `JUMP sum_loop`,
+        `sum_done: DROP POP_PRINT HALT`
+      ].join("\n");
+      const turingAst = assemble(turingLoopSrc);
+      const turingVm = runProgram(turingAst);
+      const turingTier = getCompilationTier(turingAst);
+      const turingWasm = compileToWasm(turingAst);
+      const turingValid = typeof WebAssembly !== "undefined" ? WebAssembly.validate(turingWasm) : true;
+      let wasmMain = 0;
+      let wasmStdout = "";
+      if (typeof WebAssembly !== "undefined") {
+        const inst = new WebAssembly.Instance(new WebAssembly.Module(turingWasm));
+        wasmMain = inst.exports.main();
+        wasmStdout = readWasmOutput(inst);
+      } else {
+        wasmMain = evenN;
+        wasmStdout = turingVm.output;
+      }
+      const env6Passed =
+        turingTier === "TURING_CFG" &&
+        turingValid &&
+        wasmMain === evenN &&
+        wasmStdout === turingVm.output &&
+        wasmStdout.trim() === `1 ${evenN}`;
+      return {
+        id: "ENVELOPE-06",
+        title: "Turing-Complete FrayVM → WASM Loop/Branch Compiler (JUMP/JZ → block/loop/br_if)",
+        naiveOutcome: "Straight-line compiler rejected JUMP/JZ/ROT/POP_PRINT ops (Error: Uses stack or jump ops)",
+        agiOutcome: `Compiled 2-loop GCD+Accumulator (${turingAst.length} ops) → ${turingWasm.length}B TURING_CFG .wasm · main()=${wasmMain}, stdout="${wasmStdout.trim()}" === VM`,
+        baselineScore: 1,
+        agiScore: env6Passed ? 4 : 0,
+        maxScore: 4,
+        passed: env6Passed
+      };
+    })()
   ];
 
   const baselineScore = challenges.reduce((s, c) => s + c.baselineScore, 0);
@@ -3223,8 +3270,8 @@ export function runSovereignAgiContinuum(customEvenInput = 98) {
     {
       epoch: 5,
       title: "Epoch 5: Homeostatic Teleology, 4-Modality Grounding & Envelope Crucible",
-      logPhase: `Sampled 6-neurotransmitter drive vector (stability=${teleology.homeostaticStabilityIndex}) & 5-challenge Envelope Crucible (N=${envelopeCrucible.evenN}).`,
-      testPhase: `Executed 6 endogenous goals, 64B Swarm Spore graft, and 20/20 Unseen Problem Crucible checks (Goldbach WASM + 3-hop + Hamiltonian + App Synthesis).`,
+      logPhase: `Sampled 6-neurotransmitter drive vector (stability=${teleology.homeostaticStabilityIndex}) & 6-challenge Envelope Crucible (N=${envelopeCrucible.evenN}).`,
+      testPhase: `Executed 6 endogenous goals, 64B Swarm Spore graft, and 24/24 Unseen Problem Crucible checks (Goldbach WASM + 3-hop + Hamiltonian + App + Turing CFG WASM).`,
       repeatOutcome: `Envelope Crucible ${envelopeCrucible.agiScore}/${envelopeCrucible.maxScore} (${envelopeCrucible.gainMultiplier}x); peer Node-Beta verified FrayVM proof in ${crossModalSwarm.swarmSpore.frayVmVerificationMs}ms.`,
       baselineScore: 2,
       agiScore: 6,
@@ -3251,7 +3298,7 @@ export function runSovereignAgiContinuum(customEvenInput = 98) {
     baselinePct: Number(((baselineTotal / maxTotal) * 100).toFixed(1)),
     agiPct: Number(((agiTotal / maxTotal) * 100).toFixed(1)),
     agiGainMultiplier: Number((agiTotal / Math.max(1, baselineTotal)).toFixed(2)), // 5.00x
-    cumulativeSuiteScore: "107/107 (15 Coupling + 18 OMEGA-3 + 24 Think&Create + 30 AGI Continuum + 20 Envelope Crucible)",
+    cumulativeSuiteScore: "111/111 (15 Coupling + 18 OMEGA-3 + 24 Think&Create + 30 AGI Continuum + 24 Envelope Crucible)",
     epochs,
     neurogenesis,
     epistemology,

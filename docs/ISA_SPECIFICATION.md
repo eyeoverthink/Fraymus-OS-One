@@ -101,10 +101,23 @@ Unlike conventional web applications that treat source code, neural inference, b
 | **`0x91`** | `FTOI` | — | `f:( a — ) i:( — a\|0 )` | Forge VM custom section | Transfers `fStack` top back to `iStack`. |
 | **`0x92`** | `FDUP` | — | `f:( a — a a )` | Forge VM custom section | Duplicates top of `fStack`. |
 | **`0x93`** | `FDROP` | — | `f:( a — )` | Forge VM custom section | Pops and discards top of `fStack`. |
-| **`0xA0`** | `JUMP` | `i32 LE` | `( — )` | Forge VM custom section | Unconditional jump (`this.ip = imm`). |
-| **`0xA1`** | `JZ` | `i32 LE` | `( cond — )` | Forge VM custom section | Pops `cond`; if `cond === 0`, jumps to `imm`. |
+| **`0xA0`** | `JUMP` | `i32 LE` | `( — )` | `TURING_CFG` (`local.set $pc; br $dispatch`) | Unconditional jump (`this.ip = imm`). |
+| **`0xA1`** | `JZ` | `i32 LE` | `( cond — )` | `TURING_CFG` (`i32.eqz; if $pc=imm; br $dispatch`) | Pops `cond`; if `cond === 0`, jumps to `imm`. |
 
-### 2.3 WebAssembly Custom Sections & True Merkle 41 DNA Header (`forge` & `trueMerkle`)
+### 2.3 Dual-Tier Turing-Complete `FrayVM → WebAssembly` Lowering (`DIRECT_STACK` + `TURING_CFG`)
+`compileToWasm(code)` in `client/src/tools/frayvm.js` compiles **all 53 opcodes (`100%`)** of `FrayVM.ISA` into valid, zero-import WebAssembly binaries (`00 61 73 6d`) using a two-tier lowering strategy (`getCompilationTier(code)`):
+1. **Tier 1 (`DIRECT_STACK` Fast Path — `isDirectStackCompilable(code) === true`):**
+   - Programs containing only straight-line arithmetic, logic, comparisons, and basic stack permutations (`DROP`, `DUP`, `SWAP`, `OVER`, `TRUE`, `FALSE`) lower directly to native WebAssembly stack machine opcodes with `2` `i32` scratch locals (`$t0`, `$t1`), producing ultra-compact `~50–70 B` `.wasm` modules exporting `main() -> i32`.
+2. **Tier 2 (`TURING_CFG` Structured Control-Flow & Linear-Memory Compiler — `compileTuringCfgToWasm(code)`):**
+   - Automatically engages whenever a program uses `JUMP` (`0xA0`), `JZ` (`0xA1`), `POP_PRINT` (`0x81`), `EMIT` (`0x10`), extended Forth stack operations (`ROT`, `NIP`, `TUCK`, `2DUP`, `2SWAP`, `2OVER`, `DEPTH`, `PICK`, `ROLL`, `?DUP`, `2DROP`), extended math/predicates (`ABS`, `MIN`, `MAX`, `NOT`, `NOTZERO?`, `EVEN?`, `ODD?`, `LNOT`, `BOOL`, `SIGN`, `BETWEEN`, `CLAMP`), or float stack ops (`ITOF`, `FTOI`, `FDUP`, `FDROP`).
+   - Allocates a 1-page (`64 KB`) linear memory (`mem`) partitioned into:
+     - `iStack` at `0x0000..0x07FF` (`512 × i32`, indexed by `$sp`),
+     - `fStack` at `0x0800..0x0BFF` (`256 × i32`, indexed by `$fsp`),
+     - `stdout` length word at `0x0FFC` and UTF-8/ASCII ring buffer at `0x1000..0xFFFF` (indexed by `$outPtr`, decoded via `readWasmOutput(instance)`).
+   - Emits a structured WebAssembly control-flow dispatch loop (`block $exit` $\to$ `loop $dispatch` $\to$ per-PC `if ($pc == i)` basic blocks + `20,000`-step watchdog matching `FrayVM.STEP_LIMIT`) and a pure-WASM decimal ASCII formatter (`i32.rem_u 10` / `i32.div_u 10` digit reversal) for `POP_PRINT` (`0x81`).
+   - Exports `main() -> i32`, `out_len() -> i32`, `out_ptr() -> i32`, and `mem`, achieving **bit-for-bit `main()` and `stdout` equivalence with `FrayVM` (`runProgram`) across `36/36` golden, looping, and extended ISA tests** (including nested-loop `Primes up to 40`, `Fibonacci < 100`, `GCD(48, 36)`, `Factors of 24`, and `Factorial 5`).
+
+### 2.4 WebAssembly Custom Sections & True Merkle 41 DNA Header (`forge` & `trueMerkle`)
 Every `.wasm` binary forged by `frayvm.js` carries:
 1. **Standard WASM Sections:** Magic `00 61 73 6d`, Version `01 00 00 00`, Type Section (`1`), Function Section (`3`), Export Section (`7` exporting `main` or `execute`), and Code Section (`10`).
 2. **Reversible Custom Sections (`id = 0`):**
