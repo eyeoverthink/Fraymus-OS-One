@@ -18,6 +18,7 @@
 </p>
 
 <p align="center">
+  <a href="docs/ISA_SPECIFICATION.md"><b>Unified 8-Layer ISA Specification</b></a> ·
   <a href="docs/APP_OUTLINE.md">Outline</a> ·
   <a href="docs/SOVEREIGN_BRAIN_README.md"><b>Sovereign Brain &amp; Seal</b></a> ·
   <a href="docs/SOVEREIGN_AGENT_ECOSYSTEM_OUTLINE.md"><b>Ternary-NCM &amp; 12-Skill Nexus</b></a> ·
@@ -38,6 +39,7 @@
 
 <p align="center">
   Chapters:
+  <a href="docs/ISA_SPECIFICATION.md"><b>Unified 8-Layer ISA Specification (FrayVM 53-Op, x86, Polymorphic, Ternary/FlyGNN, OMEGA-3, Δt Bus, Universal Daemon)</b></a> ·
   <a href="docs/SOVEREIGN_BRAIN_README.md"><b>Sovereign Brain, Living Seal &amp; Co-Pilot</b></a> ·
   <a href="docs/SOVEREIGN_AGENT_ECOSYSTEM_OUTLINE.md"><b>Ternary-NCM Cortex, REA, JED &amp; Offline Content Suite</b></a> ·
   <a href="docs/FLYGNN_NODULAR_SUPERPOWERS_OUTLINE.md"><b>FlyGNN v10 (1000N), AFK Superpowers &amp; Nodular Frequency Bus</b></a> ·
@@ -630,15 +632,15 @@ Implemented in `client/src/tools/EmojiCoderPage.jsx` (`applyEmojiCode`) and `cli
   8. `WebAssembly` (`page.wasm` via `buildWasm` with embedded custom-section ledger `readWasmLedger`)
   9. `1-Emoji Capsule` (`page.emoji.txt`)
 
-## WASM: FrayVM 29-Opcode Stack Machine, WASM Compiler &amp; True Merkle 41 DNA Forge
+## WASM: FrayVM 53-Opcode Dual-Stack Machine, WASM Compiler &amp; True Merkle 41 DNA Forge
 
 <p align="center">
   <img src="docs/showcase/wasm.png" alt="WASM workspace: FrayVM assembly, bytecode, WebAssembly binary, True Merkle 41 DNA header, and 1-emoji program nodes" width="100%">
 </p>
 
-Implemented in `client/src/tools/WasmPage.jsx` (`applyWasm`) and `client/src/tools/frayvm.js` (`FrayVM`, `ISA`, `assemble`, `disassemble`, `toBytecode`, `fromBytecode`, `compileToWasm`, `forge`, `trueMerkle`, `frayHeader`, `recoverProgram`):
+Implemented in `client/src/tools/WasmPage.jsx` (`applyWasm`) and `client/src/tools/frayvm.js` (`FrayVM`, `ISA`, `assemble`, `disassemble`, `toBytecode`, `fromBytecode`, `compileToWasm`, `forge`, `trueMerkle`, `frayHeader`, `recoverProgram`) — see the full **[Unified 8-Layer ISA Specification (`docs/ISA_SPECIFICATION.md`)](docs/ISA_SPECIFICATION.md)**:
 
-- **29-Opcode `FrayVM` Stack Machine (`ISA`):** Supports `NOP`, `HALT`, `DUP`, `DROP`, `SWAP`, `OVER`, `ROT`, `2DUP`, `2DROP`, `ADD`, `SUB`, `MUL`, `DIV`, `MOD`, `INC`, `DEC`, `NEG`, `ABS`, `EQ`, `LT`, `GT`, `LE`, `GE`, `JZ`, `JNZ`, `JUMP`, `PUSH`, `POP_PRINT`, and `EMIT`, plus 11 verified presets (`Fibonacci < 100`, `Primes up to 40`, `GCD(48, 36)`, `Factorial 5`, etc.) and the `runGolden()` verification suite.
+- **53-Opcode `FrayVM` Dual-Stack Machine (`ISA`):** Operates over a 32-bit signed integer stack (`iStack`) and an IEEE-754 float stack (`fStack`) across 8 opcode families (`0x00 HALT` through `0xA1 JZ`: Control &amp; I/O, Integer Stack Manipulation, Integer ALU, Comparisons, Bitwise &amp; Shifts, Float Stack &amp; Math, Type Conversion, and Branching), plus 11 verified presets (`Fibonacci < 100`, `Primes up to 40`, `GCD(48, 36)`, `Factorial 5`, `Float Hypotenuse 3-4-5`, `Bitwise Pack RGBA`, etc.) and the `runGolden()` verification suite.
 - **Native WebAssembly Compiler &amp; True Merkle 41 DNA Forge (`forge`):**
   - Compiles `FrayVM` programs into valid `.wasm` binaries (`00 61 73 6d 01 00 00 00`) executable via `WebAssembly.instantiate`.
   - Stamps a **True Merkle 41 (`trueMerkle` + `frayHeader`)** custom section into the `.wasm` binary: `256 × 32-bit` words (`8,192` DNA bases) hashed across a 4-level SHA-256 Merkle tree (`32 + 8 + 1 = 41` hashes) so `recoverProgram(bytes)` can extract and verify the original source directly from the `.wasm` bytes.
