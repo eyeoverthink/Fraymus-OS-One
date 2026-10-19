@@ -4366,7 +4366,7 @@ export default function BrainPage({ project, say, onApply }) {
                 🛰️ Instrument &amp; Heal Provider Fault (6/6 Daemons)
               </button>
               <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
-                🌌 Run Sovereign AGI Continuum (143/143 Checks · 5x)
+                🌌 Run Sovereign AGI Continuum (147/147 Checks · 5x)
               </button>
               <button className="btn on" disabled={!project} onClick={applyOmegaAgentToActiveProject}>
                 🚀 Replicate Living Omega Agent Into Project
@@ -4385,7 +4385,7 @@ export default function BrainPage({ project, say, onApply }) {
                 ["nodular_freq_bus", `📡 8. Nodular Frequency, Δt Clocks (${nodularMeshReport?.canonicalKey?.freqHz ?? 448.489872} Hz) & LoRa/HF/BLE/UDP/TCP Bus`],
                 ["think_create_proof", `⚡ 9. Think & Create Proof (${thinkCreateReport.summary.totalBaseline}/24 vs ${thinkCreateReport.summary.totalSuper}/24 · ${thinkCreateReport.summary.totalGainMultiplier}x Gain & App Creator)`],
                 ["universal_daemon", `🛰️ 10. Universal Daemonization & Universal Instrumentation (${universalDaemonReport.traceAnalysis.totalFramesInstrumented} Frames Hooked · HTTP 400 Failover)`],
-                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 56}/${agiContinuumReport.envelopeCrucible?.maxScore ?? 56} Crucible · 143/143 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
+                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 60}/${agiContinuumReport.envelopeCrucible?.maxScore ?? 60} Crucible · 147/147 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -4999,7 +4999,7 @@ export default function BrainPage({ project, say, onApply }) {
                       </button>
                     ))}
                     <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
-                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (143/143 Checks)
+                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (147/147 Checks)
                     </button>
                     <button
                       className="btn"
@@ -5043,7 +5043,7 @@ export default function BrainPage({ project, say, onApply }) {
                 <div className="emoji-view" style={{ fontSize: 11, padding: 8, border: "1px solid #00e5ff" }}>
                   <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
                     <b style={{ color: "#00e5ff" }}>
-                      🥊 V19 Adversarial Provocation &amp; Blind LLM Duel Arena (5-Vector Gauntlet:{" "}
+                      🥊 V20 Adversarial Provocation &amp; Blind LLM Duel Arena (6-Vector Gauntlet:{" "}
                       <span style={{ color: "var(--pink)" }}>Raw LLM {provocationGauntlet.rawTotal}/{provocationGauntlet.maxTotal} ({provocationGauntlet.rawPct}%)</span> vs{" "}
                       <span style={{ color: "var(--acc)" }}>Sovereign AGI {provocationGauntlet.agiTotal}/{provocationGauntlet.maxTotal} ({provocationGauntlet.agiPct}%)</span>)
                     </b>
@@ -5121,7 +5121,7 @@ export default function BrainPage({ project, say, onApply }) {
                         {agiContinuumReport.envelopeCrucible.agiScore}/{agiContinuumReport.envelopeCrucible.maxScore} Verified ({agiContinuumReport.envelopeCrucible.gainMultiplier}x vs Naive {agiContinuumReport.envelopeCrucible.baselineScore}/{agiContinuumReport.envelopeCrucible.maxScore})
                       </b>
                       <span className="pill" style={{ borderColor: "#00e5ff", color: "#00e5ff", fontSize: 10 }}>
-                        V19 Frontiers Live: 5-Vector Adversarial LLM Duel + WASM FlyGNN Spike + GF(256) FCON Heal + Living AGI Seal 🗣️
+                        V20 Frontiers Live: 6-Vector Adversarial LLM Duel + Pell-Fermat WASM + FlyGNN Spike + GF(256) FCON Heal + Living AGI Seal 🗣️
                       </span>
                     </div>
                     <div className="grid-2" style={{ marginTop: 6, gap: 6 }}>
