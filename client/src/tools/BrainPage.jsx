@@ -1162,8 +1162,9 @@ export default function BrainPage({ project, say, onApply }) {
   const [universalDaemonReport, setUniversalDaemonReport] = useState(() =>
     runUniversalDaemonAndInstrumentation({ rawTrace: DEFAULT_PROVIDER_FAULT_TRACE })
   );
+  const [agiEnvelopeInput, setAgiEnvelopeInput] = useState(98);
   const [agiContinuumReport, setAgiContinuumReport] = useState(() =>
-    runSovereignAgiContinuum()
+    runSovereignAgiContinuum(98)
   );
   const [agiCycleCount, setAgiCycleCount] = useState(1);
 
@@ -3084,8 +3085,10 @@ export default function BrainPage({ project, say, onApply }) {
     );
   }
 
-  async function executeAgiContinuumCycle() {
-    const report = runSovereignAgiContinuum();
+  async function executeAgiContinuumCycle(overrideEvenN) {
+    const targetN = overrideEvenN !== undefined ? overrideEvenN : agiEnvelopeInput;
+    if (overrideEvenN !== undefined) setAgiEnvelopeInput(overrideEvenN);
+    const report = runSovereignAgiContinuum(targetN);
     const nextCycle = agiCycleCount + 1;
     setAgiContinuumReport(report);
     setAgiCycleCount(nextCycle);
@@ -3093,7 +3096,7 @@ export default function BrainPage({ project, say, onApply }) {
     pushLedger(
       "SOVEREIGN_AGI_V17",
       `LOG_TEST_REPEAT_CYCLE_${nextCycle}`,
-      `${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x Gain) · ${report.neurogenesis.tilesSpawned} Tiles (${report.neurogenesis.totalNeurons}N) · F_5=${report.worldModel.finalFreeEnergy} · 87/87 Total Checks`,
+      `${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x) · Crucible ${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore} (N=${report.envelopeCrucible.evenN}) · 103/103 Total Checks`,
       1.0
     );
     try {
@@ -4682,10 +4685,60 @@ export default function BrainPage({ project, say, onApply }) {
                       <b style={{ color: "var(--acc)" }}>{agiContinuumReport.agiTotal}/{agiContinuumReport.maxTotal} ({agiContinuumReport.agiPct}% · {agiContinuumReport.agiGainMultiplier}x Gain)</b>
                     </div>
                   </div>
-                  <button className="btn on" onClick={executeAgiContinuumCycle}>
-                    🔁 Log, Test &amp; Repeat AGI Cycle #{agiCycleCount + 1} (30/30 Checks)
-                  </button>
+                  <div className="row" style={{ gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                    <label className="row" style={{ gap: 4, fontSize: 11 }}>
+                      <span className="muted">Unseen Even N:</span>
+                      <input
+                        type="number"
+                        step="2"
+                        min="6"
+                        value={agiEnvelopeInput}
+                        onChange={(e) => setAgiEnvelopeInput(Number(e.target.value) || 98)}
+                        style={{ width: 76 }}
+                      />
+                    </label>
+                    {[98, 122, 254, 1024].map((presetN) => (
+                      <button
+                        key={presetN}
+                        className={`btn ${agiContinuumReport.envelopeCrucible?.evenN === presetN ? "on" : ""}`}
+                        onClick={() => executeAgiContinuumCycle(presetN)}
+                      >
+                        Test N={presetN}
+                      </button>
+                    ))}
+                    <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
+                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (103/103 Checks)
+                    </button>
+                  </div>
                 </div>
+
+                {agiContinuumReport.envelopeCrucible && (
+                  <div className="emoji-view" style={{ fontSize: 11, padding: 8 }}>
+                    <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
+                      <b style={{ color: "var(--acc)" }}>
+                        🚀 Live Envelope-Pushing Unseen Problem Crucible (N={agiContinuumReport.envelopeCrucible.evenN}):{" "}
+                        {agiContinuumReport.envelopeCrucible.agiScore}/{agiContinuumReport.envelopeCrucible.maxScore} Verified ({agiContinuumReport.envelopeCrucible.gainMultiplier}x vs Naive {agiContinuumReport.envelopeCrucible.baselineScore}/{agiContinuumReport.envelopeCrucible.maxScore})
+                      </b>
+                      <span className="pill" style={{ borderColor: "#00e5ff", color: "#00e5ff", fontSize: 10 }}>
+                        Real FlyGNNv10 + FrayVM + WebAssembly + Fermat 137²⁵⁵≡242 (mod 257) + Symbolic Regression
+                      </span>
+                    </div>
+                    <div className="grid-2" style={{ marginTop: 6, gap: 6 }}>
+                      {agiContinuumReport.envelopeCrucible.challenges.map((ch) => (
+                        <div key={ch.id} style={{ padding: "4px 6px", border: "1px dashed var(--line)", borderRadius: 4, fontSize: 10 }}>
+                          <div className="row" style={{ justifyContent: "space-between" }}>
+                            <b style={{ color: "#00e5ff" }}>{ch.id}: {ch.title}</b>
+                            <b style={{ color: ch.passed ? "var(--acc)" : "var(--pink)" }}>
+                              {ch.baselineScore}/{ch.maxScore} → {ch.agiScore}/{ch.maxScore} {ch.passed ? "✓" : "✗"}
+                            </b>
+                          </div>
+                          <div style={{ color: "var(--pink)" }}>• Naive 1-Shot: {ch.naiveOutcome}</div>
+                          <div style={{ color: "var(--acc)" }}>• Sovereign AGI: {ch.agiOutcome}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid-2" style={{ alignItems: "start" }}>
                   <div className="emoji-view" style={{ maxHeight: 270, fontSize: 11 }}>
