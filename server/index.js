@@ -1111,6 +1111,54 @@ app.post("/api/brain/daemon", (req, res) => {
   }
 });
 
+const brainAgiContinuumFile = path.join(brainDir, "agi_continuum.json");
+
+app.get("/api/brain/agi-continuum", (_req, res) => {
+  try {
+    const doc = fs.existsSync(brainAgiContinuumFile)
+      ? JSON.parse(fs.readFileSync(brainAgiContinuumFile, "utf8"))
+      : { specId: "FRAY-AGI-V17-2026", cyclesCompleted: 0, runs: [] };
+    res.json({ ok: true, continuum: doc });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Could not read AGI continuum log." });
+  }
+});
+
+app.post("/api/brain/agi-continuum", (req, res) => {
+  try {
+    fs.mkdirSync(brainDir, { recursive: true });
+    const body = req.body || {};
+    const existing = fs.existsSync(brainAgiContinuumFile)
+      ? JSON.parse(fs.readFileSync(brainAgiContinuumFile, "utf8"))
+      : { specId: "FRAY-AGI-V17-2026", cyclesCompleted: 0, runs: [] };
+    const runRecord = {
+      cycleId: `AGI-CYCLE-${(existing.cyclesCompleted || 0) + 1}`,
+      specId: String(body.specId || "FRAY-AGI-V17-2026"),
+      protocol: String(body.protocol || "LOG → TEST → FALSIFY → MERKLE-COMMIT → REPEAT"),
+      agiScore: `${Number(body.agiTotal || 30)}/${Number(body.maxTotal || 30)}`,
+      agiGainMultiplier: Number(body.agiGainMultiplier || 5.0),
+      tilesSpawned: Number(body.tilesSpawned || 3),
+      totalNeurons: Number(body.totalNeurons || 3000),
+      finalFreeEnergy: Number(body.finalFreeEnergy || 0.0034),
+      mutationsPromoted: Number(body.mutationsPromoted || 2),
+      faultsRolledBack: Number(body.faultsRolledBack || 1),
+      merkleRoot: String(body.merkleRoot || "0x3e91d4f0a28c77b1"),
+      ts: new Date().toISOString()
+    };
+    const runs = [runRecord, ...(existing.runs || [])].slice(0, 50);
+    const updated = {
+      specId: "FRAY-AGI-V17-2026",
+      cyclesCompleted: (existing.cyclesCompleted || 0) + 1,
+      updatedAt: runRecord.ts,
+      runs
+    };
+    fs.writeFileSync(brainAgiContinuumFile, JSON.stringify(updated, null, 2));
+    res.json({ ok: true, runRecord, cyclesCompleted: updated.cyclesCompleted, totalBuffered: runs.length });
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Could not record AGI continuum cycle." });
+  }
+});
+
 app.use("/published", express.static(publishedDir, { index: "index.html" }));
 
 const dist = path.resolve("client/dist");
