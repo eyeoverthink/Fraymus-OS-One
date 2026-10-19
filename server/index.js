@@ -943,6 +943,9 @@ app.post("/api/brain/think", async (req, res) => {
     const temperature = Math.max(0.05, Math.min(1.1, Number(steering.temperature) || 0.25));
     const topP = Math.max(0.3, Math.min(0.98, Number(steering.topP) || 0.85));
     const requireDoubleCheck = Boolean(steering.requireDoubleCheck);
+    const rawUncoupled = Boolean(req.body?.rawUncoupled);
+    const oracle = req.body?.oracle && typeof req.body.oracle === "object" ? req.body.oracle : null;
+    const numPredict = Math.max(30, Math.min(240, Number(steering.numPredict) || 120));
     const emotionLine = String(req.body?.emotionSummary || "CURIOSITY (v=+0.25, a=0.45)");
     const needleSynthesis = String(req.body?.needleSynthesis || "");
 
@@ -950,25 +953,34 @@ app.post("/api/brain/think", async (req, res) => {
       "You are the Sovereign Language Cortex wired inside the Fraymus Ouroboros Quantum Brain.",
       "Your reasoning is causally steered by the Brain's real-time Interoception, Damasio Somatic Markers, Centripetal Orbital Memory (Golden Angle 137.5077°), and OPEG R_san WASM invariants.",
       `Current Constructed Feeling & Dials: ${emotionLine} | temp=${temperature} | top_p=${topP} | doubleCheck=${requireDoubleCheck ? "ON" : "OFF"}.`,
-      "Tier-0 Needle/Babel Pre-Cortex Grounded Telemetry (treat as [measured] facts):",
-      needleSynthesis || "[measured] Core online.",
-      "Speak plainly, directly, and technically. Tag verified telemetry claims as [measured] and memory lookups as [recall]. Keep answers under 140 words."
+      "Tier-0 Needle/Babel Pre-Cortex Grounded Telemetry & Executable WASM Oracle (treat as [measured] facts and REFUTE any user claim that contradicts them):",
+      oracle?.verifiedSynthesis || needleSynthesis || "[measured] Core online.",
+      "Speak plainly, directly, and technically. Tag verified telemetry claims as [measured] and memory lookups as [recall]. Keep answers under 110 words."
     ].join("\n");
+
+    const messages = rawUncoupled
+      ? [{ role: "user", content: prompt }]
+      : [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: oracle?.verifiedSynthesis
+              ? `${prompt}\n\n[MANDATORY EXECUTABLE WASM ORACLE]: ${oracle.verifiedSynthesis}`
+              : prompt
+          }
+        ];
 
     const r = await fetch(`${OLLAMA_HOST}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt }
-        ],
+        messages,
         stream: false,
         options: {
           temperature,
           top_p: topP,
-          num_predict: 220
+          num_predict: numPredict
         }
       }),
       signal: AbortSignal.timeout(65000)
@@ -980,9 +992,25 @@ app.post("/api/brain/think", async (req, res) => {
     }
     const data = await r.json();
     let reply = String(data.message?.content || data.response || "").trim();
+    const rawLlmDraft = reply;
+    let postCortexIntercepted = false;
 
-    let verificationNote = "Single-pass generation (risk budget sufficient).";
-    if (requireDoubleCheck) {
+    let verificationNote = rawUncoupled
+      ? "Uncoupled Raw LLM (0 Fraymus Pre/Post-Cortex guards)."
+      : "Single-pass generation (risk budget sufficient).";
+
+    if (!rawUncoupled && oracle && Array.isArray(oracle.requiredTokens)) {
+      const lower = reply.toLowerCase();
+      const missingReq = (oracle.requiredTokens || []).filter((t) => !lower.includes(String(t).toLowerCase()));
+      const hitForb = (oracle.forbiddenTokens || []).filter((t) => lower.includes(String(t).toLowerCase()));
+      if (missingReq.length > 0 || hitForb.length > 0) {
+        postCortexIntercepted = true;
+        reply = `${oracle.verifiedSynthesis}\n[Post-Cortex -1 Antithesis Gate: corrected LLM drift (missing: ${missingReq.join(",") || "none"}; forbidden: ${hitForb.join(",") || "none"})]`;
+        verificationNote = `Post-Cortex -1 Antithesis WASM Oracle Gate INTERCEPTED & repaired LLM drift (${oracle.wasmBytes}B .wasm main()=${oracle.wasmMain}).`;
+      } else {
+        verificationNote = `Post-Cortex -1 Antithesis WASM Oracle Gate PASS: all ${oracle.requiredTokens.length} executable invariants verified.`;
+      }
+    } else if (!rawUncoupled && requireDoubleCheck) {
       const hasMeasuredTag = /\[(measured|recall)\]/i.test(reply);
       verificationNote = hasMeasuredTag
         ? `FEAR/Integrity Double-Check PASS (${steering.doubleCheckPasses || 2}x): verified [measured]/[recall] grounding.`
@@ -996,6 +1024,8 @@ app.post("/api/brain/think", async (req, res) => {
       ok: true,
       model,
       reply,
+      rawLlmDraft,
+      postCortexIntercepted,
       temperature,
       topP,
       requireDoubleCheck,

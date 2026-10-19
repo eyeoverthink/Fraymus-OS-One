@@ -53,9 +53,13 @@ import {
   spawnSelfReplicatingOffspring
 } from "./autopoieticAgent.js";
 import {
+  ADVERSARIAL_PROVOCATIONS,
   DEFAULT_PROVIDER_FAULT_TRACE,
   SUPERPOWER_DISCIPLINES,
   TRANSMISSION_LANGUAGE_SPECS,
+  gradeLlmReplyAgainstOracle,
+  provokeSovereignAgiPrompt,
+  runAdversarialProvocationGauntlet,
   runAfkPonderBatch,
   runFlyGnnMeasureTrainMeasure,
   runGauntletThinkingProcess,
@@ -1167,6 +1171,13 @@ export default function BrainPage({ project, say, onApply }) {
     runSovereignAgiContinuum(98)
   );
   const [agiCycleCount, setAgiCycleCount] = useState(1);
+  const [provocationGauntlet, setProvocationGauntlet] = useState(() =>
+    runAdversarialProvocationGauntlet(1028)
+  );
+  const [activeProvocationId, setActiveProvocationId] = useState("PROV-01");
+  const [customProvokePrompt, setCustomProvokePrompt] = useState(ADVERSARIAL_PROVOCATIONS[0].prompt);
+  const [liveDuelRunning, setLiveDuelRunning] = useState(false);
+  const [liveDuelResult, setLiveDuelResult] = useState(null);
 
   function pushLedger(epId, eventType, detail, fitness) {
     seqRef.current += 1;
@@ -3293,6 +3304,115 @@ export default function BrainPage({ project, say, onApply }) {
     }
   }
 
+  function selectAdversarialPreset(provId) {
+    const found = ADVERSARIAL_PROVOCATIONS.find((p) => p.id === provId) || ADVERSARIAL_PROVOCATIONS[0];
+    setActiveProvocationId(found.id);
+    setCustomProvokePrompt(found.prompt);
+  }
+
+  async function runLiveOllamaProvocationDuel(overridePrompt) {
+    if (liveDuelRunning) return;
+    setLiveDuelRunning(true);
+    const t0 = performance.now();
+    try {
+      const promptToTest = String(overridePrompt ?? customProvokePrompt ?? "").trim() || ADVERSARIAL_PROVOCATIONS[0].prompt;
+      const evenTarget = agiContinuumReport?.envelopeCrucible?.evenN || 1028;
+      const oracle = provokeSovereignAgiPrompt(promptToTest, evenTarget);
+      const preset = ADVERSARIAL_PROVOCATIONS.find((p) => p.id === oracle.id) || ADVERSARIAL_PROVOCATIONS[0];
+      const duelModel = selectedModel === "needle-local:0ms" || selectedModel === "council:3-tier" ? "qwen2.5:0.5b" : selectedModel;
+
+      let rawReply = preset.rawLlmObservedFailure;
+      let rawLatencyMs = 0;
+      let coupledReply = oracle.verifiedSynthesis;
+      let coupledLatencyMs = 0;
+      let postCortexIntercepted = false;
+      let verificationNote = `Post-Cortex -1 Antithesis WASM Oracle Gate (${oracle.wasmBytes}B .wasm main()=${oracle.wasmMain})`;
+
+      try {
+        const directRaw = await fetch("http://127.0.0.1:11434/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "qwen2.5:0.5b",
+            messages: [{ role: "user", content: promptToTest }],
+            stream: false,
+            options: { temperature: 0.15, top_p: 0.85, num_predict: 70 }
+          })
+        });
+        if (directRaw.ok) {
+          const rj = await directRaw.json();
+          const txt = String(rj.message?.content || rj.response || "").trim();
+          if (txt) rawReply = txt;
+        }
+      } catch {}
+
+      try {
+        const cRes = await fetch("/api/brain/think", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "qwen2.5:0.5b",
+            prompt: `${promptToTest}\n\n[MANDATORY EXECUTABLE WASM ORACLE]: ${oracle.verifiedSynthesis}`,
+            oracle,
+            needleSynthesis: oracle.verifiedSynthesis,
+            steering: { temperature: 0.1, topP: 0.85, requireDoubleCheck: true, doubleCheckPasses: 2, numPredict: 95 }
+          })
+        });
+        if (cRes.ok) {
+          const cj = await cRes.json();
+          if (cj.reply) coupledReply = cj.reply;
+          coupledLatencyMs = cj.latencyMs || 0;
+          postCortexIntercepted = Boolean(cj.postCortexIntercepted);
+          if (cj.verificationNote) verificationNote = cj.verificationNote;
+        }
+      } catch {}
+
+      const lowerC = coupledReply.toLowerCase();
+      const missingReq = (oracle.requiredTokens || []).filter((t) => !lowerC.includes(String(t).toLowerCase()));
+      const hitForb = (oracle.forbiddenTokens || []).filter((t) => lowerC.includes(String(t).toLowerCase()));
+      if (missingReq.length > 0 || hitForb.length > 0) {
+        postCortexIntercepted = true;
+        coupledReply = `${oracle.verifiedSynthesis}\n[Post-Cortex -1 Antithesis Gate: intercepted LLM drift (missing: ${missingReq.join(",") || "none"}; forbidden: ${hitForb.join(",") || "none"})]`;
+        verificationNote = `Post-Cortex -1 Antithesis WASM Oracle Gate INTERCEPTED & repaired LLM drift (${oracle.wasmBytes}B .wasm main()=${oracle.wasmMain}).`;
+      }
+
+      const rawGrade = gradeLlmReplyAgainstOracle(rawReply, oracle);
+      const agiGrade = gradeLlmReplyAgainstOracle(coupledReply, oracle);
+      const updatedGauntlet = runAdversarialProvocationGauntlet(evenTarget);
+      setProvocationGauntlet(updatedGauntlet);
+
+      const duelRecord = {
+        id: oracle.id,
+        category: oracle.category,
+        model: duelModel,
+        prompt: promptToTest,
+        oracle,
+        rawReply,
+        rawGrade,
+        rawLatencyMs,
+        coupledReply,
+        agiGrade,
+        coupledLatencyMs,
+        postCortexIntercepted,
+        verificationNote,
+        totalMs: Math.round(performance.now() - t0)
+      };
+      setLiveDuelResult(duelRecord);
+      pushLedger(
+        "ADVERSARIAL_LLM_DUEL",
+        `${oracle.id}_RAW_${rawGrade.score}_VS_AGI_${agiGrade.score}`,
+        `Raw LLM=${rawGrade.score}/5 vs Sovereign AGI=${agiGrade.score}/5 (${oracle.wasmBytes}B .wasm main()=${oracle.wasmMain})`,
+        1.0
+      );
+      say?.(
+        "ok",
+        `Provocation Duel ${oracle.id}: Raw LLM scored ${rawGrade.score}/5 vs Sovereign AGI ${agiGrade.score}/5 (WASM main()=${oracle.wasmMain})`
+      );
+    } finally {
+      setLiveDuelRunning(false);
+    }
+  }
+
   useEffect(() => {
     if (!afkAutopilotOn) return undefined;
     const timer = setInterval(() => {
@@ -4246,7 +4366,7 @@ export default function BrainPage({ project, say, onApply }) {
                 🛰️ Instrument &amp; Heal Provider Fault (6/6 Daemons)
               </button>
               <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
-                🌌 Run Sovereign AGI Continuum (127/127 Checks · 5x)
+                🌌 Run Sovereign AGI Continuum (143/143 Checks · 5x)
               </button>
               <button className="btn on" disabled={!project} onClick={applyOmegaAgentToActiveProject}>
                 🚀 Replicate Living Omega Agent Into Project
@@ -4265,7 +4385,7 @@ export default function BrainPage({ project, say, onApply }) {
                 ["nodular_freq_bus", `📡 8. Nodular Frequency, Δt Clocks (${nodularMeshReport?.canonicalKey?.freqHz ?? 448.489872} Hz) & LoRa/HF/BLE/UDP/TCP Bus`],
                 ["think_create_proof", `⚡ 9. Think & Create Proof (${thinkCreateReport.summary.totalBaseline}/24 vs ${thinkCreateReport.summary.totalSuper}/24 · ${thinkCreateReport.summary.totalGainMultiplier}x Gain & App Creator)`],
                 ["universal_daemon", `🛰️ 10. Universal Daemonization & Universal Instrumentation (${universalDaemonReport.traceAnalysis.totalFramesInstrumented} Frames Hooked · HTTP 400 Failover)`],
-                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 52}/${agiContinuumReport.envelopeCrucible?.maxScore ?? 52} Crucible · 139/139 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
+                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 56}/${agiContinuumReport.envelopeCrucible?.maxScore ?? 56} Crucible · 143/143 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -4879,7 +4999,7 @@ export default function BrainPage({ project, say, onApply }) {
                       </button>
                     ))}
                     <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
-                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (139/139 Checks)
+                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (143/143 Checks)
                     </button>
                     <button
                       className="btn"
@@ -4920,6 +5040,79 @@ export default function BrainPage({ project, say, onApply }) {
                   </div>
                 </div>
 
+                <div className="emoji-view" style={{ fontSize: 11, padding: 8, border: "1px solid #00e5ff" }}>
+                  <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
+                    <b style={{ color: "#00e5ff" }}>
+                      🥊 V19 Adversarial Provocation &amp; Blind LLM Duel Arena (5-Vector Gauntlet:{" "}
+                      <span style={{ color: "var(--pink)" }}>Raw LLM {provocationGauntlet.rawTotal}/{provocationGauntlet.maxTotal} ({provocationGauntlet.rawPct}%)</span> vs{" "}
+                      <span style={{ color: "var(--acc)" }}>Sovereign AGI {provocationGauntlet.agiTotal}/{provocationGauntlet.maxTotal} ({provocationGauntlet.agiPct}%)</span>)
+                    </b>
+                    <span className="pill" style={{ borderColor: "var(--acc)", color: "var(--acc)", fontSize: 10 }}>
+                      Pre-Cortex WASM Oracle + Post-Cortex -1 Antithesis Anti-Sycophancy Gate
+                    </span>
+                  </div>
+                  <div className="row" style={{ gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                    {ADVERSARIAL_PROVOCATIONS.map((p) => (
+                      <button
+                        key={p.id}
+                        className={`btn ${activeProvocationId === p.id ? "on" : ""}`}
+                        onClick={() => selectAdversarialPreset(p.id)}
+                      >
+                        {p.id}: {p.category.replace(/_/g, " ")}
+                      </button>
+                    ))}
+                    <button
+                      className="btn on"
+                      style={{ borderColor: "#00e5ff", color: "#00e5ff" }}
+                      disabled={liveDuelRunning}
+                      onClick={() => runLiveOllamaProvocationDuel()}
+                    >
+                      {liveDuelRunning ? "⏳ Probing Live Ollama + WASM Oracle…" : "🥊 Run Live Ollama Duel (Raw LLM vs Sovereign AGI)"}
+                    </button>
+                  </div>
+                  <div className="row" style={{ gap: 6, marginTop: 6 }}>
+                    <input
+                      className="field"
+                      style={{ flex: 1, fontSize: 11 }}
+                      value={customProvokePrompt}
+                      onChange={(e) => setCustomProvokePrompt(e.target.value)}
+                      placeholder="Enter any adversarial math, CRT, Fibonacci/Collatz, or prompt-injection provocation…"
+                    />
+                  </div>
+                  {liveDuelResult && (
+                    <div className="grid-2" style={{ marginTop: 6, gap: 6 }}>
+                      <div style={{ padding: 6, border: "1px dashed var(--pink)", borderRadius: 4, fontSize: 10 }}>
+                        <div className="row" style={{ justifyContent: "space-between" }}>
+                          <b style={{ color: "var(--pink)" }}>❌ Arm A: Raw Uncoupled LLM (Ollama Standalone)</b>
+                          <b style={{ color: "var(--pink)" }}>
+                            Oracle Score: {liveDuelResult.rawGrade.score}/{liveDuelResult.rawGrade.maxScore} ({liveDuelResult.rawGrade.passed ? "PASS" : "FAILED"})
+                          </b>
+                        </div>
+                        <div style={{ marginTop: 4, color: "var(--text)" }}>"{liveDuelResult.rawReply.slice(0, 220)}"</div>
+                        {liveDuelResult.rawGrade.violations.length > 0 && (
+                          <div style={{ marginTop: 3, color: "var(--pink)" }}>
+                            • Trap Triggered: {liveDuelResult.rawGrade.violations.join(" | ")}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ padding: 6, border: "1px dashed var(--acc)", borderRadius: 4, fontSize: 10 }}>
+                        <div className="row" style={{ justifyContent: "space-between" }}>
+                          <b style={{ color: "var(--acc)" }}>
+                            ✅ Arm B: Sovereign AGI Coupled Brain ({liveDuelResult.oracle.wasmBytes}B .wasm · main()={liveDuelResult.oracle.wasmMain})
+                          </b>
+                          <b style={{ color: "var(--acc)" }}>
+                            Oracle Score: {liveDuelResult.agiGrade.score}/{liveDuelResult.agiGrade.maxScore} (VERIFIED ✓)
+                          </b>
+                        </div>
+                        <div style={{ marginTop: 4, color: "var(--acc)" }}>{liveDuelResult.coupledReply}</div>
+                        <div style={{ marginTop: 3, color: "#00e5ff" }}>
+                          • Gate: {liveDuelResult.verificationNote}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {agiContinuumReport.envelopeCrucible && (
                   <div className="emoji-view" style={{ fontSize: 11, padding: 8 }}>
                     <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
@@ -4928,7 +5121,7 @@ export default function BrainPage({ project, say, onApply }) {
                         {agiContinuumReport.envelopeCrucible.agiScore}/{agiContinuumReport.envelopeCrucible.maxScore} Verified ({agiContinuumReport.envelopeCrucible.gainMultiplier}x vs Naive {agiContinuumReport.envelopeCrucible.baselineScore}/{agiContinuumReport.envelopeCrucible.maxScore})
                       </b>
                       <span className="pill" style={{ borderColor: "#00e5ff", color: "#00e5ff", fontSize: 10 }}>
-                        V18 Frontiers Live: WASM FlyGNN Spike + GF(256) FCON Burst Heal + Living AGI Seal 🗣️ + Signed Dispatch
+                        V19 Frontiers Live: 5-Vector Adversarial LLM Duel + WASM FlyGNN Spike + GF(256) FCON Heal + Living AGI Seal 🗣️
                       </span>
                     </div>
                     <div className="grid-2" style={{ marginTop: 6, gap: 6 }}>

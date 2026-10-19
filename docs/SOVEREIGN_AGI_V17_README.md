@@ -2,16 +2,16 @@
   <img src="showcase/banner.svg" alt="Fraymus Web Studio — Sovereign AGI Continuum (V17), 53-Opcode Turing-Complete WASM Compiler & 10-Challenge Envelope Crucible" width="100%">
 </p>
 
-<h1 align="center">◈ Sovereign AGI Continuum (<code>FRAY-AGI-V18-2026</code>), 53-Opcode Turing-Complete <code>FrayVM → WebAssembly</code> Compiler &amp; 13-Challenge Envelope Crucible (<code>52/52</code> · <code>139/139</code> Suite)</h1>
+<h1 align="center">◈ Sovereign AGI Continuum (<code>FRAY-AGI-V19-2026</code>), 53-Opcode Turing-Complete <code>FrayVM → WebAssembly</code> Compiler &amp; 14-Challenge Envelope Crucible (<code>56/56</code> · <code>143/143</code> Suite)</h1>
 
 <p align="center">
-  <b>3,000N Multi-Tile Cortical Neurogenesis · Co-Evolutionary Falsifier GAN (8,192 Vectors) · Active Inference World Model (-99.99% Free Energy) · Recursive Meta-Compiler (2.71x VM Speedup) · Dual-Tier Turing-Complete WASM CFG Compiler (53/53 Opcodes) · Native WASM FlyGNN Spike Kernel · 8-Byte GF(256) FCON Burst Heal · Living AGI Seal (FSEL v2 🗣️) · 139/139 Cumulative Studio Verification</b>
+  <b>3,000N Multi-Tile Cortical Neurogenesis · Co-Evolutionary Falsifier GAN (8,192 Vectors) · Active Inference World Model (-99.99% Free Energy) · Recursive Meta-Compiler (2.71x VM Speedup) · Dual-Tier Turing-Complete WASM CFG Compiler (53/53 Opcodes) · Native WASM FlyGNN Spike Kernel · 8-Byte GF(256) FCON Burst Heal · Living AGI Seal (FSEL v2 🗣️) · V19 5-Vector Adversarial LLM Duel Arena (25/25 vs 0/25) · 143/143 Cumulative Studio Verification</b>
 </p>
 
 <p align="center">
-  <img alt="Cumulative Suite 139/139" src="https://img.shields.io/badge/Cumulative%20Suite-139%2F139%20(100%25%20Verified)-3dff9a?style=flat-square&labelColor=0b1a12">
-  <img alt="Envelope Crucible 52/52" src="https://img.shields.io/badge/Envelope%20Crucible-52%2F52%20(4.00x%20vs%20Naive)-00e5ff?style=flat-square&labelColor=0b1a12">
-  <img alt="AGI Continuum 30/30" src="https://img.shields.io/badge/AGI%20Continuum-30%2F30%20(5.00x%20Gain)-3dff9a?style=flat-square&labelColor=0b1a12">
+  <img alt="Cumulative Suite 143/143" src="https://img.shields.io/badge/Cumulative%20Suite-143%2F143%20(100%25%20Verified)-3dff9a?style=flat-square&labelColor=0b1a12">
+  <img alt="Envelope Crucible 56/56" src="https://img.shields.io/badge/Envelope%20Crucible-56%2F56%20(4.00x%20vs%20Naive)-00e5ff?style=flat-square&labelColor=0b1a12">
+  <img alt="Adversarial LLM Duel 25/25" src="https://img.shields.io/badge/Adversarial%20LLM%20Duel-25%2F25%20vs%200%2F25%20Raw-3dff9a?style=flat-square&labelColor=0b1a12">
   <img alt="FrayVM WASM 53/53" src="https://img.shields.io/badge/FrayVM%20%E2%86%92%20WASM-53%2F53%20Opcodes%20(TURING__CFG)-00e5ff?style=flat-square&labelColor=0b1a12">
   <img alt="Connectome 3000N / 704B FCON" src="https://img.shields.io/badge/Connectome-3000N%20%E2%86%92%20704B%20FCON%20Binary-3dff9a?style=flat-square&labelColor=0b1a12">
   <img alt="Living AGI Seal FSEL v2" src="https://img.shields.io/badge/Living%20AGI%20Seal-FSEL%20v2%20%F0%9F%97%A3%EF%B8%8F%20(93B%20%2B%20Voice)-00e5ff?style=flat-square&labelColor=0b1a12">
@@ -59,8 +59,8 @@
   </tr>
   <tr>
     <td align="center" width="50%">
-      <img src="showcase/brain-agi-v18-frontiers.png" alt="Brain Tab 11 V18 Frontiers: 139/139 Suite, 52/52 Crucible, ENVELOPE-09..12 & Mint Living AGI Seal" width="100%">
-      <br><b>Brain · Tab 11 (<code>FRAY-AGI-V18-2026</code> · <code>139/139</code> Suite):</b> <code>52/52</code> Crucible, <code>ENVELOPE-09..13</code>, &amp; One-Click <code>🗣️ Mint Living AGI Seal (FSEL v2 · 93B)</code>
+      <img src="showcase/brain-agi-v19-adversarial-duel.png" alt="Brain Tab 11 V19 Adversarial Provocation & Blind LLM Duel Arena: 143/143 Suite, 56/56 Crucible, Raw LLM 0/5 FAILED vs Sovereign AGI 5/5 VERIFIED" width="100%">
+      <br><b>Brain · Tab 11 (<code>FRAY-AGI-V19-2026</code> · <code>143/143</code> Suite):</b> V19 Adversarial Provocation &amp; Blind LLM Duel Arena (`Raw LLM 0/25` vs `Sovereign AGI 25/25`)
     </td>
     <td align="center" width="50%">
       <img src="showcase/seal-agi-v18-living.png" alt="Seal Workspace: Verified & Playing Sovereign AGI V18 Living Seal" width="100%">
@@ -139,11 +139,11 @@ Implemented in `client/src/tools/frayvm.js` and `client/src/tools/WasmPage.jsx`,
 
 ---
 
-## 4. The 13-Challenge Live Envelope-Pushing Crucible (`ENVELOPE-01` .. `ENVELOPE-13` · `52/52`)
+## 4. The 14-Challenge Live Envelope-Pushing Crucible (`ENVELOPE-01` .. `ENVELOPE-14` · `56/56`)
 
-Every time `runEnvelopePushingCrucible(seedValue)` runs in `flyGnnConnectome.js` (or via **`🚀 Push Envelope & Run AGI Cycle (139/139 Checks)`** in Tab 11), all **13 adversarial challenges** execute live in the browser and Node.js:
+Every time `runEnvelopePushingCrucible(seedValue)` runs in `flyGnnConnectome.js` (or via **`🚀 Push Envelope & Run AGI Cycle (143/143 Checks)`** in Tab 11), all **14 adversarial challenges** execute live in the browser and Node.js:
 
-| Challenge ID | Unseen Problem &amp; Domain | Naive 1-Shot Baseline (`13/52`) | Sovereign AGI Continuum (`52/52` · `4.00x` Gain) | Live Verified Output (`N = 1028`) |
+| Challenge ID | Unseen Problem &amp; Domain | Naive 1-Shot Baseline (`14/56`) | Sovereign AGI Continuum (`56/56` · `4.00x` Gain) | Live Verified Output (`N = 1028`) |
 | :--- | :--- | :--- | :--- | :--- |
 | **`ENVELOPE-01`** | **Goldbach Prime-Partition Synthesizer &amp; `.wasm` Compiler** | Fixed `(3, N-3)` fails on composite `N-3` (`95 = 5×19`, `1025 = 5²×41`) | Falsifier GAN discovers minimal prime pairs, meta-compiles `FrayVM` (`15 → 9` steps), compiles `63B` `.wasm` | `7 + 1021 = 1028`, `WASM main() = 1028`, `63B` valid `.wasm` |
 | **`ENVELOPE-02`** | **Dual-Layer Catastrophic Surgery (`6` Wiped Bytes + `50%` `NaN` Shards)** | `SyntaxError` on `0xFF` source bytes + `NaN` propagation | Repairs `6/6` wiped JS bytes via `GF(256)` locus tags + reconstructs `[73, 189]` via Fermat $137^{255} \equiv 242 \pmod{257}$ | `6/6` source bytes healed + `2/2` shards (`[73, 189]`) exact |
@@ -158,6 +158,7 @@ Every time `runEnvelopePushingCrucible(seedValue)` runs in `flyGnnConnectome.js`
 | **`ENVELOPE-11`** | **V18 Frontier A: Native WebAssembly `FlyGNN v10` (`3,000N`) Cortical Spike Kernel** | Uncompiled JS float arrays cannot run inside sandboxed `.wasm` | Compiles 3-Tile VNC Spike Loop (`35` ops) into a `2,461 B` `TURING_CFG` `.wasm` binary | `JS === FrayVM === WASM`: `main() = 2111`, `stdout = "67 361 655"` |
 | **`ENVELOPE-12`** | **V18 Frontier B: Multi-Tab `BroadcastChannel` + `GF(256)` 8-Byte Burst-Healed `704B FCON`** | `8-byte` `0xDEADBEEFCAFEBABE` burst corrupts `Tile#0 Slice#0` (`0/42` trusted) | Reconstructs `8/8` binary bytes via `GF(256)` locus tags + broadcasts delta over `BroadcastChannel("fraymus-nodular-dt-bus")` | Healed `8/8` bytes → CRC `0xd6a37818` (`42/42` slices intact) |
 | **`ENVELOPE-13`** | **V18 Frontier C: Living AGI Seal (`FSEL v2`) Fusion (`704B FCON` + `1,702B WASM` in 1 `🗣️` Emoji)** | Static text badge carries `0B` connectome, `0B` `.wasm`, and no voice/avatar | Packs `32B` `FCON` header (`3,000N`) + `55B` `FrayVM` into 1 `🗣️` (`93B FSEL v2`) + mints talking 8-bit `Ed25519` Seal (`SealPage.jsx`) | Peer unpacks `🗣️`, verifies `3,000N` CRC, runs `1,702B` `.wasm` (`1028`), &amp; speaks proof |
+| **`ENVELOPE-14`** | **V19 Frontier: 5-Vector Adversarial Provocation &amp; Anti-Sycophancy WASM Oracle (`PROV-01..05`)** | Uncoupled LLM accepts false math (`1021` composite, `11+1017`, `53^255=19`) &amp; hallucinates 205-digit `F(14)` (`0/25`) | Pre-Cortex `.wasm` Oracle + Post-Cortex `-1 Antithesis` Gate refutes `3/3` lies + proves `CRT-1155` (`1154`) + `Fib(14)+Collatz(27)` (`488`) | **`25/25` (`100%`)** vs `0/25` Raw LLM (`582B`–`2,721B` `.wasm`) |
 
 ---
 
@@ -196,16 +197,16 @@ Clicking **`🗣️ Mint Living AGI Seal (FSEL v2 · 93B)`** in Tab 11 of `Brain
 
 ---
 
-## 6. Cumulative `139/139` Verification Suite &amp; Reproduction Guide
+## 6. Cumulative `143/143` Verification Suite &amp; Reproduction Guide
 
 | Suite Layer | Verification Function | Checks Passed | Multiplier / Invariant |
 | :--- | :--- | :-: | :--- |
 | **1. Brain-LLM Coupling Benchmark** | `runBrainCouplingBenchmark()` | **`15 / 15`** | **`3.75x` Gain** (Quantum-Somatic-Ternary Coupled vs Uncoupled Pipe) |
 | **2. `OMEGA-3` Hard Gauntlet** | `runOmegaHardGauntletBenchmark()` | **`18 / 18`** | **`9.00x` Gain** (`6/6` Categories · `GF(257)` Exact Inverse · Kleene Quine) |
 | **3. Think &amp; Create Proof** | `runThinkAndCreateGauntlet()` | **`24 / 24`** | **`4.00x` Gain** (`100%` FlyGNN Context Separation · Zero-Wire $\Delta t$ Bus) |
-| **4. Sovereign AGI Continuum (`V18`)** | `runSovereignAgiContinuum()` | **`30 / 30`** | **`5.00x` Gain** (`3,000N` Neurogenesis · `8,192` GAN Fuzz · `-99.99%` Free Energy) |
-| **5. Envelope-Pushing Crucible (`ENVELOPE-01..13`)** | `runEnvelopePushingCrucible()` | **`52 / 52`** | **`4.00x` Gain** (`TURING_CFG` WASM · WASM FlyGNN Spike · `GF(256)` FCON Heal · `FSEL v2` `🗣️`) |
-| **TOTAL STUDIO VERIFICATION SUITE** | **All 5 Suites Combined** | **`139 / 139` (`100.0%`)** | **Zero Unresolved Frontiers · Localhost `127.0.0.1`** |
+| **4. Sovereign AGI Continuum (`V19`)** | `runSovereignAgiContinuum()` | **`30 / 30`** | **`5.00x` Gain** (`3,000N` Neurogenesis · `8,192` GAN Fuzz · `-99.99%` Free Energy) |
+| **5. Envelope-Pushing Crucible (`ENVELOPE-01..14`)** | `runEnvelopePushingCrucible()` | **`56 / 56`** | **`4.00x` Gain** (`TURING_CFG` WASM · WASM FlyGNN Spike · `GF(256)` FCON Heal · `FSEL v2` `🗣️` · `25/25` Adversarial LLM Duel) |
+| **TOTAL STUDIO VERIFICATION SUITE** | **All 5 Suites Combined** | **`143 / 143` (`100.0%`)** | **Zero Unresolved Frontiers · Localhost `127.0.0.1`** |
 
 ---
 

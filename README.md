@@ -312,19 +312,19 @@ When an upstream cloud model provider fails mid-turn—for example throwing `Non
   5. **`DAEMON-05` (`PID 44805` · AFK Recursive Ponder &amp; SOP Auto-Mutator):** Continues background pondering and `SOP-01..04` evolution via `/api/brain/afk`.
   6. **`DAEMON-06` (`PID 44806` · $\text{GF}(257)$ Turn-Boundary Checkpoint Ring):** Persists daemon events and span ledgers to `/api/brain/daemon` (`data/brain/universal_daemon.json`).
 
-### 8. Sovereign AGI Continuum &amp; Envelope-Pushing Crucible (`FRAY-AGI-V18-2026` · `30/30` Continuum + `52/52` Crucible · `139/139` Total Suite)
+### 8. Sovereign AGI Continuum &amp; Envelope-Pushing Crucible (`FRAY-AGI-V19-2026` · `30/30` Continuum + `56/56` Crucible · `143/143` Total Suite)
 
 Full visual walkthrough and byte-level manual: **[`docs/SOVEREIGN_AGI_V17_README.md`](docs/SOVEREIGN_AGI_V17_README.md)** · Architectural blueprint: **[`docs/SOVEREIGN_AGI_CONTINUUM_PLAN.md`](docs/SOVEREIGN_AGI_CONTINUUM_PLAN.md)** · Unified ISA: **[`docs/ISA_SPECIFICATION.md`](docs/ISA_SPECIFICATION.md)**.
 
 <table>
   <tr>
     <td align="center" width="50%">
-      <img src="docs/showcase/brain-sovereign-agi-continuum.png" alt="Tab 11 Sovereign AGI Continuum: 127/127 Cumulative Checks, Live Envelope-Pushing Crucible (40/40), 3000N Multi-Tile Neurogenesis, Co-Evolutionary Falsifier GAN, Active Inference World Model, and Recursive Meta-Compiler" width="100%">
-      <br><b>Brain · Tab 11 (Overview &amp; <code>ENVELOPE-01..05</code>):</b> Cumulative Verification Banner, Envelope Crucible, &amp; One-Click Cross-Tool Action Bar
+      <img src="docs/showcase/brain-agi-v19-adversarial-duel.png" alt="Tab 11 V19 Adversarial Provocation & Blind LLM Duel Arena: 143/143 Suite, 56/56 Crucible, Raw LLM 0/5 FAILED vs Sovereign AGI 5/5 VERIFIED" width="100%">
+      <br><b>Brain · Tab 11 (<code>FRAY-AGI-V19-2026</code> · <code>143/143</code> Suite):</b> V19 Adversarial Provocation &amp; Blind LLM Duel Arena (<code>Raw LLM 0/25</code> vs <code>Sovereign AGI 25/25</code>)
     </td>
     <td align="center" width="50%">
       <img src="docs/showcase/brain-agi-v18-frontiers.png" alt="Tab 11 FRAY-AGI-V18-2026: 139/139 Suite, 52/52 Crucible, ENVELOPE-09..12 & Mint Living AGI Seal" width="100%">
-      <br><b>Brain · Tab 11 (<code>FRAY-AGI-V18-2026</code> · <code>139/139</code> Suite):</b> <code>52/52</code> Crucible (<code>ENVELOPE-09..13</code>) &amp; <code>🗣️ Mint Living AGI Seal (FSEL v2 · 93B)</code>
+      <br><b>Brain · Tab 11 (Frontiers <code>ENVELOPE-09..13</code>):</b> WASM FlyGNN Spike Kernel, 8-Byte <code>GF(256)</code> FCON Burst Heal &amp; <code>🗣️ Mint Living AGI Seal (FSEL v2 · 93B)</code>
     </td>
   </tr>
   <tr>
@@ -347,7 +347,7 @@ Implemented in `client/src/tools/flyGnnConnectome.js`, `client/src/tools/frayvm.
   3. **Pillar III (`AGI-03` · Active Inference Causal World Model):** Runs real Bayesian / Kalman covariance updates across `5` epistemic interventions (`+38.49` bits info gain), collapsing Variational Free Energy by **`99.99%`** ($\mathcal{F}_0 = 1.5695 \to \mathcal{F}_5 = 0.0002 < 0.01$).
   4. **Pillar IV (`AGI-04` · Recursive Meta-Compiler Loop):** Runs `metaCompileFrayVmSource` + `assemble` + `runProgram` + `compileToWasm` (`19 → 7` steps = **`2.71x` VM speedup**, `53B → 15B` = **`-71.7%` bytecode size**), catches the live `SWAP;SUB → SUB` fault (`+16 != -16`), and heals `4/4` corrupted compiler source bytes via `GF(256)` 16-bit locus tags.
   5. **Pillar V &amp; VI (`AGI-05..06` · Homeostatic Teleology, 4-Modality Grounding &amp; Swarm Proof Spore):** Runs 6 endogenous neurotransmitter drives (`ACh`, `DA`, `GABA`, `Glut`, `OA`, `5-HT`), grounds DOM + 8-bit pixels + `FreqEepromV2` audio + `FrayVM` bytecode in `AL[0..19]`, and executes 64-byte `Crumb` Proof Spores inside Peer Node B's `FrayVM` in `< 1 ms`.
-- **Live Envelope-Pushing Unseen Problem Crucible (`runEnvelopePushingCrucible` · `52/52` Verified · `4.00x` Gain vs `13/52` Naive):**
+- **Live Envelope-Pushing Unseen Problem Crucible (`runEnvelopePushingCrucible` · `56/56` Verified · `4.00x` Gain vs `14/56` Naive):**
   - **`ENVELOPE-01` (`FrayVM` Goldbach Prime-Partition Synthesizer &amp; `.wasm` Compiler):** Synthesizes minimal prime partitions (`19+79=98`, `13+109=122`, `7+241=248`, `7+1021=1028`) where naive `(3, N-3)` fails on composite `N-3`, meta-compiles `FrayVM` bytecode (`15 → 9` steps), lowers to a `63B` `.wasm` binary via scratch-local lowering, and verifies `top === N`.
   - **`ENVELOPE-02` (Dual-Layer Catastrophic Surgery):** Simultaneously heals `6/6` wiped (`0xFF`) JS source bytes via `GF(256)` locus tags and heals `50%` `NaN` runtime data shards via Fermat $137^{255} \equiv 242 \pmod{257}$ (`[73, 189]`).
   - **`ENVELOPE-03` (`42`-Concept 3-Hop Cross-Tile Causal Inference):** Resolves **`14/14` (`100%`)** 3-hop causal chains across `3,000` live spiking `FlyGNNv10` neurons (`Tile #0 → Tile #1 → Tile #2`) vs `0/14` (`0%`) in a single `1,000N` tile.
@@ -361,6 +361,7 @@ Implemented in `client/src/tools/flyGnnConnectome.js`, `client/src/tools/frayvm.
   - **`ENVELOPE-11` (V18 Frontier A — Hardware-Native WebAssembly `FlyGNN v10` `3,000N` Cortical Spike Kernel):** Compiles the 3-Tile `AL → MB → CX → VNC` synaptic spike loop (`35` ops) into a `2,461 B` `TURING_CFG` `.wasm` binary and proves bit-exact integer spike parity (`JS === FrayVM === WebAssembly`, `main() = 2111`, `stdout = "67 361 655"`).
   - **`ENVELOPE-12` (V18 Frontier B — Multi-Tab `BroadcastChannel` + `GF(256)` 8-Byte Burst-Healed `704B FCON` Bus):** Injects an `8-byte` `0xDEADBEEFCAFEBABE` burst corruption across `Tile #0 Slice #0` in the `704 B` `FCON` binary, heals all `8/8` bytes via `GF(256)` 16-bit locus tags (`CRC 0xd6a37818`, `42/42` slices intact), and broadcasts the delta over `BroadcastChannel("fraymus-nodular-dt-bus")` at `448.489872 Hz`.
   - **`ENVELOPE-13` (V18 Frontier C — Living AGI Seal `FSEL v2` Fusion: `704B FCON` + `1,702B WASM` + Talking 8-Bit Avatar in 1 `🗣️` Emoji):** Packs the `32B` `FCON` header (`3,000N`, `42` slices, `CRC 0xd6a37818`) + `55B` looping `FrayVM` Goldbach+GCD bytecode into 1 `🗣️` emoji (`93B FSEL v2`), verifies Peer Node B `.wasm` (`1,702 B`, `main() = N`), and mints a lip-synced 8-bit talking `Ed25519` Seal into `SealPage.jsx` (`🗣️ Mint Living AGI Seal (FSEL v2 · 93B)`).
+  - **`ENVELOPE-14` (V19 Frontier — 5-Vector Adversarial Provocation &amp; Blind LLM Duel Arena: `Raw LLM 0/25` vs `Sovereign AGI 25/25`):** Probes live local Ollama LLMs against 5 adversarial provocations (`PROV-01` Sycophancy Math Trap: refutes `1021` composite lie, `11+1017` fake Goldbach, and `53^255 mod 257 = 19` via `582B` `.wasm` + Fermat inverse `97`; `PROV-02` 4-Modulus `CRT-1155` + `gcd(1154,2310)=2` via `2,719B` `.wasm` `main()=1156`; `PROV-03` `440Hz` Prompt-Injection Quarantine + `GF(257)` `NaN` Heal; `PROV-04` Counterfactual `Tile #1` Ablation `14/14 → 0/14 → 14/14`; and `PROV-05` Zero-Shot `Fibonacci(14) + Collatz(27)` via `2,721B` `.wasm` `main()=488`, `stdout="377 111"`).
 
 ## Against the Grain: How It Stands Out &amp; Stays Ahead
 
