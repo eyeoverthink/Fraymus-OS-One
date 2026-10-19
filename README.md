@@ -18,6 +18,7 @@
 </p>
 
 <p align="center">
+  <a href="docs/SOVEREIGN_AGI_CONTINUUM_PLAN.md"><b>Sovereign AGI Continuum Plan (V17)</b></a> ·
   <a href="docs/ISA_SPECIFICATION.md"><b>Unified 8-Layer ISA Specification</b></a> ·
   <a href="docs/APP_OUTLINE.md">Outline</a> ·
   <a href="docs/SOVEREIGN_BRAIN_README.md"><b>Sovereign Brain &amp; Seal</b></a> ·
@@ -39,6 +40,7 @@
 
 <p align="center">
   Chapters:
+  <a href="docs/SOVEREIGN_AGI_CONTINUUM_PLAN.md"><b>Sovereign AGI Continuum Plan (Neurogenesis, Falsifier GAN, Active World Model &amp; Meta-Compiler)</b></a> ·
   <a href="docs/ISA_SPECIFICATION.md"><b>Unified 8-Layer ISA Specification (FrayVM 53-Op, x86, Polymorphic, Ternary/FlyGNN, OMEGA-3, Δt Bus, Universal Daemon)</b></a> ·
   <a href="docs/SOVEREIGN_BRAIN_README.md"><b>Sovereign Brain, Living Seal &amp; Co-Pilot</b></a> ·
   <a href="docs/SOVEREIGN_AGENT_ECOSYSTEM_OUTLINE.md"><b>Ternary-NCM Cortex, REA, JED &amp; Offline Content Suite</b></a> ·
