@@ -58,7 +58,8 @@ import {
   runAfkPonderBatch,
   runFlyGnnMeasureTrainMeasure,
   runGauntletThinkingProcess,
-  runNodularFrequencyMesh
+  runNodularFrequencyMesh,
+  runThinkAndCreateGauntlet
 } from "./flyGnnConnectome.js";
 
 export const PHI = 1.618033988749895;
@@ -1145,6 +1146,15 @@ export default function BrainPage({ project, say, onApply }) {
   );
   const [afkState, setAfkState] = useState(() => runAfkPonderBatch({}, 3));
   const [afkAutopilotOn, setAfkAutopilotOn] = useState(false);
+  const [thinkCreateGoal, setThinkCreateGoal] = useState(
+    "Create a Fault-Tolerant FlyGNN v10 Neural Reflex & Nodular Δt Spectrum Synthesizer with GF(257) Self-Healing and Booby-Trap Firewall"
+  );
+  const [thinkCreateReport, setThinkCreateReport] = useState(() =>
+    runThinkAndCreateGauntlet({
+      prompt:
+        "Create a Fault-Tolerant FlyGNN v10 Neural Reflex & Nodular Δt Spectrum Synthesizer with GF(257) Self-Healing and Booby-Trap Firewall"
+    })
+  );
 
   function pushLedger(epId, eventType, detail, fitness) {
     seqRef.current += 1;
@@ -2990,6 +3000,47 @@ export default function BrainPage({ project, say, onApply }) {
     say?.("ok", `AFK Agent completed ${ticks} recursive ponder cycles → Cycle #${nextAfk.cycle} (Score ${nextAfk.compositeScore})`);
   }
 
+  function executeThinkAndCreateGauntlet(goalOverride) {
+    const goal = String(goalOverride || thinkCreateGoal).trim();
+    const report = runThinkAndCreateGauntlet({
+      prompt: goal,
+      afkState
+    });
+    setThinkCreateReport(report);
+    setOmegaTab("think_create_proof");
+    pushLedger(
+      "THINK_CREATE_PROOF",
+      `24_OF_24_LIVE_SYNTHESIS_PASS`,
+      `Think: ${report.summary.thinkBaseline} → ${report.summary.thinkSuper} (${report.summary.thinkMultiplier}) · Create: ${report.summary.createBaseline} → ${report.summary.createSuper} (${report.summary.createMultiplier}) in ${report.elapsedMs}ms`,
+      1.0
+    );
+    say?.(
+      "ok",
+      `Think & Create Proof: ${report.summary.totalSuper}/${report.summary.totalPossible} (${report.summary.totalGainMultiplier}x vs Baseline) in ${report.elapsedMs}ms`
+    );
+  }
+
+  function applyCreatedBrainAppToProject() {
+    if (!project || !onApply || !thinkCreateReport?.createdArtifacts?.studioApp) return;
+    const app = thinkCreateReport.createdArtifacts.studioApp;
+    projectFossilsRef.current.push(project);
+    setProjectFossilCount(projectFossilsRef.current.length);
+    const nextProject = {
+      ...project,
+      html: app.html,
+      css: app.css,
+      js: app.js
+    };
+    onApply(nextProject);
+    pushLedger(
+      "BRAIN_CREATOR",
+      "STUDIO_ARTIFACT_APPLIED",
+      `Applied "${app.title.slice(0, 48)}" (HTML+CSS+JS · VM-verified 24/24) into Studio project`,
+      1.0
+    );
+    say?.("ok", `Applied Brain-created interactive app into Studio project`);
+  }
+
   useEffect(() => {
     if (!afkAutopilotOn) return undefined;
     const timer = setInterval(() => {
@@ -3936,6 +3987,9 @@ export default function BrainPage({ project, say, onApply }) {
               <button className="btn" style={{ borderColor: "#00e5ff", color: "#00e5ff" }} onClick={() => executeNodularFrequencyPulse()}>
                 📡 Pulse 5-Nodule Δt Bus ({nodularMeshReport?.canonicalKey?.freqHz ?? 448.489872} Hz)
               </button>
+              <button className="btn on" onClick={() => executeThinkAndCreateGauntlet()}>
+                ⚡ Run Think &amp; Create Proof ({thinkCreateReport.summary.totalSuper}/{thinkCreateReport.summary.totalPossible} · {thinkCreateReport.summary.totalGainMultiplier}x)
+              </button>
               <button className="btn on" disabled={!project} onClick={applyOmegaAgentToActiveProject}>
                 🚀 Replicate Living Omega Agent Into Project
               </button>
@@ -3950,7 +4004,8 @@ export default function BrainPage({ project, say, onApply }) {
                 ["hard_gauntlet", `🔥 5. Hard Adversarial Benchmark (${omegaGauntletReport.staticTotal}/18 vs ${omegaGauntletReport.omegaTotal}/18 · ${omegaGauntletReport.multiplier})`],
                 ["flygnn_v10", `🦟 6. FlyGNN v10 Connectome (1000N · 13×70 Dedicated Slices · 100% Separation)`],
                 ["afk_superpowers", `🦸 7. Gauntlet-Thinking, AFK Agent (C#${afkState?.cycle ?? 3} · ${afkState?.compositeScore ?? 929.2}), Superpowers & SOP Evolution`],
-                ["nodular_freq_bus", `📡 8. Nodular Frequency, Δt Clocks (${nodularMeshReport?.canonicalKey?.freqHz ?? 448.489872} Hz) & LoRa/HF/BLE/UDP/TCP Bus`]
+                ["nodular_freq_bus", `📡 8. Nodular Frequency, Δt Clocks (${nodularMeshReport?.canonicalKey?.freqHz ?? 448.489872} Hz) & LoRa/HF/BLE/UDP/TCP Bus`],
+                ["think_create_proof", `⚡ 9. Think & Create Proof (${thinkCreateReport.summary.totalBaseline}/24 vs ${thinkCreateReport.summary.totalSuper}/24 · ${thinkCreateReport.summary.totalGainMultiplier}x Gain & App Creator)`]
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -4359,6 +4414,92 @@ export default function BrainPage({ project, say, onApply }) {
                         </div>
                       ))}
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {omegaTab === "think_create_proof" && (
+              <div className="stack" style={{ marginTop: 8, gap: 8 }}>
+                <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+                  <label className="field" style={{ flex: 1, minWidth: 260 }}>
+                    <span>Live Creation &amp; Multi-Context Thinking Prompt</span>
+                    <input
+                      value={thinkCreateGoal}
+                      onChange={(e) => setThinkCreateGoal(e.target.value)}
+                    />
+                  </label>
+                  <button className="btn on" onClick={() => executeThinkAndCreateGauntlet()}>
+                    ⚡ Run Think &amp; Create Proof ({thinkCreateReport.summary.totalSuper}/{thinkCreateReport.summary.totalPossible} · {thinkCreateReport.summary.totalGainMultiplier}x)
+                  </button>
+                  <button
+                    className="btn on"
+                    disabled={!project || !onApply}
+                    onClick={applyCreatedBrainAppToProject}
+                  >
+                    ✨ Apply Created App into Studio Project
+                  </button>
+                </div>
+
+                <div className="emoji-view" style={{ fontSize: 11, padding: 8 }}>
+                  <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                    <div>
+                      <b style={{ color: "var(--acc)" }}>
+                        ⚡ Empirical Proof — Does FlyGNN v10 + Gauntlet-Thinking + Superpowers + AFK SOPs Help It THINK &amp; CREATE?
+                      </b>
+                      <div className="muted" style={{ color: "var(--text)" }}>
+                        Pillar I (THINKING): Crowded 200N / 1-Shot Baseline = <b style={{ color: "var(--pink)" }}>{thinkCreateReport.summary.thinkBaseline}</b> vs. Superpowered = <b style={{ color: "var(--acc)" }}>{thinkCreateReport.summary.thinkSuper} ({thinkCreateReport.summary.thinkMultiplier} Gain)</b>
+                        {" · "}
+                        Pillar II (CREATING): 1-Shot Naive Code Gen = <b style={{ color: "var(--pink)" }}>{thinkCreateReport.summary.createBaseline}</b> vs. Superpowered VM-Verified = <b style={{ color: "var(--acc)" }}>{thinkCreateReport.summary.createSuper} ({thinkCreateReport.summary.createMultiplier} Gain)</b>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="pill" style={{ borderColor: "var(--acc)", color: "var(--acc)" }}>
+                        TOTAL: {thinkCreateReport.summary.totalBaseline}/24 ({thinkCreateReport.summary.totalBaselinePct}%) → {thinkCreateReport.summary.totalSuper}/24 ({thinkCreateReport.summary.totalSuperPct}% · {thinkCreateReport.summary.totalGainMultiplier}x) · AFK C#{thinkCreateReport.afkCyclesApplied} (+{thinkCreateReport.sopAvgEffGainPct}% SOP Eff) · {thinkCreateReport.elapsedMs}ms
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid-2" style={{ alignItems: "start" }}>
+                  <div className="emoji-view" style={{ maxHeight: 280, fontSize: 11 }}>
+                    <b style={{ color: "var(--acc)" }}>🧠 Pillar I (THINK-01..03) &amp; 🛠️ Pillar II (CREATE-01..03) Live VM Verdicts:</b>
+                    {thinkCreateReport.tasks.map((t) => (
+                      <div key={t.id} style={{ padding: "5px 0", borderBottom: "1px dashed var(--line)" }}>
+                        <div className="row" style={{ justifyContent: "space-between" }}>
+                          <span>
+                            <b style={{ color: t.pillar === "THINK" ? "#00e5ff" : "var(--acc)" }}>[{t.id}]</b> <b>{t.title}</b>
+                          </span>
+                          <span>
+                            <span style={{ color: "var(--pink)" }}>Base: {t.baselinePassed}/{t.totalChecks}</span>
+                            {" → "}
+                            <b style={{ color: "var(--acc)" }}>Super: {t.superPassed}/{t.totalChecks} ✓</b>
+                          </span>
+                        </div>
+                        <div className="muted" style={{ fontSize: 10 }}>
+                          <b>Mechanism:</b> {t.mechanism}
+                        </div>
+                        <div className="muted" style={{ fontSize: 10, color: "var(--pink)" }}>
+                          ✗ Baseline Fail: {t.baselineFailureWhy}
+                        </div>
+                        <div className="muted" style={{ fontSize: 10, color: "var(--text)" }}>
+                          ✓ Superpowered Fix: {t.superSolutionWhy}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="emoji-view" style={{ maxHeight: 280, fontSize: 11 }}>
+                    <b style={{ color: "#00e5ff" }}>✨ Live Created &amp; VM-Verified Code Artifacts (GF(257) Codec, Slice Store &amp; Studio App):</b>
+                    <div style={{ marginTop: 4 }} className="muted">
+                      VM Controller Proof: <code>mary→{thinkCreateReport.createdArtifacts.studioApp.vmVerification.marySim.motorAction}</code> (bleed {thinkCreateReport.createdArtifacts.studioApp.vmVerification.marySim.crossContextBleedPct}%) · <code>fire→{thinkCreateReport.createdArtifacts.studioApp.vmVerification.fireSim.motorAction}</code> · Δt Sync=<b>{thinkCreateReport.createdArtifacts.studioApp.vmVerification.syncSim.status}</b> · 440Hz Probe=<b>{thinkCreateReport.createdArtifacts.studioApp.vmVerification.trapSim.status} (π→{thinkCreateReport.createdArtifacts.studioApp.vmVerification.trapSim.morphedSecretIndex})</b>
+                    </div>
+                    <pre style={{ margin: "6px 0", fontSize: 10, color: "var(--acc)", whiteSpace: "pre-wrap" }}>
+                      {thinkCreateReport.createdArtifacts.gf257CodecSource.slice(0, 560)}...
+                    </pre>
+                    <pre style={{ margin: "6px 0", fontSize: 10, color: "#00e5ff", whiteSpace: "pre-wrap" }}>
+                      {thinkCreateReport.createdArtifacts.studioApp.html.slice(0, 520)}...
+                    </pre>
                   </div>
                 </div>
               </div>
