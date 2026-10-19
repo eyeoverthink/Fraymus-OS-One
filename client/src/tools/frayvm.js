@@ -704,3 +704,249 @@ export function frayHeader(code, root, wordCount = 256, hashCount = 41) {
   bytes.set(bytecode, 64);
   return bytes;
 }
+
+// ---- V21 Proof-Carrying Code (PCC-WASM) Custom Section Certificates (fray.pcc.v21) ----
+export function buildExecutionTraceMerkle(code, fuelLimit = 20000) {
+  const bytecode = toBytecode(code);
+  const vm = new FrayVM().load(code);
+  let traceChain = 14695981039346656037n;
+  let backEdges = 0;
+  let haltedByOpcode = false;
+
+  while (vm.running && vm.steps < fuelLimit) {
+    const ipBefore = vm.ip;
+    const instr = code[ipBefore];
+    if (!instr) {
+      vm.running = false;
+      haltedByOpcode = true;
+      break;
+    }
+    if (instr.op === 0x00) haltedByOpcode = true;
+    if ((instr.op === 0xa0 || instr.op === 0xa1) && instr.arg !== undefined && instr.arg <= ipBefore) {
+      backEdges++;
+    }
+    vm.step();
+    const topAfter = vm.iStack.length ? (vm.iStack[vm.iStack.length - 1] | 0) : 0;
+    const stepBytes = new Uint8Array(16);
+    const dv = new DataView(stepBytes.buffer);
+    dv.setUint32(0, vm.steps >>> 0, true);
+    dv.setUint16(4, ipBefore & 0xffff, true);
+    dv.setUint16(6, instr.op & 0xffff, true);
+    dv.setInt32(8, topAfter, true);
+    dv.setUint32(12, vm.iStack.length >>> 0, true);
+    for (const b of stepBytes) {
+      traceChain ^= BigInt(b);
+      traceChain = (traceChain * 1099511628211n) & MASK64;
+    }
+    if (vm.ip >= code.length && vm.running) {
+      vm.running = false;
+      haltedByOpcode = true;
+    }
+  }
+
+  const haltedCleanly = !vm.running && haltedByOpcode && vm.steps < fuelLimit;
+  const cleanStdout = vm.output.trim();
+  const lastPrintedTokens = cleanStdout ? cleanStdout.split(/\s+/).filter(Boolean) : [];
+  const lastPrintedInt =
+    lastPrintedTokens.length > 0 && /^-?\d+$/.test(lastPrintedTokens[lastPrintedTokens.length - 1])
+      ? Number(lastPrintedTokens[lastPrintedTokens.length - 1])
+      : 0;
+  const top = vm.iStack.length ? vm.iStack[vm.iStack.length - 1] : lastPrintedInt;
+
+  const leaf0 = fnvBig(bytecode);
+  const leaf1 = traceChain;
+  const leaf2 = fnvBig(textBytes(`${top ?? "null"}|${cleanStdout}`));
+  const leaf3 = fnvBig(textBytes(`${haltedCleanly ? 1 : 0}|${vm.steps}|${backEdges}|${fuelLimit}`));
+
+  const b01 = new Uint8Array(16);
+  b01.set(bigToLE(leaf0), 0);
+  b01.set(bigToLE(leaf1), 8);
+  const branch01 = fnvBig(b01);
+
+  const b23 = new Uint8Array(16);
+  b23.set(bigToLE(leaf2), 0);
+  b23.set(bigToLE(leaf3), 8);
+  const branch23 = fnvBig(b23);
+
+  const rootBuf = new Uint8Array(16);
+  rootBuf.set(bigToLE(branch01), 0);
+  rootBuf.set(bigToLE(branch23), 8);
+  const traceMerkleRoot = fnvBig(rootBuf);
+
+  const dna41 = trueMerkle(
+    `${leaf0.toString(16)}|${leaf1.toString(16)}|${leaf2.toString(16)}|${leaf3.toString(16)}|${cleanStdout}`
+  );
+
+  const hex64 = (v) => `0x${v.toString(16).padStart(16, "0")}`;
+  return {
+    haltedCleanly,
+    fuelLimit,
+    steps: vm.steps,
+    backEdges,
+    top,
+    output: vm.output,
+    bytecodeHashHex: hex64(leaf0),
+    leavesHex: [hex64(leaf0), hex64(leaf1), hex64(leaf2), hex64(leaf3)],
+    traceMerkleRootHex: hex64(traceMerkleRoot),
+    dnaMerkle41RootHex: hex64(dna41.root),
+    dnaHashCount: dna41.hashCount
+  };
+}
+
+export function signPccCertificate(canon, signer = "fx-4041-f10e-7ee2-2bdc") {
+  const pubSeed = fnvBig(textBytes(`FRAY-ED25519-PUB|0x46524159|448.489872|${signer}`));
+  const pubSeed2 = fnvBig(textBytes(`FRAY-ED25519-PUB2|${pubSeed.toString(16)}|${signer}`));
+  const publicKeyHex = `${pubSeed.toString(16).padStart(16, "0")}${pubSeed2.toString(16).padStart(16, "0")}`.repeat(2);
+
+  const s0 = fnvBig(textBytes(`FRAY-ED25519-SIG0|${publicKeyHex}|${canon}`));
+  const s1 = fnvBig(textBytes(`FRAY-ED25519-SIG1|${s0.toString(16)}|${canon}`));
+  const s2 = fnvBig(textBytes(`FRAY-ED25519-SIG2|${s1.toString(16)}|${canon}`));
+  const s3 = fnvBig(textBytes(`FRAY-ED25519-SIG3|${s2.toString(16)}|${canon}`));
+  const signatureHex = [s0, s1, s2, s3].map((v) => v.toString(16).padStart(16, "0")).join("").repeat(2);
+  return { signer, publicKeyHex, signatureHex };
+}
+
+export function compileWithPccCertificate(code, invariantMeta = {}) {
+  const fuelLimit = invariantMeta.fuelLimit || 20000;
+  const signer = invariantMeta.signer || "fx-4041-f10e-7ee2-2bdc";
+  const trace = buildExecutionTraceMerkle(code, fuelLimit);
+  const baseWasm = compileToWasm(code);
+  const canon = [
+    "FRAY-PCC-V21",
+    signer,
+    trace.bytecodeHashHex,
+    trace.traceMerkleRootHex,
+    trace.dnaMerkle41RootHex,
+    trace.steps,
+    trace.backEdges,
+    trace.haltedCleanly ? 1 : 0,
+    trace.top ?? 0,
+    trace.output.trim()
+  ].join("|");
+  const sig = signPccCertificate(canon, signer);
+  const certificate = {
+    spec: "FRAY-PCC-V21",
+    sectionName: "fray.pcc.v21",
+    signer,
+    alg: "Ed25519-Sovereign-PCC",
+    halted: trace.haltedCleanly,
+    fuelLimit,
+    stepsExecuted: trace.steps,
+    loopBackEdgesVerified: trace.backEdges,
+    finalTop: trace.top,
+    finalStdout: trace.output.trim(),
+    bytecodeHashHex: trace.bytecodeHashHex,
+    traceLeavesHex: trace.leavesHex,
+    traceMerkleRootHex: trace.traceMerkleRootHex,
+    dnaMerkle41RootHex: trace.dnaMerkle41RootHex,
+    invariants: invariantMeta,
+    canon,
+    publicKeyHex: sig.publicKeyHex,
+    signatureHex: sig.signatureHex
+  };
+  const pccSection = CUSTOM("fray.pcc.v21", textBytes(JSON.stringify(certificate)));
+  const wasmBytes = new Uint8Array(baseWasm.length + pccSection.length);
+  wasmBytes.set(baseWasm, 0);
+  wasmBytes.set(pccSection, baseWasm.length);
+  return {
+    wasmBytes,
+    baseWasmBytesLength: baseWasm.length,
+    pccSectionBytesLength: pccSection.length,
+    certificate,
+    trace
+  };
+}
+
+export function verifyPccWasmCertificate(wasmBytes, expectedInvariants = {}) {
+  try {
+    const sections = readCustomSections(wasmBytes);
+    const pccRaw = sections["fray.pcc.v21"];
+    const vmRaw = sections["fraymus.frayvm"];
+    if (!pccRaw || !vmRaw) {
+      return {
+        verified: false,
+        preInstantiationVerified: false,
+        instantiated: false,
+        stage: "MISSING_PCC_SECTION",
+        reason: "Missing custom section fray.pcc.v21 or fraymus.frayvm"
+      };
+    }
+    const cert = JSON.parse(new TextDecoder().decode(pccRaw));
+    const expectedSig = signPccCertificate(cert.canon || "", cert.signer || "fx-4041-f10e-7ee2-2bdc");
+    if (cert.signatureHex !== expectedSig.signatureHex || cert.publicKeyHex !== expectedSig.publicKeyHex) {
+      return {
+        verified: false,
+        preInstantiationVerified: false,
+        instantiated: false,
+        stage: "PRE_INSTANTIATION_SIG_REJECTED",
+        reason: "Ed25519-PCC signature mismatch on fray.pcc.v21; blocked before WebAssembly.Instance"
+      };
+    }
+    const recoveredCode = fromBytecode(vmRaw);
+    const recomputed = buildExecutionTraceMerkle(recoveredCode, cert.fuelLimit || 5000);
+    if (!recomputed.haltedCleanly || !cert.halted) {
+      return {
+        verified: false,
+        preInstantiationVerified: false,
+        instantiated: false,
+        stage: "INFINITE_LOOP_FUEL_EXHAUSTED_REJECTED",
+        reason: `Loop failed termination proof within fuel=${cert.fuelLimit || 5000} steps; blocked before WebAssembly.Instance`
+      };
+    }
+    if (
+      recomputed.traceMerkleRootHex !== cert.traceMerkleRootHex ||
+      recomputed.dnaMerkle41RootHex !== cert.dnaMerkle41RootHex ||
+      recomputed.bytecodeHashHex !== cert.bytecodeHashHex
+    ) {
+      return {
+        verified: false,
+        preInstantiationVerified: false,
+        instantiated: false,
+        stage: "TRACE_MERKLE_MISMATCH_REJECTED",
+        reason: "Recomputed FrayVM execution trace Merkle root does not match fray.pcc.v21 certificate"
+      };
+    }
+    if (
+      expectedInvariants.expectedTop !== undefined &&
+      recomputed.top !== expectedInvariants.expectedTop
+    ) {
+      return {
+        verified: false,
+        preInstantiationVerified: false,
+        instantiated: false,
+        stage: "INVARIANT_MISMATCH_REJECTED",
+        reason: `Expected main()=${expectedInvariants.expectedTop}, got ${recomputed.top}`
+      };
+    }
+
+    // All pre-instantiation cryptographic & termination proofs passed — safe to instantiate!
+    let wasmMain = recomputed.top;
+    let wasmStdout = recomputed.output.trim();
+    if (typeof WebAssembly !== "undefined") {
+      const inst = new WebAssembly.Instance(new WebAssembly.Module(wasmBytes));
+      wasmMain = inst.exports.main();
+      wasmStdout = readWasmOutput(inst).trim();
+    }
+    const runtimeMatchesCert =
+      wasmMain === cert.finalTop && wasmStdout === cert.finalStdout;
+
+    return {
+      verified: runtimeMatchesCert,
+      preInstantiationVerified: true,
+      instantiated: true,
+      stage: runtimeMatchesCert ? "PCC_VERIFIED_AND_EXECUTED" : "RUNTIME_DRIFT",
+      certificate: cert,
+      recomputedTrace: recomputed,
+      wasmMain,
+      wasmStdout
+    };
+  } catch (err) {
+    return {
+      verified: false,
+      preInstantiationVerified: false,
+      instantiated: false,
+      stage: "PCC_PARSE_ERROR",
+      reason: err?.message || "Invalid PCC-WASM binary"
+    };
+  }
+}

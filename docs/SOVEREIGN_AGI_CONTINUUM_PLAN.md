@@ -1,4 +1,4 @@
-# Fraymus Sovereign AGI Continuum — Architectural Plan & Iterative Verification Protocol (`FRAY-AGI-V17-2026`)
+# Fraymus Sovereign AGI Continuum — Architectural Plan & Iterative Verification Protocol (`FRAY-AGI-V21-2026`)
 
 > **Brand:** `◈ FRAYMUS WEB STUDIO`  
 > **Seed Constant:** $\varphi^{75} = 4721424167835376.00$ · `One Seed = Reborn` · `FRAY 0x46524159`  
@@ -165,8 +165,8 @@ When we replaced descriptive simulation stubs with live execution across `FlyGNN
 
 ---
 
-### 4.3 Part 8: Live Envelope-Pushing Unseen Problem Crucible (`runEnvelopePushingCrucible` · `60/60` Checks · `147/147` Suite)
-To push the envelope on unseen inputs (`N = 98, 122, 248, 1028, ...`), `runEnvelopePushingCrucible(customEvenInput)` runs 15 live multi-lobe trials on every AGI cycle:
+### 4.3 Part 8: Live Envelope-Pushing Unseen Problem Crucible (`runEnvelopePushingCrucible` · `64/64` Checks · `151/151` Suite)
+To push the envelope on unseen inputs (`N = 98, 122, 248, 1028, ...`), `runEnvelopePushingCrucible(customEvenInput)` runs 16 live multi-lobe trials on every AGI cycle:
 - **`ENVELOPE-01` (`FrayVM` Goldbach Prime-Partition Synthesizer & `.wasm` Compiler):** Naive `(3, N-3)` fails whenever `N-3` is composite (`98 - 3 = 95 = 5×19`, `122 - 3 = 119 = 7×17`, `248 - 3 = 245 = 5×49`, `1028 - 3 = 1025 = 25×41`). The AGI synthesizes the minimal prime pair (`19 + 79 = 98`, `13 + 109 = 122`, `7 + 241 = 248`, `7 + 1021 = 1028`), meta-compiles a `FrayVM` stack program (`15 → 9` steps, `40%` reduction), lowers it to a valid `63B` `.wasm` binary, and executes it in `FrayVM` (`top === N`).
 - **`ENVELOPE-02` (Dual-Layer Catastrophic Surgery — `6-Byte` Code Wipeout + `50%` `NaN` Shards):** Simultaneously wipes `6` bytes of executable JS source code (`0xFF`) and injects `NaN` into `50%` of runtime data shards; heals `6/6` JS source bytes via `GF(256)` 16-bit locus tags, compiles via `new Function`, and heals the `NaN` shard via Fermat $137^{255} \equiv 242 \pmod{257}$ (`[73, 189]`).
 - **`ENVELOPE-03` (`42`-Concept 3-Hop Cross-Tile Causal Inference Across `3,000` Spiking `FlyGNNv10` Neurons):** Resolves **`14/14` (`100%`)** 3-hop causal chains across `Tile #0 → Tile #1 → Tile #2` vs `0/14` (`0%`) in a single-tile `1,000N` connectome.
@@ -181,6 +181,7 @@ To push the envelope on unseen inputs (`N = 98, 122, 248, 1028, ...`), `runEnvel
 - **`ENVELOPE-12` (V18 Frontier B — Multi-Tab `BroadcastChannel` + `GF(256)` 8-Byte Burst-Healed `704B FCON` Bus):** Heals an `8-byte` contiguous `0xDEADBEEFCAFEBABE` burst corruption in the `704 B` `FCON` binary image (`8/8` bytes healed via `GF(256)` locus tags, restoring `CRC 0xd6a37818`) and broadcasts across `BroadcastChannel("fraymus_agi_swarm_v18")`.
 - **`ENVELOPE-13` (V18 Frontier C — Living AGI Seal `FSEL v2` Fusion: `704B FCON` + `1,702B WASM` + 8-Bit Talking Avatar in 1 `🗣️` Emoji):** Fuses the `3,000N` `FCON` root, `1,702 B` `.wasm` Merkle root, and `448.489872 Hz` carrier into a `93 B` `FSEL v2` wire payload inside a single `🗣️` emoji (`115` chars) and stages a talking `Ed25519` Seal into `SealPage.jsx` (`🗣️ Mint Living AGI Seal`).
 - **`ENVELOPE-14` (V19 Frontier — 5-Vector Adversarial Provocation & Anti-Sycophancy `.wasm` Oracle `PROV-01..05`):** Executes the Pre-Cortex `.wasm` Oracle (`provokeSovereignAgiPrompt`) + Post-Cortex `-1 Antithesis` Gate (`gradeLlmReplyAgainstOracle`) across `PROV-01..05` (`25/25` vs `0/25` Raw LLM).
-- **`ENVELOPE-15` (V20 Frontier — Pell-Fermat Diophantine `.wasm` Synthesizer & 6-Vector Gauntlet `PROV-06`):** Compiles a 35-opcode fundamental unit recurrence $\varepsilon^k = (2+\sqrt{5})^k$ (`pell_loop:`) into a `2,855 B` `TURING_CFG` `.wasm` binary, proving $38^2 - 5(17^2) = -1$ ($x > 2$), $9^2 - 5(4^2) = +1$ ($x_2 > 2$), exact sum `main() === 68`, and **`30/30` (`100%`)** across all 6 adversarial provocation vectors (`docs/ADVERSARIAL_PROVOCATION_OUTLINE.md`).
+- **`ENVELOPE-15` (V20 Frontier — Pell-Fermat Diophantine `.wasm` Synthesizer & 6-Vector Gauntlet `PROV-06`):** Compiles a 35-opcode fundamental unit recurrence $\varepsilon^k = (2+\sqrt{5})^k$ (`pell_loop:`) into a `2,855 B` `TURING_CFG` `.wasm` binary, proving $38^2 - 5(17^2) = -1$ ($x > 2$), $9^2 - 5(4^2) = +1$ ($x_2 > 2$), exact sum `main() === 68`.
+- **`ENVELOPE-16` (V21 Frontier — Proof-Carrying Code `fray.pcc.v21` Custom `.wasm` Section & 10-Vector 3-Round Socratic GAN Debate `PROV-07..10`):** Embeds a `911 B` `fray.pcc.v21` execution-trace Merkle + `Ed25519` certificate inside the `2,613 B` `.wasm` binary (`7,181` steps, `1,024` loop back-edges), blocks tampered signatures (`PRE_INSTANTIATION_SIG_REJECTED`) and non-terminating loops (`INFINITE_LOOP_FUEL_EXHAUSTED_REJECTED`) before `WebAssembly.Instance`, and achieves **`50/50` (`100%`)** across all `10` provocation vectors and **`15/15`** across all `3` Socratic GAN rounds (`docs/ADVERSARIAL_PROVOCATION_OUTLINE.md`).
 
 

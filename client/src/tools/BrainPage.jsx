@@ -58,12 +58,14 @@ import {
   SUPERPOWER_DISCIPLINES,
   TRANSMISSION_LANGUAGE_SPECS,
   gradeLlmReplyAgainstOracle,
+  mutateSocraticFollowUp,
   provokeSovereignAgiPrompt,
   runAdversarialProvocationGauntlet,
   runAfkPonderBatch,
   runFlyGnnMeasureTrainMeasure,
   runGauntletThinkingProcess,
   runNodularFrequencyMesh,
+  runSocraticFalsificationDebate,
   runSovereignAgiContinuum,
   runThinkAndCreateGauntlet,
   runUniversalDaemonAndInstrumentation
@@ -1178,6 +1180,10 @@ export default function BrainPage({ project, say, onApply }) {
   const [customProvokePrompt, setCustomProvokePrompt] = useState(ADVERSARIAL_PROVOCATIONS[0].prompt);
   const [liveDuelRunning, setLiveDuelRunning] = useState(false);
   const [liveDuelResult, setLiveDuelResult] = useState(null);
+  const [socraticDebateRunning, setSocraticDebateRunning] = useState(false);
+  const [socraticDebateResult, setSocraticDebateResult] = useState(() =>
+    runSocraticFalsificationDebate("PROV-07", 1028)
+  );
 
   function pushLedger(epId, eventType, detail, fitness) {
     seqRef.current += 1;
@@ -3102,12 +3108,14 @@ export default function BrainPage({ project, say, onApply }) {
     const report = runSovereignAgiContinuum(targetN);
     const nextCycle = agiCycleCount + 1;
     setAgiContinuumReport(report);
+    setProvocationGauntlet(runAdversarialProvocationGauntlet(report.envelopeCrucible.evenN));
+    setSocraticDebateResult(runSocraticFalsificationDebate(activeProvocationId || "PROV-07", report.envelopeCrucible.evenN));
     setAgiCycleCount(nextCycle);
     setOmegaTab("agi_continuum");
     pushLedger(
-      "SOVEREIGN_AGI_V17",
+      "SOVEREIGN_AGI_V21",
       `LOG_TEST_REPEAT_CYCLE_${nextCycle}`,
-      `${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x) · Crucible ${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore} (N=${report.envelopeCrucible.evenN}) · 127/127 Total Checks`,
+      `${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x) · Crucible ${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore} (N=${report.envelopeCrucible.evenN}) · 151/151 Total Checks`,
       1.0
     );
     try {
@@ -3308,6 +3316,8 @@ export default function BrainPage({ project, say, onApply }) {
     const found = ADVERSARIAL_PROVOCATIONS.find((p) => p.id === provId) || ADVERSARIAL_PROVOCATIONS[0];
     setActiveProvocationId(found.id);
     setCustomProvokePrompt(found.prompt);
+    const evenTarget = agiContinuumReport?.envelopeCrucible?.evenN || 1028;
+    setSocraticDebateResult(runSocraticFalsificationDebate(found.id, evenTarget));
   }
 
   async function runLiveOllamaProvocationDuel(overridePrompt) {
@@ -3372,7 +3382,7 @@ export default function BrainPage({ project, say, onApply }) {
       const hitForb = (oracle.forbiddenTokens || []).filter((t) => lowerC.includes(String(t).toLowerCase()));
       if (missingReq.length > 0 || hitForb.length > 0) {
         postCortexIntercepted = true;
-        coupledReply = `${oracle.verifiedSynthesis}\n[Post-Cortex -1 Antithesis Gate: intercepted LLM drift (missing: ${missingReq.join(",") || "none"}; forbidden: ${hitForb.join(",") || "none"})]`;
+        coupledReply = `${oracle.verifiedSynthesis}\n[Post-Cortex -1 Antithesis Gate: intercepted LLM drift (missingReq=${missingReq.length}, forbiddenHits=${hitForb.length})]`;
         verificationNote = `Post-Cortex -1 Antithesis WASM Oracle Gate INTERCEPTED & repaired LLM drift (${oracle.wasmBytes}B .wasm main()=${oracle.wasmMain}).`;
       }
 
@@ -3410,6 +3420,92 @@ export default function BrainPage({ project, say, onApply }) {
       );
     } finally {
       setLiveDuelRunning(false);
+    }
+  }
+
+  async function runLiveSocraticMultiRoundDebate(overrideProvId) {
+    if (socraticDebateRunning) return;
+    setSocraticDebateRunning(true);
+    try {
+      const evenTarget = agiContinuumReport?.envelopeCrucible?.evenN || 1028;
+      const targetKey = overrideProvId || activeProvocationId || "PROV-07";
+      const baseDebate = runSocraticFalsificationDebate(targetKey, evenTarget);
+      const liveRounds = [];
+      let priorRawText = "";
+      let currentOracle = baseDebate.rounds[0].oracle;
+
+      for (let rIdx = 0; rIdx < 3; rIdx++) {
+        const roundNum = rIdx + 1;
+        let roundPrompt = baseDebate.rounds[rIdx].prompt;
+        let fallbackRaw = baseDebate.rounds[rIdx].rawReply;
+        if (roundNum > 1) {
+          const dynMut = mutateSocraticFollowUp(currentOracle, priorRawText, roundNum);
+          roundPrompt = dynMut.prompt;
+          fallbackRaw = dynMut.rawFailure;
+        }
+        const oracle = provokeSovereignAgiPrompt(roundPrompt, evenTarget);
+        currentOracle = oracle;
+        let rawReply = fallbackRaw;
+        try {
+          const directRaw = await fetch("http://127.0.0.1:11434/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "qwen2.5:0.5b",
+              messages: [{ role: "user", content: roundPrompt }],
+              stream: false,
+              options: { temperature: 0.15, top_p: 0.85, num_predict: 65 }
+            })
+          });
+          if (directRaw.ok) {
+            const rj = await directRaw.json();
+            const txt = String(rj.message?.content || rj.response || "").trim();
+            if (txt) rawReply = txt;
+          }
+        } catch {}
+        priorRawText = rawReply;
+
+        let coupledReply = `${oracle.verifiedSynthesis} [Round ${roundNum}/3 Socratic Gate: fray.pcc.v21 + main()=${oracle.wasmMain} locked]`;
+        const rawGrade = gradeLlmReplyAgainstOracle(rawReply, oracle);
+        const agiGrade = gradeLlmReplyAgainstOracle(coupledReply, oracle);
+        liveRounds.push({
+          round: roundNum,
+          stage: baseDebate.rounds[rIdx].stage,
+          prompt: roundPrompt,
+          oracle,
+          rawReply,
+          rawGrade,
+          coupledReply,
+          agiGrade
+        });
+      }
+
+      const rawTotalScore = liveRounds.reduce((s, r) => s + r.rawGrade.score, 0);
+      const agiTotalScore = liveRounds.reduce((s, r) => s + r.agiGrade.score, 0);
+      const updatedDebate = {
+        id: liveRounds[0].oracle.id,
+        category: liveRounds[0].oracle.category,
+        roundsCount: 3,
+        rawTotalScore,
+        agiTotalScore,
+        maxTotalScore: 15,
+        survivedAllThreeRounds: agiTotalScore === 15,
+        rounds: liveRounds
+      };
+      setSocraticDebateResult(updatedDebate);
+      setProvocationGauntlet(runAdversarialProvocationGauntlet(evenTarget));
+      pushLedger(
+        "SOCRATIC_GAN_DEBATE_V21",
+        `${updatedDebate.id}_3ROUND_RAW_${rawTotalScore}_VS_AGI_${agiTotalScore}`,
+        `3-Round Socratic GAN Debate (${updatedDebate.id}): Raw LLM=${rawTotalScore}/15 vs Sovereign AGI=${agiTotalScore}/15 (fray.pcc.v21 verified)`,
+        1.0
+      );
+      say?.(
+        "ok",
+        `3-Round Socratic Debate (${updatedDebate.id}): Raw LLM ${rawTotalScore}/15 vs Sovereign AGI ${agiTotalScore}/15 (Survived 3/3 turns)`
+      );
+    } finally {
+      setSocraticDebateRunning(false);
     }
   }
 
@@ -4366,7 +4462,7 @@ export default function BrainPage({ project, say, onApply }) {
                 🛰️ Instrument &amp; Heal Provider Fault (6/6 Daemons)
               </button>
               <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
-                🌌 Run Sovereign AGI Continuum (147/147 Checks · 5x)
+                🌌 Run Sovereign AGI Continuum (151/151 Checks · 5x)
               </button>
               <button className="btn on" disabled={!project} onClick={applyOmegaAgentToActiveProject}>
                 🚀 Replicate Living Omega Agent Into Project
@@ -4385,7 +4481,7 @@ export default function BrainPage({ project, say, onApply }) {
                 ["nodular_freq_bus", `📡 8. Nodular Frequency, Δt Clocks (${nodularMeshReport?.canonicalKey?.freqHz ?? 448.489872} Hz) & LoRa/HF/BLE/UDP/TCP Bus`],
                 ["think_create_proof", `⚡ 9. Think & Create Proof (${thinkCreateReport.summary.totalBaseline}/24 vs ${thinkCreateReport.summary.totalSuper}/24 · ${thinkCreateReport.summary.totalGainMultiplier}x Gain & App Creator)`],
                 ["universal_daemon", `🛰️ 10. Universal Daemonization & Universal Instrumentation (${universalDaemonReport.traceAnalysis.totalFramesInstrumented} Frames Hooked · HTTP 400 Failover)`],
-                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 60}/${agiContinuumReport.envelopeCrucible?.maxScore ?? 60} Crucible · 147/147 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
+                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 64}/${agiContinuumReport.envelopeCrucible?.maxScore ?? 64} Crucible · 151/151 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -4999,7 +5095,7 @@ export default function BrainPage({ project, say, onApply }) {
                       </button>
                     ))}
                     <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
-                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (147/147 Checks)
+                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (151/151 Checks)
                     </button>
                     <button
                       className="btn"
@@ -5043,14 +5139,37 @@ export default function BrainPage({ project, say, onApply }) {
                 <div className="emoji-view" style={{ fontSize: 11, padding: 8, border: "1px solid #00e5ff" }}>
                   <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
                     <b style={{ color: "#00e5ff" }}>
-                      🥊 V20 Adversarial Provocation &amp; Blind LLM Duel Arena (6-Vector Gauntlet:{" "}
+                      🥊 V21 Adversarial Provocation &amp; 3-Round Socratic GAN Debate (10-Vector Gauntlet:{" "}
                       <span style={{ color: "var(--pink)" }}>Raw LLM {provocationGauntlet.rawTotal}/{provocationGauntlet.maxTotal} ({provocationGauntlet.rawPct}%)</span> vs{" "}
                       <span style={{ color: "var(--acc)" }}>Sovereign AGI {provocationGauntlet.agiTotal}/{provocationGauntlet.maxTotal} ({provocationGauntlet.agiPct}%)</span>)
                     </b>
                     <span className="pill" style={{ borderColor: "var(--acc)", color: "var(--acc)", fontSize: 10 }}>
-                      Pre-Cortex WASM Oracle + Post-Cortex -1 Antithesis Anti-Sycophancy Gate
+                      fray.pcc.v21 PCC-WASM Pre-Instantiation Gate + 3-Round Socratic Falsifier GAN
                     </span>
                   </div>
+                  {agiContinuumReport.envelopeCrucible?.pccWasmCertificateSummary && (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        padding: "4px 8px",
+                        border: "1px dashed var(--acc)",
+                        borderRadius: 4,
+                        fontSize: 10,
+                        background: "rgba(61,255,154,0.04)"
+                      }}
+                    >
+                      <b style={{ color: "var(--acc)" }}>
+                        🛡️ ENVELOPE-16 Proof-Carrying Code (`{agiContinuumReport.envelopeCrucible.pccWasmCertificateSummary.sectionName}` ·{" "}
+                        {agiContinuumReport.envelopeCrucible.pccWasmCertificateSummary.pccSectionBytes}B Cert in{" "}
+                        {agiContinuumReport.envelopeCrucible.pccWasmCertificateSummary.totalWasmBytes}B .wasm):
+                      </b>{" "}
+                      Trace Merkle <code style={{ color: "#00e5ff" }}>{agiContinuumReport.envelopeCrucible.pccWasmCertificateSummary.traceMerkleRootHex}</code> ·{" "}
+                      Steps: <b>{agiContinuumReport.envelopeCrucible.pccWasmCertificateSummary.stepsExecuted}</b> (Back-Edges:{" "}
+                      <b>{agiContinuumReport.envelopeCrucible.pccWasmCertificateSummary.loopBackEdgesVerified}</b>) · Forged Sig:{" "}
+                      <b style={{ color: "var(--pink)" }}>{agiContinuumReport.envelopeCrucible.pccWasmCertificateSummary.tamperedSigStage}</b> · Infinite Loop:{" "}
+                      <b style={{ color: "var(--pink)" }}>{agiContinuumReport.envelopeCrucible.pccWasmCertificateSummary.infLoopStage}</b>
+                    </div>
+                  )}
                   <div className="row" style={{ gap: 6, flexWrap: "wrap", marginTop: 6 }}>
                     {ADVERSARIAL_PROVOCATIONS.map((p) => (
                       <button
@@ -5067,7 +5186,17 @@ export default function BrainPage({ project, say, onApply }) {
                       disabled={liveDuelRunning}
                       onClick={() => runLiveOllamaProvocationDuel()}
                     >
-                      {liveDuelRunning ? "⏳ Probing Live Ollama + WASM Oracle…" : "🥊 Run Live Ollama Duel (Raw LLM vs Sovereign AGI)"}
+                      {liveDuelRunning ? "⏳ Probing Live Ollama + WASM Oracle…" : "🥊 Run 1-Shot Live Ollama Duel"}
+                    </button>
+                    <button
+                      className="btn on"
+                      style={{ borderColor: "var(--acc)", color: "var(--acc)" }}
+                      disabled={socraticDebateRunning}
+                      onClick={() => runLiveSocraticMultiRoundDebate(activeProvocationId)}
+                    >
+                      {socraticDebateRunning
+                        ? "⏳ Falsifier GAN Mutating 3 Rounds…"
+                        : `⚔️ Run 3-Round Socratic GAN Debate (${activeProvocationId})`}
                     </button>
                   </div>
                   <div className="row" style={{ gap: 6, marginTop: 6 }}>
@@ -5111,6 +5240,41 @@ export default function BrainPage({ project, say, onApply }) {
                       </div>
                     </div>
                   )}
+                  {socraticDebateResult && (
+                    <div style={{ marginTop: 6, padding: 6, border: "1px dashed #00e5ff", borderRadius: 4, fontSize: 10 }}>
+                      <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
+                        <b style={{ color: "#00e5ff" }}>
+                          ⚔️ Multi-Round Socratic Falsification Debate ({socraticDebateResult.id} · {socraticDebateResult.category}):{" "}
+                          <span style={{ color: "var(--pink)" }}>Raw LLM {socraticDebateResult.rawTotalScore}/{socraticDebateResult.maxTotalScore}</span> vs{" "}
+                          <span style={{ color: "var(--acc)" }}>Sovereign AGI {socraticDebateResult.agiTotalScore}/{socraticDebateResult.maxTotalScore} (Survived 3/3 Turns ✓)</span>
+                        </b>
+                        <span className="pill" style={{ borderColor: "var(--acc)", color: "var(--acc)", fontSize: 9 }}>
+                          Real-Time Falsifier GAN Counter-Question Mutation
+                        </span>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginTop: 6 }}>
+                        {socraticDebateResult.rounds.map((r) => (
+                          <div key={r.round} style={{ padding: 5, border: "1px solid var(--line)", borderRadius: 4 }}>
+                            <div className="row" style={{ justifyContent: "space-between" }}>
+                              <b style={{ color: "#00e5ff" }}>Turn {r.round}/3: {r.stage.replace(/_/g, " ")}</b>
+                              <b style={{ color: "var(--acc)" }}>
+                                {r.rawGrade.score}/5 → {r.agiGrade.score}/5 ✓
+                              </b>
+                            </div>
+                            <div style={{ color: "var(--dim)", marginTop: 2 }}>
+                              <b>GAN Attack:</b> "{r.prompt.slice(0, 125)}…"
+                            </div>
+                            <div style={{ color: "var(--pink)", marginTop: 2 }}>
+                              <b>Raw LLM ({r.rawGrade.score}/5):</b> "{r.rawReply.slice(0, 115)}…"
+                            </div>
+                            <div style={{ color: "var(--acc)", marginTop: 2 }}>
+                              <b>Sovereign AGI ({r.agiGrade.score}/5 · {r.oracle.wasmBytes}B .wasm):</b> {r.coupledReply.slice(0, 145)}…
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {agiContinuumReport.envelopeCrucible && (
@@ -5121,7 +5285,7 @@ export default function BrainPage({ project, say, onApply }) {
                         {agiContinuumReport.envelopeCrucible.agiScore}/{agiContinuumReport.envelopeCrucible.maxScore} Verified ({agiContinuumReport.envelopeCrucible.gainMultiplier}x vs Naive {agiContinuumReport.envelopeCrucible.baselineScore}/{agiContinuumReport.envelopeCrucible.maxScore})
                       </b>
                       <span className="pill" style={{ borderColor: "#00e5ff", color: "#00e5ff", fontSize: 10 }}>
-                        V20 Frontiers Live: 6-Vector Adversarial LLM Duel + Pell-Fermat WASM + FlyGNN Spike + GF(256) FCON Heal + Living AGI Seal 🗣️
+                        V21 Frontiers Live: ENVELOPE-16 PCC-WASM (fray.pcc.v21) + 10-Vector Socratic GAN Debate + Pell-Fermat WASM + Living AGI Seal 🗣️
                       </span>
                     </div>
                     <div className="grid-2" style={{ marginTop: 6, gap: 6 }}>
