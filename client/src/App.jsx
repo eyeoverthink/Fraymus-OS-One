@@ -12,6 +12,7 @@ import SealPage from "./tools/SealPage.jsx";
 import BrainPage from "./tools/BrainPage.jsx";
 import WasmPage from "./tools/WasmPage.jsx";
 import MailPage from "./tools/MailPage.jsx";
+import LooseScrewPage from "./tools/LooseScrewPage.jsx";
 import {
   BRAND,
   PHI,
@@ -594,11 +595,11 @@ export default function App() {
       </header>
       <div className="top" style={{ paddingTop: 0 }}>
         <div className="seg">
-          {[["studio", "Code"], ["crud", "CRUD"], ["repl", "REPL"], ["canvas", "Canvas"], ["pixel", "8-bit"], ["production", "Production"], ["seal", "Seal"], ["brain", "Brain"], ["webjs", "HTML·JS"], ["emoji", "Emoji"], ["coder", "Emoji Coder"], ["dispatch", "Dispatch"], ["wasm", "WASM"], ["mail", "Mail"]].map(([id, label]) => (
+          {[["studio", "Code"], ["crud", "CRUD"], ["repl", "REPL"], ["canvas", "Canvas"], ["pixel", "8-bit"], ["production", "Production"], ["seal", "Seal"], ["brain", "Brain"], ["webjs", "HTML·JS"], ["emoji", "Emoji"], ["coder", "Emoji Coder"], ["dispatch", "Dispatch"], ["wasm", "WASM"], ["mail", "Mail"], ["loosescrew", "Screw"]].map(([id, label]) => (
             <button key={id} className={workspace === id ? "on" : ""} onClick={() => setWorkspace(id)}>{label}</button>
           ))}
         </div>
-        <span className="muted">{workspace === "mail" ? "Gmail or the local mailbox: read, send, import, export" : workspace === "wasm" ? "FrayVM → bytecode → WebAssembly → one emoji" : workspace === "dispatch" ? "Signed emoji payloads: compose, verify, run, mail" : workspace === "brain" ? "Ouroboros 5-Stage Quantum RSI + Centripetal Memory + Wolfram Rule 30" : workspace === "seal" ? "Signed talking avatar + voice + Merkle proof inside one emoji" : workspace === "coder" ? "Emoji markup to HTML, CSS, JavaScript, and Java" : workspace === "emoji" ? "Text ↔ glyph ↔ DNA ↔ zero-width" : workspace === "webjs" ? "HTML and JavaScript, live preview" : workspace === "production" ? "Add a face, animate it with a voice, then add another face" : workspace === "pixel" ? "Photo to 8-bit character" : workspace === "canvas" ? "Blocks, cube grid, entity components" : workspace === "repl" ? "JavaScript and DOM" : workspace === "crud" ? "GET POST PUT PATCH DELETE" : "Editor"}</span>
+        <span className="muted">{workspace === "loosescrew" ? "looseScrew: stems, 60fps broadcast, and Code & App Design cards" : workspace === "mail" ? "Gmail or the local mailbox: read, send, import, export" : workspace === "wasm" ? "FrayVM → bytecode → WebAssembly → one emoji" : workspace === "dispatch" ? "Signed emoji payloads: compose, verify, run, mail" : workspace === "brain" ? "Ouroboros 5-Stage Quantum RSI + Centripetal Memory + Wolfram Rule 30" : workspace === "seal" ? "Signed talking avatar + voice + Merkle proof inside one emoji" : workspace === "coder" ? "Emoji markup to HTML, CSS, JavaScript, and Java" : workspace === "emoji" ? "Text ↔ glyph ↔ DNA ↔ zero-width" : workspace === "webjs" ? "HTML and JavaScript, live preview" : workspace === "production" ? "Add a face, animate it with a voice, then add another face" : workspace === "pixel" ? "Photo to 8-bit character" : workspace === "canvas" ? "Blocks, cube grid, entity components" : workspace === "repl" ? "JavaScript and DOM" : workspace === "crud" ? "GET POST PUT PATCH DELETE" : "Editor"}</span>
       </div>
       {narrow && workspace === "studio" && (
         <div className="mobile-switch seg">
@@ -619,6 +620,7 @@ export default function App() {
       {workspace === "dispatch" && project && <DispatchPage project={project} say={say} onApply={(next) => patch(() => next)} />}
       {workspace === "wasm" && project && <WasmPage project={project} say={say} onApply={(next) => patch(() => next)} />}
       {workspace === "mail" && project && <MailPage project={project} say={say} onApply={(next) => patch(() => next)} />}
+      {workspace === "loosescrew" && <LooseScrewPage project={project} say={say} onApply={(next) => patch(() => next)} />}
       {workspace === "studio" && <div className="workspace">
         {showLib && libOpen && (
           <aside className="library">

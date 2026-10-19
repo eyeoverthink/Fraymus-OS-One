@@ -438,7 +438,7 @@ export default function StudioPage({ project, onApply, say }) {
         image: face.photo,
         mode,
         seed,
-        note: "Head and shoulders, solid black background. Keep this person's face, hair, beard, and clothes. Do not add a hat. Do not redesign the face."
+        note: "Head and shoulders, solid black background. Preserve this person's exact facial likeness, expression, age, eyeglasses, hat or headwear, beard including any gray hair, and clothes. Do not redesign the face."
       });
       if (cancelRef.current) throw new Error("Stopped.");
       if (Number.isInteger(master.seed)) seed = master.seed;

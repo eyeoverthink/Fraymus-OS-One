@@ -75,15 +75,15 @@ function imageData(img, maxSide) {
 
 function skinLike(r, g, b) {
   const spread = Math.max(r, g, b) - Math.min(r, g, b);
-  return r > 40 && r >= g && g >= b * 0.8 && r - b >= 12 && r - b <= 140 && spread >= 12;
+  return r > 40 && r < 240 && r >= g + 8 && g >= b * 0.8 && r - b >= 14 && r - b <= 148 && spread >= 14;
 }
 
 function skinStats(img) {
   if (!img) return null;
   const { width, height, data } = img;
   const picks = [];
-  for (let y = Math.round(height * 0.12); y < Math.round(height * 0.62); y += 2) {
-    for (let x = Math.round(width * 0.28); x < Math.round(width * 0.72); x += 2) {
+  for (let y = Math.round(height * 0.34); y < Math.round(height * 0.68); y += 2) {
+    for (let x = Math.round(width * 0.33); x < Math.round(width * 0.67); x += 2) {
       const i = (y * width + x) * 4;
       const r = data[i];
       const g = data[i + 1];
@@ -91,7 +91,7 @@ function skinStats(img) {
       if (skinLike(r, g, b)) picks.push([0.299 * r + 0.587 * g + 0.114 * b, r, g, b]);
     }
   }
-  if (picks.length < 120) return null;
+  if (picks.length < 60) return null;
   picks.sort((a, b) => a[0] - b[0]);
   const mid = picks.slice(Math.floor(picks.length * 0.25), Math.ceil(picks.length * 0.75));
   const mean = [0, 0, 0];
@@ -105,7 +105,7 @@ function matchSkin(raw, photo, shift) {
   if (!rendered) return out;
   const target = skinStats(photo);
   const luma = ([r, g, b]) => 0.299 * r + 0.587 * g + 0.114 * b;
-  const auto = target ? Math.min(1.1, Math.max(0.7, luma(target) / Math.max(1, luma(rendered)))) : 1;
+  const auto = target ? Math.min(1.1, Math.max(0.52, luma(target) / Math.max(1, luma(rendered)))) : 1;
   const gain = auto * (1 + shift / 100);
   const ratio = [gain, gain, gain];
   const d = out.data;
@@ -114,7 +114,7 @@ function matchSkin(raw, photo, shift) {
     const g = d[i + 1];
     const b = d[i + 2];
     if (!skinLike(r, g, b)) continue;
-    if (Math.abs(r - rendered[0]) + Math.abs(g - rendered[1]) + Math.abs(b - rendered[2]) > 120) continue;
+    if (Math.abs(r - rendered[0]) + Math.abs(g - rendered[1]) + Math.abs(b - rendered[2]) > 135) continue;
     d[i] = r * ratio[0];
     d[i + 1] = g * ratio[1];
     d[i + 2] = b * ratio[2];

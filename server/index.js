@@ -143,10 +143,11 @@ function base64Image(value) {
 function pixelPrompt(mode, hasStyle, extra) {
   const note = String(extra || "").replace(/[\r\n]+/g, " ").slice(0, 240);
   const style = hasStyle ? `Match the drawing style of image 2 only. ${PIXEL_STYLE}.` : `${PIXEL_STYLE}.`;
+  const identity = "Preserve the person's exact facial likeness, facial proportions, nose shape, cheekbones, eye shape, warm smile or expression, and age so it looks unmistakably like the same individual from image 1.";
   const look = mode === "avatar"
-    ? "Give the person a dark gray fedora, black sunglasses with small cyan highlights, and a navy jacket with glowing cyan trim. Keep their face shape, beard and hair."
-    : "Keep their real clothes, hair, beard and any shirt graphics exactly as in the photo. Do not add a hat, sunglasses, or costume that is not in the photo.";
-  return `Convert the person in image 1 into an ${style} Remove the room and background completely. ${look} ${PIXEL_SKIN}. ${note}`.trim();
+    ? "Give the person a dark gray fedora, black sunglasses with small cyan highlights, and a navy jacket with glowing cyan trim. Keep their exact face shape, nose, mouth, and beard including any gray or salt-and-pepper hair."
+    : "Keep their exact eyeglasses and frame shape if worn, their exact hat, fedora, beanie, or headwear if worn, their exact mustache and beard shape including any gray or salt-and-pepper hair on the chin, and their exact real clothes, blazer, jacket, collared shirt, plaid pattern, or shirt graphics from the photo.";
+  return `Redraw the exact person from image 1 as an ${style} Remove the room and background completely. ${identity} ${look} ${PIXEL_SKIN}. ${note}`.trim();
 }
 
 function run(cmd, args) {
@@ -1283,6 +1284,44 @@ app.post("/api/brain/swarm-mesh", (req, res) => {
   } catch (error) {
     res.status(400).json({ error: error.message || "Could not broadcast swarm mesh state." });
   }
+});
+
+const looseScrewFossils = [];
+
+app.get("/api/loosescrew/akashic", (_req, res) => {
+  res.json({ ok: true, fossils: looseScrewFossils });
+});
+
+app.post("/api/loosescrew/akashic", (req, res) => {
+  const body = req.body || {};
+  const entry = {
+    timestamp: new Date().toISOString(),
+    category: String(body.category || "NOTE").slice(0, 64),
+    payload: String(body.payload || "").slice(0, 4000)
+  };
+  looseScrewFossils.unshift(entry);
+  if (looseScrewFossils.length > 200) looseScrewFossils.length = 200;
+  res.json({ ok: true, count: looseScrewFossils.length, entry });
+});
+
+app.post("/api/loosescrew/design", (req, res) => {
+  const goal = String(req.body?.goal || "app design").slice(0, 500);
+  const stem = String(req.body?.stem || "custom").slice(0, 160);
+  res.json({
+    ok: true,
+    title: `SystemDesign · ${stem}`,
+    steps: [
+      "Target Scoping",
+      "Setup & Readiness",
+      "Surface Mapping",
+      "Feature Tracing",
+      "Evidence Collection",
+      "Reconstruction",
+      "Verification",
+      "Final Report"
+    ],
+    goal
+  });
 });
 
 app.use("/published", express.static(publishedDir, { index: "index.html" }));
