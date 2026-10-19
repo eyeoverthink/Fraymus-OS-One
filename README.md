@@ -308,10 +308,10 @@ When an upstream cloud model provider fails mid-turn—for example throwing `Non
   5. **`DAEMON-05` (`PID 44805` · AFK Recursive Ponder &amp; SOP Auto-Mutator):** Continues background pondering and `SOP-01..04` evolution via `/api/brain/afk`.
   6. **`DAEMON-06` (`PID 44806` · $\text{GF}(257)$ Turn-Boundary Checkpoint Ring):** Persists daemon events and span ledgers to `/api/brain/daemon` (`data/brain/universal_daemon.json`).
 
-### 8. Sovereign AGI Continuum &amp; Envelope-Pushing Crucible (`FRAY-AGI-V17-2026` · `30/30` Continuum + `16/16` Crucible · `103/103` Total Suite)
+### 8. Sovereign AGI Continuum &amp; Envelope-Pushing Crucible (`FRAY-AGI-V17-2026` · `30/30` Continuum + `20/20` Crucible · `107/107` Total Suite)
 
 <p align="center">
-  <img src="docs/showcase/brain-sovereign-agi-continuum.png" alt="Tab 11 Sovereign AGI Continuum: 103/103 Cumulative Checks, Live Envelope-Pushing Crucible (16/16), 3000N Multi-Tile Neurogenesis, Co-Evolutionary Falsifier GAN, Active Inference World Model, and Recursive Meta-Compiler" width="100%">
+  <img src="docs/showcase/brain-sovereign-agi-continuum.png" alt="Tab 11 Sovereign AGI Continuum: 107/107 Cumulative Checks, Live Envelope-Pushing Crucible (20/20), 3000N Multi-Tile Neurogenesis, Co-Evolutionary Falsifier GAN, Active Inference World Model, and Recursive Meta-Compiler" width="100%">
 </p>
 
 Implemented in `client/src/tools/flyGnnConnectome.js`, `client/src/tools/frayvm.js`, `client/src/tools/BrainPage.jsx` (**Tab 11: `🌌 11. Sovereign AGI Continuum`**), `server/index.js` (`/api/brain/agi-continuum`), and documented in [`docs/SOVEREIGN_AGI_CONTINUUM_PLAN.md`](docs/SOVEREIGN_AGI_CONTINUUM_PLAN.md):
@@ -322,11 +322,12 @@ Implemented in `client/src/tools/flyGnnConnectome.js`, `client/src/tools/frayvm.
   3. **Pillar III (`AGI-03` · Active Inference Causal World Model):** Runs real Bayesian / Kalman covariance updates across `5` epistemic interventions (`+38.49` bits info gain), collapsing Variational Free Energy by **`99.99%`** ($\mathcal{F}_0 = 1.5695 \to \mathcal{F}_5 = 0.0002 < 0.01$).
   4. **Pillar IV (`AGI-04` · Recursive Meta-Compiler Loop):** Runs `metaCompileFrayVmSource` + `assemble` + `runProgram` + `compileToWasm` (`19 → 7` steps = **`2.71x` VM speedup**, `53B → 15B` = **`-71.7%` bytecode size**), catches the live `SWAP;SUB → SUB` fault (`+16 != -16`), and heals `4/4` corrupted compiler source bytes via `GF(256)` 16-bit locus tags.
   5. **Pillar V &amp; VI (`AGI-05..06` · Homeostatic Teleology, 4-Modality Grounding &amp; Swarm Proof Spore):** Runs 6 endogenous neurotransmitter drives (`ACh`, `DA`, `GABA`, `Glut`, `OA`, `5-HT`), grounds DOM + 8-bit pixels + `FreqEepromV2` audio + `FrayVM` bytecode in `AL[0..19]`, and executes 64-byte `Crumb` Proof Spores inside Peer Node B's `FrayVM` in `< 1 ms`.
-- **Live Envelope-Pushing Unseen Problem Crucible (`runEnvelopePushingCrucible` · `16/16` Verified · `4.00x` Gain vs `4/16` Naive):**
-  - **`ENVELOPE-01` (`FrayVM` Goldbach Prime-Partition Synthesizer &amp; `.wasm` Compiler):** Synthesizes minimal prime partitions (`19+79=98`, `13+109=122`, `13+241=254`, `3+1021=1024`) where naive `(3, N-3)` fails on composite `N-3`, meta-compiles `FrayVM` bytecode (`15 → 9` steps), lowers to a `63B` `.wasm` binary via scratch-local lowering, and verifies `top === N`.
+- **Live Envelope-Pushing Unseen Problem Crucible (`runEnvelopePushingCrucible` · `20/20` Verified · `4.00x` Gain vs `5/20` Naive):**
+  - **`ENVELOPE-01` (`FrayVM` Goldbach Prime-Partition Synthesizer &amp; `.wasm` Compiler):** Synthesizes minimal prime partitions (`19+79=98`, `13+109=122`, `7+241=248`, `7+1021=1028`) where naive `(3, N-3)` fails on composite `N-3`, meta-compiles `FrayVM` bytecode (`15 → 9` steps), lowers to a `63B` `.wasm` binary via scratch-local lowering, and verifies `top === N`.
   - **`ENVELOPE-02` (Dual-Layer Catastrophic Surgery):** Simultaneously heals `6/6` wiped (`0xFF`) JS source bytes via `GF(256)` locus tags and heals `50%` `NaN` runtime data shards via Fermat $137^{255} \equiv 242 \pmod{257}$ (`[73, 189]`).
   - **`ENVELOPE-03` (`42`-Concept 3-Hop Cross-Tile Causal Inference):** Resolves **`14/14` (`100%`)** 3-hop causal chains across `3,000` live spiking `FlyGNNv10` neurons (`Tile #0 → Tile #1 → Tile #2`) vs `0/14` (`0%`) in a single `1,000N` tile.
   - **`ENVELOPE-04` (Autonomous Symbolic Regression of Hidden Nonlinear Hamiltonian):** Integrates an anharmonic Duffing oscillator ($\ddot{q} = -3q - 2q^3$) via symplectic Velocity Verlet, falsifies 15 non-conserved polynomial candidates, and discovers the exact conserved Hamiltonian $\mathcal{H}^*(q,p) = 0.5p^2 + 1.5q^2 + 0.5q^4$ (`drift ΔE = 0.000002` vs `0.506218` harmonic baseline).
+  - **`ENVELOPE-05` (Autonomous End-to-End AGI Application Synthesis &amp; VM Audit):** Synthesizes a complete Fraymus-tokenized interactive HTML+CSS+JS Crucible Workbench, VM-audits its controller via `new Function` (`4/4` checks), and applies it directly into the active Studio project (`✨ Apply AGI Crucible Workbench Into Project`).
 
 ## Against the Grain: How It Stands Out &amp; Stays Ahead
 

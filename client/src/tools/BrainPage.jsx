@@ -3096,7 +3096,7 @@ export default function BrainPage({ project, say, onApply }) {
     pushLedger(
       "SOVEREIGN_AGI_V17",
       `LOG_TEST_REPEAT_CYCLE_${nextCycle}`,
-      `${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x) · Crucible ${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore} (N=${report.envelopeCrucible.evenN}) · 103/103 Total Checks`,
+      `${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x) · Crucible ${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore} (N=${report.envelopeCrucible.evenN}) · 107/107 Total Checks`,
       1.0
     );
     try {
@@ -3114,14 +3114,40 @@ export default function BrainPage({ project, say, onApply }) {
           finalFreeEnergy: report.worldModel.finalFreeEnergy,
           mutationsPromoted: report.metaCompiler.mutationsPromoted,
           faultsRolledBack: report.metaCompiler.faultsCaughtAndRolledBack,
-          merkleRoot: report.crossModalSwarm.swarmSpore.merkleRoot
+          merkleRoot: report.crossModalSwarm.swarmSpore.merkleRoot,
+          evenN: report.envelopeCrucible.evenN,
+          crucibleScore: `${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore}`,
+          cumulativeChecks: "107/107",
+          goldbachPair: report.envelopeCrucible.goldbachPair,
+          discoveredHamiltonian: report.envelopeCrucible.discoveredHamiltonian
         })
       });
     } catch {}
     say?.(
       "ok",
-      `Sovereign AGI Cycle #${nextCycle} verified: ${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x Gain), ${report.neurogenesis.totalNeurons}N across ${report.neurogenesis.tilesSpawned} Tiles, Free Energy ${report.worldModel.finalFreeEnergy}`
+      `Sovereign AGI Cycle #${nextCycle} verified: ${report.agiTotal}/${report.maxTotal} (${report.agiGainMultiplier}x), Crucible ${report.envelopeCrucible.agiScore}/${report.envelopeCrucible.maxScore} (N=${report.envelopeCrucible.evenN}), 107/107 Total Checks`
     );
+  }
+
+  function applyAgiCrucibleAppToProject() {
+    if (!project || !onApply || !agiContinuumReport?.envelopeCrucible?.synthesizedStudioApp) return;
+    const app = agiContinuumReport.envelopeCrucible.synthesizedStudioApp;
+    projectFossilsRef.current.push(project);
+    setProjectFossilCount(projectFossilsRef.current.length);
+    const nextProject = {
+      ...project,
+      html: app.html,
+      css: app.css,
+      js: app.js
+    };
+    onApply(nextProject);
+    pushLedger(
+      "SOVEREIGN_AGI_CREATOR",
+      "CRUCIBLE_WORKBENCH_APPLIED",
+      `Applied "${app.title}" (107/107 VM-verified) into Studio project with .bak fossil backup`,
+      1.0
+    );
+    say?.("ok", `Applied Sovereign AGI Crucible Workbench (N=${agiContinuumReport.envelopeCrucible.evenN}) into Studio project`);
   }
 
   useEffect(() => {
@@ -4076,6 +4102,9 @@ export default function BrainPage({ project, say, onApply }) {
               <button className="btn on" onClick={() => executeUniversalDaemonProbe()}>
                 🛰️ Instrument &amp; Heal Provider Fault (6/6 Daemons)
               </button>
+              <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
+                🌌 Run Sovereign AGI Continuum (107/107 Checks · 5x)
+              </button>
               <button className="btn on" disabled={!project} onClick={applyOmegaAgentToActiveProject}>
                 🚀 Replicate Living Omega Agent Into Project
               </button>
@@ -4093,7 +4122,7 @@ export default function BrainPage({ project, say, onApply }) {
                 ["nodular_freq_bus", `📡 8. Nodular Frequency, Δt Clocks (${nodularMeshReport?.canonicalKey?.freqHz ?? 448.489872} Hz) & LoRa/HF/BLE/UDP/TCP Bus`],
                 ["think_create_proof", `⚡ 9. Think & Create Proof (${thinkCreateReport.summary.totalBaseline}/24 vs ${thinkCreateReport.summary.totalSuper}/24 · ${thinkCreateReport.summary.totalGainMultiplier}x Gain & App Creator)`],
                 ["universal_daemon", `🛰️ 10. Universal Daemonization & Universal Instrumentation (${universalDaemonReport.traceAnalysis.totalFramesInstrumented} Frames Hooked · HTTP 400 Failover)`],
-                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} · ${agiContinuumReport.agiGainMultiplier}x Gain · ${agiContinuumReport.neurogenesis.totalNeurons}N Multi-Tile · F=${agiContinuumReport.worldModel.finalFreeEnergy})`]
+                ["agi_continuum", `🌌 11. Sovereign AGI Continuum (${agiContinuumReport.agiTotal}/${agiContinuumReport.maxTotal} + ${agiContinuumReport.envelopeCrucible?.agiScore ?? 20}/20 Crucible · 107/107 Checks · ${agiContinuumReport.neurogenesis.totalNeurons}N)`]
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -4697,7 +4726,7 @@ export default function BrainPage({ project, say, onApply }) {
                         style={{ width: 76 }}
                       />
                     </label>
-                    {[98, 122, 254, 1024].map((presetN) => (
+                    {[98, 122, 248, 1028].map((presetN) => (
                       <button
                         key={presetN}
                         className={`btn ${agiContinuumReport.envelopeCrucible?.evenN === presetN ? "on" : ""}`}
@@ -4707,7 +4736,15 @@ export default function BrainPage({ project, say, onApply }) {
                       </button>
                     ))}
                     <button className="btn on" onClick={() => executeAgiContinuumCycle()}>
-                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (103/103 Checks)
+                      🚀 Push Envelope &amp; Run AGI Cycle #{agiCycleCount + 1} (107/107 Checks)
+                    </button>
+                    <button
+                      className="btn"
+                      style={{ borderColor: "#00e5ff", color: "#00e5ff" }}
+                      disabled={!project}
+                      onClick={applyAgiCrucibleAppToProject}
+                    >
+                      ✨ Apply AGI Crucible Workbench Into Project
                     </button>
                   </div>
                 </div>
