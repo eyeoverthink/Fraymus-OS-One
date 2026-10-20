@@ -218,6 +218,7 @@ export default function PixelPage({ project, onApply, say }) {
   const liveRef = useRef(false);
   const playingRef = useRef(false);
   const stylingRef = useRef(false);
+  const clipHoldRef = useRef(false);
   const videoCancelRef = useRef(false);
   const durationRef = useRef(0);
   const fpsRef = useRef(CLIP_FPS);
@@ -290,6 +291,7 @@ export default function PixelPage({ project, onApply, say }) {
   }, [cameraOn]);
 
   async function useSource(img) {
+    clipHoldRef.current = false;
     const fitted = fitSource(img);
     sourceRef.current = fitted;
     photoDataRef.current = fitted;
@@ -310,7 +312,7 @@ export default function PixelPage({ project, onApply, say }) {
   }
 
   function paint() {
-    if (liveRef.current || playingRef.current || stylingRef.current || talkRef.current) return;
+    if (liveRef.current || playingRef.current || stylingRef.current || talkRef.current || clipHoldRef.current) return;
     if (previewId && cellsRef.current?.[previewId] && resultRef.current) {
       drawTalkCell(resultRef.current, previewId, 520);
       return;
@@ -566,6 +568,83 @@ export default function PixelPage({ project, onApply, say }) {
     say?.("ok", "Picture taken");
   }
 
+  function paintVideoFrame(video) {
+    const canvas = resultRef.current;
+    if (!canvas || !(video?.videoWidth > 0) || !(video?.videoHeight > 0)) return false;
+    const maxEdge = 720;
+    const scale = Math.min(1, maxEdge / Math.max(video.videoWidth, video.videoHeight));
+    canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+    canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = scale < 1;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const step = Math.max(16, Math.floor(data.length / 8000)) * 4;
+    let lit = 0;
+    for (let i = 0; i < data.length; i += step) {
+      if (data[i] + data[i + 1] + data[i + 2] > 24) lit += 1;
+    }
+    return lit > 6;
+  }
+
+  function openVideoUrl(video, url) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error("That video took too long to open."));
+      }, 12000);
+      const cleanup = () => {
+        clearTimeout(timer);
+        video.removeEventListener("loadeddata", onReady);
+        video.removeEventListener("error", onErr);
+      };
+      const onReady = () => {
+        cleanup();
+        resolve();
+      };
+      const onErr = () => {
+        cleanup();
+        reject(new Error("That video could not be opened."));
+      };
+      video.addEventListener("loadeddata", onReady);
+      video.addEventListener("error", onErr);
+      video.src = url;
+      video.load();
+    });
+  }
+
+  async function revealVideo(video) {
+    const duration = await measureDuration(video);
+    if (!(duration > 0)) throw new Error("That video has no readable length.");
+    if (!(video.videoWidth > 0)) return 0;
+    const marks = [0, Math.min(0.2, duration / 2), Math.min(0.6, Math.max(0, duration - 0.05))];
+    for (const time of marks) {
+      try {
+        await seekVideo(video, time);
+        if (paintVideoFrame(video)) return duration;
+      } catch {
+        /* The next mark, then a converted copy, can still have a picture. */
+      }
+    }
+    return 0;
+  }
+
+  async function browserMovie(file) {
+    const response = await fetch("/api/pixel/video", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "X-File-Name": file.name || "clip.mov"
+      },
+      body: file
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || "This browser could not show that movie.");
+    }
+    return URL.createObjectURL(await response.blob());
+  }
+
   async function onVideoFile(file) {
     if (!file) return;
     if (!isVideoFile(file)) {
@@ -579,33 +658,37 @@ export default function PixelPage({ project, onApply, say }) {
     setFrameCount(0);
     playIndexRef.current = 0;
     if (clipUrlRef.current) URL.revokeObjectURL(clipUrlRef.current);
-    const url = URL.createObjectURL(file);
+    let url = URL.createObjectURL(file);
     clipUrlRef.current = url;
     const video = clipRef.current;
     if (!video) return;
     setBusy(true);
+    clipHoldRef.current = true;
+    setNote(`Opening ${file.name}.`);
+    const stage = resultRef.current;
+    if (stage?.width) {
+      const ctx = stage.getContext("2d");
+      ctx.fillStyle = "#101014";
+      ctx.fillRect(0, 0, stage.width, stage.height);
+    }
     try {
-      await new Promise((resolve, reject) => {
-        const cleanup = () => {
-          video.removeEventListener("loadedmetadata", onReady);
-          video.removeEventListener("error", onErr);
-        };
-        const onReady = () => {
-          cleanup();
-          resolve();
-        };
-        const onErr = () => {
-          cleanup();
-          reject(new Error("That video could not be opened."));
-        };
-        video.addEventListener("loadeddata", onReady);
-        video.addEventListener("error", onErr);
-        video.src = url;
-        video.load();
-      });
-      const duration = await measureDuration(video);
-      if (!(duration > 0)) throw new Error("That video has no readable length.");
-      await seekVideo(video, 0);
+      let duration = 0;
+      try {
+        await openVideoUrl(video, url);
+        duration = await revealVideo(video);
+      } catch {
+        duration = 0;
+      }
+      if (!(duration > 0)) {
+        setNote(`Converting ${file.name} so the picture can show.`);
+        const converted = await browserMovie(file);
+        URL.revokeObjectURL(url);
+        url = converted;
+        clipUrlRef.current = url;
+        await openVideoUrl(video, url);
+        duration = await revealVideo(video);
+      }
+      if (!(duration > 0) || !(video.videoWidth > 0)) throw new Error("That movie opened, but no picture could be read from it.");
       durationRef.current = duration;
       const next = {
         name: file.name,
@@ -615,8 +698,10 @@ export default function PixelPage({ project, onApply, say }) {
       };
       setClip(next);
       const frames = Math.max(1, Math.ceil(next.duration * CLIP_FPS));
-      setNote(`${next.name} · ${next.duration.toFixed(1)}s · ${frames} frames at ${CLIP_FPS} fps. Style video keeps the face large and uses 2-pixel blocks on every frame.`);
+      setNote(`Styling ${next.name} · ${frames} frames.`);
+      await styleClip();
     } catch (error) {
+      clipHoldRef.current = false;
       setClip(null);
       setNote(error.message);
       say?.("error", error.message);
@@ -637,7 +722,7 @@ export default function PixelPage({ project, onApply, say }) {
   async function styleClip() {
     const video = clipRef.current;
     const duration = durationRef.current;
-    if (!video || !(duration > 0)) return;
+    if (!video || !(duration > 0) || stylingRef.current) return;
     stopCamera();
     playingRef.current = false;
     setPlaying(false);
@@ -686,7 +771,7 @@ export default function PixelPage({ project, onApply, say }) {
   async function cartoonClip() {
     const video = clipRef.current;
     const duration = durationRef.current;
-    if (!video || !(duration > 0)) return;
+    if (!video || !(duration > 0) || stylingRef.current) return;
     stopCamera();
     playingRef.current = false;
     setPlaying(false);
@@ -1454,6 +1539,8 @@ export default function PixelPage({ project, onApply, say }) {
           <span className="muted">{paletteCount ? `${paletteCount} colors` : "character studio"}</span>
           <button className="btn" onClick={() => fileRef.current?.click()} disabled={busy || videoBusy}>New picture</button>
           <button className="btn" onClick={() => videoFileRef.current?.click()} disabled={busy || videoBusy}>New video</button>
+          {clip && <button className="btn on" onClick={styleClip} disabled={videoBusy}>{videoJob === "style" ? `Frame ${videoProgress.done}/${videoProgress.total}` : "Style video"}</button>}
+          {(videoJob === "style" || videoJob === "cartoon") && <button className="btn" onClick={() => { videoCancelRef.current = true; }}>Stop</button>}
           <button className="btn on" onClick={aiRender} disabled={!hasSource || aiBusy}>{aiBusy ? "Rendering…" : "AI Render"}</button>
           <button className={`btn ${editing ? "on" : ""}`} onClick={toggleEdit} disabled={!hasSource}>Edit</button>
           <button className="btn" onClick={removeBackground} disabled={!hasSource}>Remove background</button>
@@ -1493,7 +1580,8 @@ export default function PixelPage({ project, onApply, say }) {
         >
           <canvas ref={resultRef} aria-label="8-bit character" />
           <video ref={clipRef} className="pixel-clip" playsInline muted />
-          {!hasSource && !cameraOn && !frameCount && !videoBusy && <p className="pixel-empty">{note}</p>}
+          {(busy || videoBusy) && <p className="pixel-status">{note}</p>}
+          {!hasSource && !cameraOn && !frameCount && !videoBusy && !busy && !clip && <p className="pixel-empty">{note}</p>}
         </div>
         <div className="pixel-roll" aria-label="Gallery">
           {!roll.length && <span className="muted">Roll is empty. Save a character to keep it here.</span>}

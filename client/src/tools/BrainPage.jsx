@@ -70,6 +70,7 @@ import {
   runThinkAndCreateGauntlet,
   runUniversalDaemonAndInstrumentation
 } from "./flyGnnConnectome.js";
+import { createMind, normalizeMind, think } from "./brainMind.js";
 
 export const PHI = 1.618033988749895;
 export const GOLDEN_ANGLE = 2.0 * Math.PI * (1.0 - 1.0 / PHI); // 137.507764° (Patch U-01)
@@ -1030,6 +1031,9 @@ export default function BrainPage({ project, say, onApply }) {
   const [ollamaStatus, setOllamaStatus] = useState({ ollamaOnline: false, models: [], continuitySaved: false, continuityUpdatedAt: null });
   const [selectedModel, setSelectedModel] = useState("fraynix-dna:3b");
   const [cortexPrompt, setCortexPrompt] = useState("Verify EP3 Puiseux α=2^(1/3), recall GENESIS_DNA, and report how your somatic dials steer this thought.");
+  const [thinkGoal, setThinkGoal] = useState("14 - 9");
+  const [thinkReport, setThinkReport] = useState(null);
+  const mindRef = useRef(createMind());
   const [cortexThinking, setCortexThinking] = useState(false);
   const [cortexResult, setCortexResult] = useState(null);
   const [dnaPlasmidInfo, setDnaPlasmidInfo] = useState(null);
@@ -1326,6 +1330,7 @@ export default function BrainPage({ project, say, onApply }) {
             somaticRef.current = continuity.somaticMarkers;
             syncSomatic();
           }
+          if (continuity.mind?.opcodes) mindRef.current = normalizeMind(continuity.mind);
           pushLedger(
             "CONTINUITY",
             "DISK_RESTORED",
@@ -1787,6 +1792,7 @@ export default function BrainPage({ project, say, onApply }) {
         ? { generation: activeGenome.generation, branch: activeGenome.branch, codeHash: activeGenome.codeHash, fitness: activeGenome.fitness }
         : null,
       lastDnaPlasmid: dna.plasmid,
+      mind: mindRef.current,
       updatedAt: new Date().toISOString()
     };
     try {
@@ -3612,6 +3618,45 @@ export default function BrainPage({ project, say, onApply }) {
         </div>
 
         <div className="tool-body" style={{ gap: 10 }}>
+          <div className="card">
+            <div className="row" style={{ justifyContent: "space-between" }}>
+              <b>Think</b>
+              <span className="muted">{thinkReport ? thinkReport.verdict : "no run yet"}</span>
+            </div>
+            <span className="muted">
+              The goal is compiled with the operator table this mind holds, run on FrayVM, and compared with a separate evaluator. A mismatch rewrites the table. The rewrite is kept only when this goal, fresh probes, and every earlier goal still agree.
+            </span>
+            <label className="field">
+              <span>Goal</span>
+              <input value={thinkGoal} onChange={(event) => setThinkGoal(event.target.value)} placeholder="14 - 9" />
+            </label>
+            <div className="row">
+              <button className="btn on" onClick={() => {
+                const report = think(mindRef.current, thinkGoal);
+                mindRef.current = report.mind;
+                setThinkReport(report);
+                pushLedger("THINK", report.verdict, report.steps.map((step) => step.phase).join(" → "), report.verdict === "PASS" ? 1 : 0);
+                persistDiskContinuity();
+              }}>Think</button>
+              {["14 - 9", "100 - 37", "6 * 7", "remember studio = fraymus", "recall studio", "bind fire 7", "bind steam 4"].map((sample) => (
+                <button key={sample} className="btn" onClick={() => setThinkGoal(sample)}>{sample}</button>
+              ))}
+            </div>
+            {thinkReport && (
+              <div className="stack">
+                {thinkReport.steps.map((step, index) => (
+                  <span key={`${step.phase}-${index}`} className="muted"><b>{step.phase}</b> — {step.detail}</span>
+                ))}
+                {thinkReport.source && <code style={{ whiteSpace: "pre-wrap" }}>{thinkReport.source}</code>}
+                <span className="muted">
+                  opcodes + {thinkReport.mind.opcodes["+"]} · − {thinkReport.mind.opcodes["-"]} · × {thinkReport.mind.opcodes["*"]} · ÷ {thinkReport.mind.opcodes["/"]}
+                  {" · "}placement {thinkReport.mind.placement}
+                  {" · "}{thinkReport.mind.cases.length} checked goals
+                  {" · "}{thinkReport.mind.fossils.length} retired rules
+                </span>
+              </div>
+            )}
+          </div>
           <div className="card" style={{ borderColor: emotionState?.primary?.color || "var(--line2)" }}>
             <div className="row" style={{ justifyContent: "space-between" }}>
               <b>Constructed feeling</b>

@@ -3945,8 +3945,9 @@ export function runSovereignAgiContinuum(customEvenInput = 98) {
     }
   ];
 
-  const baselineTotal = epochs.reduce((s, e) => s + e.baselineScore, 0); // 6 / 30
-  const agiTotal = epochs.reduce((s, e) => s + e.agiScore, 0); // 30 / 30
+  const scoredEpochs = epochs.map((epoch) => ({ ...epoch, agiScore: epoch.verified ? epoch.maxScore : 0 }));
+  const baselineTotal = scoredEpochs.reduce((s, e) => s + e.baselineScore, 0);
+  const agiTotal = scoredEpochs.reduce((s, e) => s + e.agiScore, 0);
   const maxTotal = epochs.reduce((s, e) => s + e.maxScore, 0); // 30
   const elapsedMs = Number(
     ((typeof performance !== "undefined" ? performance.now() : Date.now()) - t0).toFixed(2)
@@ -3962,9 +3963,9 @@ export function runSovereignAgiContinuum(customEvenInput = 98) {
     maxTotal,
     baselinePct: Number(((baselineTotal / maxTotal) * 100).toFixed(1)),
     agiPct: Number(((agiTotal / maxTotal) * 100).toFixed(1)),
-    agiGainMultiplier: Number((agiTotal / Math.max(1, baselineTotal)).toFixed(2)), // 5.00x
-    cumulativeSuiteScore: "151/151 (15 Coupling + 18 OMEGA-3 + 24 Think&Create + 30 AGI Continuum + 64 Envelope Crucible)",
-    epochs,
+    agiGainMultiplier: Number((agiTotal / Math.max(1, baselineTotal)).toFixed(2)),
+    cumulativeSuiteScore: `${agiTotal}/${maxTotal} epoch checks verified on this run`,
+    epochs: scoredEpochs,
     neurogenesis,
     epistemology,
     worldModel,

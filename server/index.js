@@ -150,10 +150,10 @@ function pixelPrompt(mode, hasStyle, extra) {
   return `Redraw the exact person from image 1 as an ${style} Remove the room and background completely. ${identity} ${look} ${PIXEL_SKIN}. ${note}`.trim();
 }
 
-function run(cmd, args) {
+function run(cmd, args, timeout = 45000) {
   return new Promise((resolve, reject) => {
-    execFile(cmd, args, { timeout: 45000 }, (error, stdout, stderr) => {
-      if (error) reject(new Error(String(stderr || error.message).trim()));
+    execFile(cmd, args, { timeout }, (error, stdout, stderr) => {
+      if (error) reject(new Error(String(stderr || error.message).trim() || "The converter failed."));
       else resolve(stdout);
     });
   });
@@ -190,6 +190,32 @@ app.post("/api/pixel/convert", express.raw({ type: () => true, limit: "60mb" }),
     res.json({ image: `data:image/png;base64,${fs.readFileSync(output).toString("base64")}` });
   } catch (error) {
     res.status(415).json({ error: error.message });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+app.post("/api/pixel/video", express.raw({ type: () => true, limit: "160mb" }), async (req, res) => {
+  if (!req.body?.length) return res.status(400).json({ error: "The file was empty." });
+  if (process.platform !== "darwin") return res.status(415).json({ error: "This machine cannot convert that movie." });
+  const name = String(req.get("x-file-name") || "clip.mov").replace(/[^\w.\-]+/g, "_").slice(-80);
+  const ext = path.extname(name).toLowerCase() || ".mov";
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "fraymus-video-"));
+  const input = path.join(dir, `in${ext}`);
+  const output = path.join(dir, "out.mp4");
+  fs.writeFileSync(input, req.body);
+  try {
+    await run("avconvert", [
+      "--source", input,
+      "--preset", "Preset1280x720",
+      "--output", output,
+      "--replace"
+    ], 180000);
+    if (!fs.existsSync(output) || fs.statSync(output).size < 32) throw new Error("The movie could not be converted.");
+    res.setHeader("Content-Type", "video/mp4");
+    res.send(fs.readFileSync(output));
+  } catch (error) {
+    res.status(415).json({ error: error.message || "The movie could not be converted." });
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -920,7 +946,8 @@ app.post("/api/brain/memory", (req, res) => {
       blackHoleHashes: Array.isArray(body.blackHoleHashes) ? body.blackHoleHashes.slice(0, 200) : [],
       body: body.body || null,
       activeGenomeMeta: body.activeGenomeMeta || null,
-      lastDnaPlasmid: typeof body.lastDnaPlasmid === "string" ? body.lastDnaPlasmid.slice(0, 8192) : null
+      lastDnaPlasmid: typeof body.lastDnaPlasmid === "string" ? body.lastDnaPlasmid.slice(0, 8192) : null,
+      mind: body.mind && typeof body.mind === "object" ? body.mind : (readBrainContinuity()?.mind || null)
     });
     res.json({
       ok: true,
