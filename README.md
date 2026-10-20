@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <b>A localhost studio for HTML, React, and MERN, plus 8-bit pictures and video, talking seals, cryptographic emoji, and a Brain that can miss, rewrite its own operator table, and keep the rewrite only when the old goals still pass.</b>
+  <b>Fraymus OS One. A localhost studio for HTML, React, and MERN, plus 8-bit pictures and video, talking seals, cryptographic emoji, an OPEG gateway, and a Brain that can miss, rewrite its own operator table, and keep the rewrite only when the old goals still pass.</b>
 </p>
 
 <p align="center">
@@ -20,6 +20,7 @@
   <a href="#what-to-expect"><b>What to expect</b></a> ·
   <a href="#wiring"><b>Wiring</b></a> ·
   <a href="#workspaces"><b>Workspaces</b></a> ·
+  <a href="docs/tabs/README.md"><b>Tab manuals</b></a> ·
   <a href="#think"><b>Think</b></a> ·
   <a href="#8-bit"><b>8-bit</b></a> ·
   <a href="#brain"><b>Brain</b></a> ·
@@ -27,7 +28,9 @@
   <a href="#ship"><b>Ship</b></a> ·
   <a href="docs/APP_OUTLINE.md">Outline</a> ·
   <a href="docs/STUDIO_HANDBOOK.md">Handbook</a> ·
-  <a href="https://github.com/eyeoverthink/fraymus-css">GitHub</a>
+  <a href="https://github.com/eyeoverthink/Fraymus-OS-One">Fraymus OS One</a> ·
+  <a href="https://github.com/eyeoverthink/fraymus-css">fraymus-css</a> ·
+  <a href="https://github.com/eyeoverthink/fraymus-brain">fraymus-brain</a>
 </p>
 
 <p align="center">
@@ -36,7 +39,7 @@
 
 Write a page and watch it render. Pair it with a stylesheet. Give it a REST collection. Poke the DOM from a REPL. Turn a photo or a movie into an 8-bit character. Put a talking mouth on the drawn smile. Pack a program into one emoji, sign it, and mail it. Open **Brain** and press **Think**: the goal runs on [FrayVM](client/src/tools/frayvm.js), a separate evaluator checks the number, and a wrong operator is rewritten and replayed against every earlier goal.
 
-Repository: [eyeoverthink/fraymus-css](https://github.com/eyeoverthink/fraymus-css)
+This tree is [Fraymus OS One](https://github.com/eyeoverthink/Fraymus-OS-One): the studio, the OPEG gateway, a screenshot of each working tab, and a manual per tab in [docs/tabs](docs/tabs/README.md). The earlier studio remote stays [eyeoverthink/fraymus-css](https://github.com/eyeoverthink/fraymus-css). The φ-scaled weight kernel is [eyeoverthink/fraymus-brain](https://github.com/eyeoverthink/fraymus-brain), a separate repository.
 
 Everything binds to `127.0.0.1`. Projects, mail, and Brain continuity stay on this machine.
 
@@ -165,25 +168,26 @@ The seed table maps `-`, `*`, and `/` to `ADD`, so the first real difference, pr
 
 ## Workspaces
 
-Fifteen tabs. Each one receives the open project.
+Sixteen tabs. Each one has a manual with the screenshot from this run. Each one receives the open project.
 
 | Tab | Module | What you get |
 | --- | --- | --- |
-| [Code](#code) | [`App.jsx`](client/src/App.jsx), [`model.js`](client/src/model.js) | Library, Pair editor, live preview, `⌘K` |
-| [CRUD](#crud) | [`CrudPage.jsx`](client/src/tools/CrudPage.jsx) | Schema through compile, live REST |
-| [REPL](#repl) | [`ReplPage.jsx`](client/src/tools/ReplPage.jsx) | DOM commands on the preview |
-| [Canvas](#canvas) | [`CanvasPage.jsx`](client/src/tools/CanvasPage.jsx) | Cube of blocks, purple accent |
-| [8-bit](#8-bit) | [`PixelPage.jsx`](client/src/tools/PixelPage.jsx) | Photo, camera, video, talk |
-| Production | [`StudioPage.jsx`](client/src/tools/StudioPage.jsx) | Cast, voices, mouth on the smile |
-| [Seal](#seal) | [`SealPage.jsx`](client/src/tools/SealPage.jsx) | One talking emoji |
-| [Brain](#brain) | [`BrainPage.jsx`](client/src/tools/BrainPage.jsx) | Think, plus the lobes below |
-| HTML·JS | [`WebJsPage.jsx`](client/src/tools/WebJsPage.jsx) | HTML and JS side by side |
-| [Emoji](#emoji) | [`EmojiPage.jsx`](client/src/tools/EmojiPage.jsx) | Text hidden in one glyph |
-| Emoji Coder | [`EmojiCoderPage.jsx`](client/src/tools/EmojiCoderPage.jsx) | Emoji markup to nine targets |
-| [Dispatch](#dispatch) | [`DispatchPage.jsx`](client/src/tools/DispatchPage.jsx) | Signed, deflated, emoji wire |
-| [WASM](#wasm) | [`WasmPage.jsx`](client/src/tools/WasmPage.jsx) | 53-opcode machine to `.wasm` |
-| [Mail](#dispatch) | [`MailPage.jsx`](client/src/tools/MailPage.jsx) | Local mailbox and Gmail |
-| Screw | [`LooseScrewPage.jsx`](client/src/tools/LooseScrewPage.jsx) | Broadcast desk |
+| [Code](docs/tabs/code.md) | [`App.jsx`](client/src/App.jsx), [`model.js`](client/src/model.js) | Library, Pair editor, live preview, `⌘K` |
+| [CRUD](docs/tabs/crud.md) | [`CrudPage.jsx`](client/src/tools/CrudPage.jsx) | Schema through compile, live REST |
+| [REPL](docs/tabs/repl.md) | [`ReplPage.jsx`](client/src/tools/ReplPage.jsx) | DOM commands on the preview |
+| [Canvas](docs/tabs/canvas.md) | [`CanvasPage.jsx`](client/src/tools/CanvasPage.jsx) | Cube of blocks, purple accent |
+| [8-bit](docs/tabs/pixel.md) | [`PixelPage.jsx`](client/src/tools/PixelPage.jsx) | Photo, camera, video, talk |
+| [Production](docs/tabs/production.md) | [`StudioPage.jsx`](client/src/tools/StudioPage.jsx) | Cast, voices, mouth on the smile |
+| [Seal](docs/tabs/seal.md) | [`SealPage.jsx`](client/src/tools/SealPage.jsx) | One talking emoji |
+| [Brain](docs/tabs/brain.md) | [`BrainPage.jsx`](client/src/tools/BrainPage.jsx) | Think, plus the lobes below |
+| [OPEG](docs/tabs/opeg.md) | [`OpegPage.jsx`](client/src/tools/OpegPage.jsx) | PT-symmetric goal → `R_san` |
+| [HTML·JS](docs/tabs/htmljs.md) | [`WebJsPage.jsx`](client/src/tools/WebJsPage.jsx) | HTML and JS side by side |
+| [Emoji](docs/tabs/emoji.md) | [`EmojiPage.jsx`](client/src/tools/EmojiPage.jsx) | Text hidden in one glyph |
+| [Emoji Coder](docs/tabs/emoji-coder.md) | [`EmojiCoderPage.jsx`](client/src/tools/EmojiCoderPage.jsx) | Emoji markup to nine targets |
+| [Dispatch](docs/tabs/dispatch.md) | [`DispatchPage.jsx`](client/src/tools/DispatchPage.jsx) | Signed, deflated, emoji wire |
+| [WASM](docs/tabs/wasm.md) | [`WasmPage.jsx`](client/src/tools/WasmPage.jsx) | 53-opcode machine to `.wasm` |
+| [Mail](docs/tabs/mail.md) | [`MailPage.jsx`](client/src/tools/MailPage.jsx) | Local mailbox and Gmail |
+| [Screw](docs/tabs/screw.md) | [`LooseScrewPage.jsx`](client/src/tools/LooseScrewPage.jsx) | Broadcast desk |
 
 <p align="center">
   <img src="docs/showcase/8bit-studio.png" alt="8-bit studio" width="32%">
@@ -302,6 +306,16 @@ Deep manuals, each with their own figures:
   <img src="docs/showcase/brain-agi-v21-pcc-socratic.png" alt="Proof-carrying WASM and Socratic duel" width="32%">
 </p>
 
+### OPEG
+
+A goal that names PT-symmetric, EP3, or Puiseux is posted to `POST /api/opeg/execute`. The gateway loads [`config/system_protocol.yaml`](config/system_protocol.yaml) and [`modelfiles/fraynix_core.yaml`](modelfiles/fraynix_core.yaml), runs the 3×3 Hamiltonian in [`opeg.js`](client/src/tools/opeg.js), and returns `R_san` with the sanitizer `Σ`. The raw pipe keeps metadata. The receipt does not.
+
+Demo task `g = 1`, `γ = 0.5`, `ε = 0.001`: EP3 false, `γ_EP3 = 1.4142135623730951`, roots `0, ±1.3228756555322954`, discriminant `21.4375`, Puiseux branches `0.1000 | −0.0500 ± i0.0866`. A goal outside that family returns HALT and no derivation. Full write-up: [OPEG manual](docs/tabs/opeg.md).
+
+<p align="center">
+  <img src="docs/os/opeg.png" alt="OPEG command for the demo Hamiltonian" width="100%">
+</p>
+
 ### HTML · JS, Emoji, Dispatch, WASM, Mail
 
 <p align="center">
@@ -349,6 +363,8 @@ The deploy bundle includes `vercel.json`, `netlify.toml`, a Dockerfile, Compose,
 | POST | `/api/pixel/video` | Movie to H.264 MP4 through `avconvert` |
 | POST | `/api/pixel/convert` | HEIC and other stills |
 | POST | `/api/pixel/render` | AI Render and cartoon frames |
+| GET | `/api/opeg/protocol` | Protocol YAML and the Fraynix modelfile |
+| POST | `/api/opeg/execute` | PT-symmetric goal in, `R_san` out |
 
 The rest of the studio routes are listed in the [outline](docs/APP_OUTLINE.md).
 
@@ -364,6 +380,8 @@ The rest of the studio routes are listed in the [outline](docs/APP_OUTLINE.md).
 | `findMouth` and the tooth / slit helpers | [`pixelMouth.js`](client/src/tools/pixelMouth.js) | Place the opening on the teeth. `inspectTalk` still has to accept the cells. |
 | `POST /api/pixel/video` | [`server/index.js`](server/index.js) | Darwin only. 180 second `avconvert` budget. Returns `video/mp4`. |
 | `POST /api/brain/memory` | same | Persists `mind` beside the orbits. A save that omits `mind` keeps the one already on disk. |
+| `runOpeg` | [`opeg.js`](client/src/tools/opeg.js) | PT-symmetric 3×3 only. Returns `R_san` or HALT. Sanitizer drops metadata and the session id. |
+| `POST /api/opeg/execute` | [`server/index.js`](server/index.js) | Refuses to run when the protocol file is missing the inference ban. |
 
 Older exports stay where the [Brain manual](docs/SOVEREIGN_BRAIN_README.md) and the [ISA spec](docs/ISA_SPECIFICATION.md) list them: `evaluateInArena`, `FlyGNNv10`, `assemble`, `runProgram`, `compileToWasm`, `compileWithPccCertificate`, `composeTalkCells`, `styleImage`.
 
@@ -379,8 +397,15 @@ client/                 Vite root
   src/tools/pixelMouth.js   Mouth placement
   src/tools/frayvm.js       53-opcode machine
   src/tools/flyGnnConnectome.js
-server/index.js         API, live sessions, pixel convert, brain routes
-docs/showcase/          Pictures in this README
+  src/tools/opeg.js         OPEG Hamiltonian and sanitizer
+  src/tools/OpegPage.jsx    OPEG workspace
+config/system_protocol.yaml
+modelfiles/fraynix_core.yaml
+server/index.js         API, live sessions, pixel convert, brain routes, OPEG
+server/opeg.test.mjs
+docs/showcase/          Earlier pictures in this README
+docs/os/                Screenshots from the OS One run
+docs/tabs/              One manual per tab
 docs/                   Manuals linked above
 data/brain/             Continuity. Gitignored
 data/projects/          Projects. Gitignored. Do not commit face photos
@@ -412,5 +437,6 @@ data/projects/          Projects. Gitignored. Do not commit face photos
   <a href="#brand">φ^75 = 4721424167835376.00</a> ·
   <a href="#brand">One Seed = Reborn</a> ·
   <a href="#brand">FRAY 0x46524159</a> ·
+  <a href="https://github.com/eyeoverthink/Fraymus-OS-One">eyeoverthink/Fraymus-OS-One</a> ·
   <a href="https://github.com/eyeoverthink/fraymus-css">eyeoverthink/fraymus-css</a>
 </p>

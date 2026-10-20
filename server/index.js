@@ -6,6 +6,7 @@ import express from "express";
 import cors from "cors";
 import archiver from "archiver";
 import mongoose from "mongoose";
+import { runOpeg } from "../client/src/tools/opeg.js";
 import { createGmail } from "./gmailBox.js";
 import { createStore } from "./mailbox.js";
 import {
@@ -1349,6 +1350,38 @@ app.post("/api/loosescrew/design", (req, res) => {
     ],
     goal
   });
+});
+
+const opegMemory = [];
+
+function readOpegLaw() {
+  const protocol = fs.readFileSync(path.resolve("config/system_protocol.yaml"), "utf8");
+  const modelfile = fs.readFileSync(path.resolve("modelfiles/fraynix_core.yaml"), "utf8");
+  const enforced = protocol.includes("Forbidden_Action: DIRECT_INFERENCE") && protocol.includes("Sanitizer: Σ");
+  return { protocol, modelfile, enforced };
+}
+
+app.get("/api/opeg/protocol", (_req, res) => {
+  const law = readOpegLaw();
+  res.json({ ok: law.enforced, protocol: law.protocol, modelfile: law.modelfile });
+});
+
+app.post("/api/opeg/execute", (req, res) => {
+  const law = readOpegLaw();
+  if (!law.enforced) return res.status(500).json({ ok: false, error: "The OPEG protocol file is missing the inference ban" });
+  const body = req.body || {};
+  const report = runOpeg({
+    goal: String(body.goal || "").slice(0, 2000),
+    hamiltonianType: String(body.hamiltonianType || "pt_symmetric_3x3").slice(0, 64),
+    g: Number(body.g),
+    gamma: Number(body.gamma),
+    epsilon: Number(body.epsilon)
+  });
+  if (report.status === "SUCCESS") {
+    opegMemory.unshift({ receipt_id: report.R_san.receipt_id, at: report.R_san.timestamp });
+    if (opegMemory.length > 50) opegMemory.length = 50;
+  }
+  res.json({ ok: true, memoryCount: opegMemory.length, ...report });
 });
 
 app.use("/published", express.static(publishedDir, { index: "index.html" }));

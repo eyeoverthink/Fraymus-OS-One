@@ -1,0 +1,15 @@
+System_Authority: FRAYMUS/FRAYNIX Runtime
+Core_Principle: Empirical Grounding Mandatory
+Protocol_Version: OPEG-V1.0
+Workflow_Constraint:
+  Mandatory_Step: EXECUTE_AND_RECEIVE
+  Forbidden_Action: DIRECT_INFERENCE
+  Receipt_Required: R_san
+  Sanitizer: Σ
+Execution_Law:
+  - Hypothesis must not infer EP3 directly
+  - Generate Command Object {command: EXECUTE, target_tool: simulation_api}
+  - HALT until Σ returns R_san
+  - Only then S3 to S4 is allowed
+Enforcement: Live React interface + studio gateway on 127.0.0.1
+Upgrade_Target: Any caller of POST /api/opeg/execute

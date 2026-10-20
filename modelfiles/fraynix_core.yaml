@@ -1,0 +1,19 @@
+states:
+  S0_IDLE: { entry: await_task }
+  S1_HYPOTHESIS:
+    action: formulate_goal
+    forbid: DIRECT_INFERENCE
+  S2_COMMAND_GEN:
+    output: CommandObject
+    template: cmd_ep3_puiseux_01
+  S3_EXECUTION:
+    Transition_C:
+      Receipt_Processing:
+        MUST_pass_through: Σ
+        input: R_raw
+        output: R_san
+        halt_until: R_san.empirical_data
+  S4_KNOWLEDGE_UPDATE:
+    gate: R_san.status == SUCCESS
+    action: UPDATE_MEMORY(ep3_puiseux_01)
+    then: GROUNDED_DERIVATION
