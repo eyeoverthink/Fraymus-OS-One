@@ -1,0 +1,23 @@
+{
+  "name": "fraymus-portal",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server and localhost JSON endpoint exposing the Fraymus OS One studio API as agent tools, with SHA-256 chained receipts.",
+  "bin": {
+    "fraymus-portal": "src/server.js"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "start:http": "node src/server.js --http",
+    "smoke": "node test/smoke.mjs",
+    "verify-receipts": "node scripts/verify-receipts.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  }
+}
