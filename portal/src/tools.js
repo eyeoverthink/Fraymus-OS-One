@@ -2,6 +2,7 @@
 // studio already ships (brainMind.js). Nothing is simulated: if the studio or a
 // dependency is missing, the tool returns the real error.
 import fs from "node:fs";
+import crypto from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -96,6 +97,32 @@ async function filesFrom(args) {
   throw new Error("Pass files or project_id.");
 }
 
+// Staged dry-run mind. Dry runs learn too (a miss rewrites the operator table);
+// the lesson is kept here, tied to the hash of the studio's saved mind. If the saved
+// mind changes (the UI or a persist run), the stage is stale and is dropped.
+export const STAGED_MIND = path.join(OUT_DIR, "staged-mind.json");
+
+function mindHash(mind) {
+  const { journal, ...rest } = mind || {};
+  return crypto.createHash("sha256").update(JSON.stringify(rest)).digest("hex");
+}
+
+function readStaged(baseHash) {
+  try {
+    const doc = JSON.parse(fs.readFileSync(STAGED_MIND, "utf8"));
+    return doc.baseHash === baseHash ? doc : null;
+  } catch { return null; }
+}
+
+function writeStaged(doc) {
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  fs.writeFileSync(STAGED_MIND, JSON.stringify(doc, null, 2));
+}
+
+function clearStaged() {
+  fs.rmSync(STAGED_MIND, { force: true });
+}
+
 let brainMindModule = null;
 async function brainMind() {
   if (!brainMindModule) brainMindModule = await import(path.join(REPO_ROOT, "client/src/tools/brainMind.js"));
@@ -147,19 +174,29 @@ export const TOOLS = [
   },
   {
     name: "brain_think",
-    description: "Run the studio's Think loop (client/src/tools/brainMind.js think()) on one goal: an integer expression like \"8 / 2\", \"remember name = value\", \"recall name\", or \"bind name value\". It compiles to FrayVM, checks against an independent evaluator, and rewrites the operator table on a miss. Starts from the mind saved in /api/brain/memory. persist=true writes the new mind back without touching the other continuity fields. No language model is involved.",
+    description: "Run the studio's Think loop (client/src/tools/brainMind.js think()) on one goal: an integer expression like \"8 / 2\", \"remember name = value\", \"recall name\", or \"bind name value\". It compiles to FrayVM, checks against an independent evaluator, and rewrites the operator table on a miss. Starts from the mind saved in /api/brain/memory. A dry run (persist=false) never writes to the studio, but what it learns is staged in the portal (out/staged-mind.json) so the next dry run builds on it; persist=true writes the staged lessons plus this run to the studio. discard_staged=true drops the staged lessons first. No language model is involved.",
     input: {
       goal: z.string().min(1).max(500),
-      persist: z.boolean().optional().describe("Save the updated mind to /api/brain/memory. Default false (dry run).")
+      persist: z.boolean().optional().describe("Save the updated mind (including staged dry-run lessons) to /api/brain/memory. Default false (dry run, staged in the portal only)."),
+      discard_staged: z.boolean().optional().describe("Forget staged dry-run lessons and start from the saved mind.")
     },
-    async run({ goal, persist = false }) {
+    async run({ goal, persist = false, discard_staged = false }) {
       const { think, normalizeMind } = await brainMind();
       let saved = null;
       try { saved = (await studio("GET", "/api/brain/memory")).continuity; } catch (error) {
         if (persist) throw error;
       }
-      const result = think(normalizeMind(saved?.mind), goal);
+      const savedMind = normalizeMind(saved?.mind);
+      const savedHash = mindHash(savedMind);
+      if (discard_staged) clearStaged();
+      const staged = readStaged(savedHash);
+      const start = staged ? normalizeMind(staged.mind) : savedMind;
+      const result = think(start, goal);
+      // learned = a rule changed (operator table, placement, facts, binds); recorded cases alone don't count.
+      const rules = (m) => JSON.stringify([m.opcodes, m.placement, m.facts, m.binds]);
+      const learned = rules(normalizeMind(result.mind)) !== rules(start);
       let persisted = false;
+      let stagedRuns = 0;
       if (persist) {
         const c = saved || {};
         await studio("POST", "/api/brain/memory", { json: {
@@ -173,6 +210,10 @@ export const TOOLS = [
           mind: result.mind
         } });
         persisted = true;
+        clearStaged();
+      } else {
+        stagedRuns = (staged?.runs || 0) + 1;
+        writeStaged({ baseHash: savedHash, runs: stagedRuns, updatedAt: new Date().toISOString(), mind: result.mind });
       }
       return {
         verdict: result.verdict,
@@ -182,7 +223,11 @@ export const TOOLS = [
         source: result.source ?? null,
         opcodes: result.mind.opcodes,
         startedFromSavedMind: Boolean(saved?.mind),
-        persisted
+        startedFromStaged: Boolean(staged),
+        learned,
+        cases: (result.mind.cases || []).length,
+        persisted,
+        staged: persisted ? null : { runs: stagedRuns, file: STAGED_MIND, note: "Dry run: lessons are staged in the portal, not saved in the studio. Run brain_think with persist=true to save them." }
       };
     }
   },

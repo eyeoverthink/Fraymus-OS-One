@@ -10,3 +10,4 @@ hf-token.txt
 .env.*
 .extract
 .DS_Store
+data/studio-token

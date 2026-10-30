@@ -3,12 +3,12 @@ import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import express from "express";
-import cors from "cors";
 import archiver from "archiver";
 import mongoose from "mongoose";
 import { runOpeg } from "../client/src/tools/opeg.js";
 import { createGmail } from "./gmailBox.js";
 import { createStore } from "./mailbox.js";
+import { installAuth } from "./auth.js";
 import {
   STATIC_SERVER,
   commandVersion,
@@ -33,10 +33,10 @@ import {
 ensureDirs();
 const app = express();
 app.disable("x-powered-by");
-app.use(cors({ origin: true }));
+const PORT = Number(process.env.FRAYMUS_PORT) || 4177;
+const auth = installAuth(app, { port: PORT });
 app.use(express.json({ limit: "12mb" }));
 
-const PORT = Number(process.env.FRAYMUS_PORT) || 4177;
 let ProjectModel = null;
 let mongoState = "off";
 
@@ -1397,4 +1397,7 @@ if (fs.existsSync(dist)) {
 
 app.listen(PORT, "127.0.0.1", () => {
   console.log(`Fraymus studio server http://127.0.0.1:${PORT}`);
+  console.log(auth.enabled
+    ? `studio login on: token from ${auth.source}. Open http://127.0.0.1:${PORT}/login (or the UI on :5173) and paste it.`
+    : "studio login OFF (STUDIO_AUTH=off): anything on this machine can call the API.");
 });

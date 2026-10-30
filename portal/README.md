@@ -14,12 +14,12 @@ agent ──MCP (stdio or HTTP)──▶ portal ──HTTP──▶ studio 127.0
 
 ```bash
 # 1. the studio (repo root)
-npm install && npm start            # http://127.0.0.1:4177
+npm install && npm start            # http://127.0.0.1:4177, login on (token in data/studio-token)
 
 # 2. the portal
 cd portal && npm install
 node src/server.js                   # MCP over stdio (what desktop clients launch)
-node src/server.js --http            # MCP at http://127.0.0.1:4190/mcp + JSON at /tools
+node src/server.js --http            # MCP at http://127.0.0.1:4191/mcp + JSON at /tools
 node src/server.js --http --stdio    # both
 node test/smoke.mjs                  # call every tool against the running studio
 node scripts/verify-receipts.mjs     # check the receipt chain
@@ -30,7 +30,8 @@ Node 20 or newer runs the portal. The studio was tested on Node 24.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `FRAYMUS_STUDIO_URL` | `http://127.0.0.1:4177` | Where the studio listens |
-| `PORTAL_PORT` | `4190` | HTTP mode port, always bound to `127.0.0.1` |
+| `PORTAL_PORT` | `4191` | HTTP mode port, always bound to `127.0.0.1`. The old default 4190 is on the WHATWG fetch blocked-port list, so `fetch()` and browsers refuse it. |
+| `FRAYMUS_STUDIO_TOKEN` / `STUDIO_TOKEN` | unset | The studio login token the portal sends as `Authorization: Bearer`. When unset the portal reads the file the studio writes, `STUDIO_TOKEN_FILE` (default `<repo>/data/studio-token`). |
 | `PORTAL_TOKEN` | unset | When set, HTTP calls need `Authorization: Bearer <token>` or `x-portal-token`. stdio does not use it, because the client spawns the process itself. |
 | `PORTAL_RECEIPTS` | `portal/receipts.jsonl` | Receipt file |
 | `PORTAL_OUT_DIR` | `portal/out/` | Where zips, PNGs and MP4s land |
@@ -46,7 +47,7 @@ Node 20 or newer runs the portal. The studio was tested on Node 24.
 | `studio_health` | `GET /api/health`, `/api/system` | studio | worked |
 | `brain_status` | `GET /api/brain/status` | studio | worked (reported Ollama offline) |
 | `brain_memory_get` | `GET /api/brain/memory` | studio | worked |
-| `brain_think` | `brainMind.think()` plus `GET/POST /api/brain/memory` | studio | worked: `8 / 2` and `14 - 9` missed, rewrote the table, and passed. `persist:true` saved the mind. Over HTTP, `6 * 7` returned 42. |
+| `brain_think` | `brainMind.think()` plus `GET/POST /api/brain/memory` | studio | worked: `8 / 2` and `14 - 9` missed, rewrote the table, and passed. `persist:true` saved the mind. Over HTTP, `6 * 7` returned 42. Dry runs stage what they learn in `out/staged-mind.json` (see Limits). |
 | `brain_cortex_chat` | `POST /api/brain/think` | Ollama on 127.0.0.1:11434 | failed cleanly with 503 (no Ollama on the box) |
 | `opeg_protocol` | `GET /api/opeg/protocol` | studio | worked, `enforced=true` |
 | `opeg_execute` | `POST /api/opeg/execute` | studio | worked, `SUCCESS` with an `R_san` receipt |
@@ -108,7 +109,7 @@ PORTAL_TOKEN=$(openssl rand -hex 24) node src/server.js --http
 {
   "mcpServers": {
     "fraymus-portal": {
-      "url": "http://127.0.0.1:4190/mcp",
+      "url": "http://127.0.0.1:4191/mcp",
       "headers": { "Authorization": "Bearer <PORTAL_TOKEN>" }
     }
   }
@@ -121,8 +122,8 @@ The portal only listens on loopback. A cloud agent can't reach it unless you put
 
 1. JSON, through the existing `http_get` style tools or a small `fraymus_studio` tool:
    ```bash
-   curl -s http://127.0.0.1:4190/tools -H "Authorization: Bearer $PORTAL_TOKEN"
-   curl -s -X POST http://127.0.0.1:4190/tools/brain_think \
+   curl -s http://127.0.0.1:4191/tools -H "Authorization: Bearer $PORTAL_TOKEN"
+   curl -s -X POST http://127.0.0.1:4191/tools/brain_think \
      -H "Authorization: Bearer $PORTAL_TOKEN" -H "content-type: application/json" \
      -d '{"goal":"100 - 37"}'
    ```
@@ -136,5 +137,6 @@ The portal only listens on loopback. A cloud agent can't reach it unless you put
 - `brain_think` is the symbolic Think loop. It handles integer arithmetic, `remember`, `recall` and `bind` with a checker. It is not a language model and does not plan. `brain_cortex_chat` is the LLM path, and it needs Ollama.
 - `site_publish` and `export_zip` with `project_id` rebuild files with a simpler exporter than the studio UI. The studio's exporter in `client/src/model.js` uses Vite `?raw` imports and can't load in Node. Static projects become `index.html` + `styles.css` + `app.js`, React mode and WASM aren't wired, and `.env` is always left out. Pass `files` yourself for exact output.
 - `project_create` makes static projects only.
-- The studio has no auth of its own and allows any CORS origin on 127.0.0.1:4177. The portal token protects the portal, not the studio port.
+- Studio login. The studio API needs its token (see the root README). The portal reads it from `FRAYMUS_STUDIO_TOKEN`/`STUDIO_TOKEN` or `data/studio-token` and sends it on every call, so a 401 from a tool means the portal and studio disagree on the token. `GET /health` reports `studioToken: true` when the portal found one.
+- `brain_think` dry runs. A dry run never writes to the studio, but a miss still teaches the mind (the operator table gets rewritten). That lesson is staged in `portal/out/staged-mind.json`, tied to the hash of the studio's saved mind, and the next dry run starts from it (`startedFromStaged: true`, `learned` says whether this run changed anything). `persist: true` saves the staged lessons plus the current run to the studio and clears the stage. `discard_staged: true` throws the stage away. If the saved mind changes underneath (the UI's Think tab or another persist), the stage is dropped as stale.
 - HTTP mode is stateless: each POST to `/mcp` gets a fresh server, and there are no server-sent notifications.

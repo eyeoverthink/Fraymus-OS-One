@@ -50,6 +50,12 @@ process.exitCode = failed ? 1 : 0;
 
 if (process.argv.includes("--http")) {
   const base = process.env.MAIL_URL || "http://127.0.0.1:4177";
+  // Studio login: STUDIO_TOKEN, or the token file the server writes.
+  const fs = await import("node:fs");
+  let token = process.env.STUDIO_TOKEN || "";
+  try { token = token || fs.readFileSync(process.env.STUDIO_TOKEN_FILE || "data/studio-token", "utf8").trim(); } catch { /* login off */ }
+  const auth = token ? { Authorization: `Bearer ${token}` } : {};
+  const fetch = (url, init = {}) => globalThis.fetch(url, { ...init, headers: { ...auth, ...(init.headers || {}) } });
   const stamp = `e2e-${Date.now()}`;
   const res = await fetch(`${base}/api/mail/messages`, {
     method: "POST",

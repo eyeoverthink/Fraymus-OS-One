@@ -9,7 +9,8 @@
     "dev:server": "node server/index.js",
     "dev:client": "vite --config client/vite.config.js",
     "start": "node server/index.js",
-    "build": "vite build --config client/vite.config.js"
+    "build": "vite build --config client/vite.config.js",
+    "test:auth": "node scripts/auth-e2e.mjs"
   },
   "dependencies": {
     "@babel/standalone": "^7.26.2",

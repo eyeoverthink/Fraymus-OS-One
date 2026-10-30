@@ -93,7 +93,9 @@ npm run dev
 | Health | [http://127.0.0.1:4177/api/health](http://127.0.0.1:4177/api/health) |
 | Dispatch hub | [http://127.0.0.1:8787](http://127.0.0.1:8787) when [`scripts/email-watcher/hub.mjs`](scripts/email-watcher/hub.mjs) is running |
 
-Vite proxies `/api`, `/live`, `/published`, and `/vendor` to the API. Both processes bind to `127.0.0.1`. `npm run dev` does not use `node --watch`. After you edit `server/`, restart the API. If port 4177 is already taken, stop the old server and run `npm run dev` again.
+Vite proxies `/api`, `/live`, `/published`, `/vendor`, `/login`, and `/logout` to the API. Both processes bind to `127.0.0.1`. `npm run dev` does not use `node --watch`. After you edit `server/`, restart the API. If port 4177 is already taken, stop the old server and run `npm run dev` again.
+
+**Login.** The API needs a token. On first start the server writes a random one to `data/studio-token` (mode 600, gitignored) and prints that path, never the token. Open the UI, and the first API call sends you to `/login`; paste the token and the server sets an HttpOnly, SameSite=Strict session cookie for 30 days. Scripts and agents send `Authorization: Bearer <token>` or `X-Studio-Token`. The server also refuses any `Host` header that isn't 127.0.0.1/localhost on 4177 or 5173, and any browser `Origin` other than those, so other local pages and DNS-rebinding sites can't use it. `/api/health`, `/published/`, `/vendor/` and built UI assets stay open. The Fraymus Portal (`portal/`) reads the same token file.
 
 `http://127.0.0.1:4177` serves `client/dist`. Source edits show up there after `npm run build`. The Vite port shows them immediately.
 
@@ -112,6 +114,10 @@ Open **Brain**, press **Think** on `14 - 9`, then on `100 - 37`. The first run m
 | Variable | Default | Role |
 | --- | --- | --- |
 | `FRAYMUS_PORT` | `4177` | Studio API port |
+| `STUDIO_TOKEN` | unset | Use this login token instead of the generated one |
+| `STUDIO_TOKEN_FILE` | `data/studio-token` | Where the generated token is kept |
+| `STUDIO_AUTH` | `on` | `off` turns the login off (not recommended) |
+| `STUDIO_ALLOWED_ORIGINS`, `STUDIO_ALLOWED_HOSTS` | unset | Extra browser origins / Host headers to accept, comma-separated |
 | `MONGODB_URI` | unset | Turns on Mongoose for the Item model |
 | `HF_TOKEN` | unset | Hugging Face token for AI Render. `hf-token.txt` works too and must stay untracked |
 | `FRAYMUS_PIXEL_SPACE` | `prithivMLmods/Flux.2-Klein-Edit-Ultra-Fast` | Space used for AI Render |

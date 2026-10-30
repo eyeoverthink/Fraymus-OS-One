@@ -12,7 +12,9 @@ export default defineConfig({
       "/api": "http://127.0.0.1:4177",
       "/live": "http://127.0.0.1:4177",
       "/published": "http://127.0.0.1:4177",
-      "/vendor": "http://127.0.0.1:4177"
+      "/vendor": "http://127.0.0.1:4177",
+      "/login": "http://127.0.0.1:4177",
+      "/logout": "http://127.0.0.1:4177"
     }
   },
   build: {

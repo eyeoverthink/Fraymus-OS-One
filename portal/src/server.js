@@ -8,11 +8,11 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { TOOLS } from "./tools.js";
 import { buildMcpServer, callTool, log, RECEIPTS_FILE } from "./portal.js";
 import { verifyLedger } from "./receipts.js";
-import { studioBase } from "./studio.js";
+import { studioBase, studioToken } from "./studio.js";
 import { z } from "zod";
 
 const HOST = "127.0.0.1";
-const PORT = Number(process.env.PORTAL_PORT) || 4190;
+const PORT = Number(process.env.PORTAL_PORT) || 4191; // 4190 is on the WHATWG fetch blocked-port list
 const TOKEN = process.env.PORTAL_TOKEN || "";
 const LOCAL_HOSTS = new Set([`127.0.0.1:${PORT}`, `localhost:${PORT}`,
   ...String(process.env.PORTAL_ALLOWED_HOSTS || "").split(",").map((h) => h.trim()).filter(Boolean)]);
@@ -56,7 +56,7 @@ async function handle(req, res) {
 
   const url = new URL(req.url, `http://${req.headers.host}`);
   if (url.pathname === "/health" && req.method === "GET") {
-    return send(res, 200, { ok: true, studio: studioBase(), tools: TOOLS.length, auth: Boolean(TOKEN) });
+    return send(res, 200, { ok: true, studio: studioBase(), tools: TOOLS.length, auth: Boolean(TOKEN), studioToken: Boolean(studioToken()) });
   }
   if (url.pathname === "/receipts/verify" && req.method === "GET") {
     return send(res, 200, verifyLedger(RECEIPTS_FILE));

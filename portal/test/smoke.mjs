@@ -94,7 +94,7 @@ await stdio.close();
 
 // 2. HTTP with a throwaway token
 const token = crypto.randomBytes(16).toString("hex");
-const port = 4190 + Math.floor(Math.random() * 50);
+const port = 4191 + Math.floor(Math.random() * 50);
 const child = spawn(process.execPath, [path.join(portalDir, "src/server.js"), "--http"], {
   env: { ...env, PORTAL_TOKEN: token, PORTAL_PORT: String(port) }, stdio: ["ignore", "ignore", "pipe"]
 });
@@ -119,6 +119,9 @@ const jsonCall = await (await fetch(`${base}/tools/brain_think`, {
   method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify({ goal: "6 * 7" })
 })).json();
 httpChecks.push([`POST /tools/brain_think 6 * 7 -> ${jsonCall.result?.verdict} ${jsonCall.result?.got}`, jsonCall.ok && jsonCall.result?.got === 42]);
+httpChecks.push([`dry run staged its lessons (runs=${jsonCall.result?.staged?.runs}, persisted=${jsonCall.result?.persisted})`, jsonCall.result?.persisted === false && jsonCall.result?.staged?.runs >= 1]);
+const health = await (await fetch(`${base}/health`, { headers: { authorization: `Bearer ${token}` } })).json();
+httpChecks.push([`portal found the studio token (studioToken=${health.studioToken})`, health.studioToken === true]);
 const remote = new Client({ name: "portal-smoke-http", version: "0.1.0" });
 await remote.connect(new StreamableHTTPClientTransport(new URL(`${base}/mcp`), { requestInit: { headers: { authorization: `Bearer ${token}` } } }));
 const remoteTools = await remote.listTools();
